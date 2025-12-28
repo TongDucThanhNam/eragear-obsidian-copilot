@@ -13,7 +13,7 @@ interface ChatInputProps {
 	onModelChange?: (model: string) => void;
 	availableModels?: string[];
 	onTriggerContext?: () => void;
-	contextMenu?: React.ReactNode;
+	// contextMenu prop removed
 	shouldFocus?: boolean;
 }
 
@@ -28,7 +28,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 	onModelChange,
 	availableModels = [],
 	onTriggerContext,
-	contextMenu,
 }) => {
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -80,7 +79,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 							className="eragear-model-badge"
 							style={{ position: "relative" }}
 						>
-							{/* Hacky select overlay for now, or just use native select styled */}
 							<span>{selectedModel}</span>
 							<IconChevronDown />
 							{onModelChange && (
@@ -106,18 +104,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 							)}
 						</div>
 
-						{/* Context Menu Slot or Default Button */}
-						{contextMenu ||
-							(onTriggerContext && (
-								<button
-									type="button"
-									className="eragear-context-btn-footer"
-									onClick={onTriggerContext}
-									title="Add Context"
-								>
-									<IconAt />
-								</button>
-							))}
+						{onTriggerContext && (
+							<button
+								type="button"
+								className="eragear-context-trigger-btn" // Reuse the styled button class
+								onClick={onTriggerContext}
+								title="Add Context"
+								style={{ marginLeft: "8px" }}
+							>
+								<span className="eragear-icon-at">@</span>
+								<span className="eragear-btn-label">Add context</span>
+							</button>
+						)}
 					</div>
 
 					<button

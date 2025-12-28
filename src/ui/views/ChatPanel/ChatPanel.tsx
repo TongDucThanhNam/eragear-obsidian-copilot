@@ -5,14 +5,19 @@ import { AIService } from "../../../services/ai-service";
 import { AIProviderType } from "../../../settings";
 import { EditorController } from "../../editor/editor-controller";
 import {
-	ChatContextMenu,
 	ChatInput,
 	ContextBadges,
 	MessageList,
 	SlashCommandMenu,
 	SuggestionPopover,
+	type SuggestionItem,
 } from "./components";
-import { IconPlus } from "./components/Icons";
+import {
+	IconPlus,
+	IconFileText,
+	IconFolder,
+	IconSearch,
+} from "./components/Icons";
 import type { Message } from "./types";
 
 interface ChatPanelProps {
@@ -53,8 +58,13 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 	const [selectedFiles, setSelectedFiles] = useState<TFile[]>([]);
 	const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
 	const [suggestionQuery, setSuggestionQuery] = useState<string | null>(null);
-	const [suggestions, setSuggestions] = useState<TFile[]>([]);
+	const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
 	const [suggestionIndex, setSuggestionIndex] = useState(0);
+	// Mode for context picker: null (root), 'notes', 'folders'
+	const [contextPickerMode, setContextPickerMode] = useState<
+		"root" | "notes" | "folders"
+	>("root");
+
 	const settings = getPluginSettings();
 
 	const editorCtrl = useRef(new EditorController(app));
@@ -76,39 +86,122 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 	// Filter suggestions when query changes
 	useEffect(() => {
 		if (suggestionQuery !== null) {
-			const files = app.vault.getMarkdownFiles();
 			const lowerQuery = suggestionQuery.toLowerCase();
 
-			// Get Active File
-			const activeView = app.workspace.getActiveViewOfType(MarkdownView);
-			const activeFile = activeView?.file;
+			// Check if we are in a special mode or just filtered
+			if (suggestionQuery === "") {
+				// ROOT MENU MODE
+				if (contextPickerMode === "root") {
+					const rootItems: SuggestionItem[] = [];
 
-			// Filter
-			let filtered = files.filter(
-				(f) =>
-					f.basename.toLowerCase().includes(lowerQuery) ||
-					f.path.toLowerCase().includes(lowerQuery),
-			);
+					// 1. Active Note
+					const activeView = app.workspace.getActiveViewOfType(MarkdownView);
+					const activeFile = activeView?.file;
+					if (activeFile) {
+						const isAlreadySelected = selectedFiles.some(
+							(f) => f.path === activeFile.path,
+						);
+						if (!isAlreadySelected) {
+							rootItems.push({
+								type: "action",
+								label: "Active Note",
+								id: "action_active_note",
+								icon: <IconFileText />, // We should import this or use emoji
+								desc: activeFile.basename,
+								data: activeFile,
+							});
+						}
+					}
 
-			// If query is empty or matches active file, ensure it's at top
-			if (
-				activeFile &&
-				(activeFile.basename.toLowerCase().includes(lowerQuery) ||
-					activeFile.path.toLowerCase().includes(lowerQuery))
-			) {
-				// Remove from generic list to avoid duplicate
-				filtered = filtered.filter((f) => f.path !== activeFile.path);
-				// Prepend
-				filtered.unshift(activeFile);
+					// 2. Notes
+					rootItems.push({
+						type: "category",
+						label: "Notes",
+						id: "category_notes",
+						icon: <IconFileText />,
+						desc: "Select from all notes",
+					});
+
+					// 3. Folders
+					rootItems.push({
+						type: "category",
+						label: "Folders",
+						id: "category_folders",
+						icon: <IconFolder />,
+						desc: "Select a folder",
+					});
+
+					setSuggestions(rootItems);
+				} else if (contextPickerMode === "notes") {
+					// Show recent files (mocked or full list restricted)
+					const files = app.vault.getMarkdownFiles().slice(0, 50); // Limit to top 50 for performance
+					const fileItems: SuggestionItem[] = files.map((f) => ({
+						type: "file",
+						label: f.basename,
+						id: f.path,
+						data: f,
+						desc: f.path,
+					}));
+					setSuggestions(fileItems);
+				} else if (contextPickerMode === "folders") {
+					// Show all folders
+					const allFolders = app.vault
+						.getAllLoadedFiles()
+						.filter((f) => !("extension" in f)); // simplistic check for folder
+					const folderItems: SuggestionItem[] = allFolders.map((f) => ({
+						type: "folder",
+						label: f.name,
+						id: f.path,
+						data: f,
+						desc: f.path,
+						icon: <IconFolder />,
+					}));
+					// Filter internal folders if needed, but for now show all
+					setSuggestions(folderItems.slice(0, 50));
+				}
+			} else {
+				// We have a query text
+				// Default to searching FILES and FOLDERS mixed?
+				// Or if we are in 'notes' mode, search notes.
+				// Let's implement global search for simplicity as user types
+
+				const files = app.vault.getMarkdownFiles();
+				let filtered = files.filter(
+					(f) =>
+						f.basename.toLowerCase().includes(lowerQuery) ||
+						f.path.toLowerCase().includes(lowerQuery),
+				);
+
+				// Get Active File for prioritization
+				const activeView = app.workspace.getActiveViewOfType(MarkdownView);
+				const activeFile = activeView?.file;
+
+				if (
+					activeFile &&
+					activeFile.basename.toLowerCase().includes(lowerQuery)
+				) {
+					filtered = filtered.filter((f) => f.path !== activeFile.path);
+					filtered.unshift(activeFile);
+				}
+
+				const items: SuggestionItem[] = filtered.slice(0, 15).map((f) => ({
+					type: "file",
+					label: f.basename,
+					id: f.path,
+					data: f,
+					desc: f.path,
+				}));
+				setSuggestions(items);
 			}
 
-			setSuggestions(filtered.slice(0, 10));
 			setSuggestionIndex(0);
 		} else {
 			setSuggestions([]);
+			setContextPickerMode("root"); // Reset mode when closed
 		}
 	}, [
 		suggestionQuery,
+		contextPickerMode,
 		app.vault.getMarkdownFiles,
 		app.workspace.getActiveViewOfType,
 	]);
@@ -117,9 +210,15 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 		setInput(val);
 
 		// Simple @ detection: Last word starts with @
-		const match = val.match(/@(\w*)$/);
-		if (match && match[1] !== undefined) {
-			setSuggestionQuery(match[1]);
+		const match = val.match(/@(.*)$/); // Match until end to capture spaces if we want multi-word search?
+		// Actually, existing regex was /@(\w*)$/. This implies SINGLE WORD.
+		// If we want "Notes" -> sub menu, we need to handle state machine.
+		// If user Backspaces, we might want to go back to root?
+		// For now, let's keep simple trigger.
+
+		const triggerMatch = val.match(/@([^@]*)$/); // capture everything after last @
+		if (triggerMatch && triggerMatch[1] !== undefined) {
+			setSuggestionQuery(triggerMatch[1]);
 			setShowCommands(false);
 		} else {
 			setSuggestionQuery(null);
@@ -129,21 +228,49 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 		setShouldFocusInput(false);
 	};
 
-	const handleSelectSuggestion = (file: TFile) => {
-		// Add to selected files if not already there
-		if (!selectedFiles.find((f) => f.path === file.path)) {
-			setSelectedFiles((prev) => [...prev, file]);
+	const handleSelectSuggestion = (item: SuggestionItem) => {
+		if (item.type === "action") {
+			if (item.id === "action_active_note") {
+				// Add active note
+				const file = item.data as TFile;
+				if (!selectedFiles.find((f) => f.path === file.path)) {
+					setSelectedFiles((prev) => [...prev, file]);
+				}
+				closeIdsAndCleanInput();
+			}
+		} else if (item.type === "category") {
+			if (item.id === "category_notes") {
+				setContextPickerMode("notes");
+				// Don't close, just update list. The query is still "".
+				// We rely on the useEffect dependency on contextPickerMode to refresh suggestions.
+			} else if (item.id === "category_folders") {
+				setContextPickerMode("folders");
+			}
+		} else if (item.type === "file") {
+			const file = item.data as TFile;
+			if (!selectedFiles.find((f) => f.path === file.path)) {
+				setSelectedFiles((prev) => [...prev, file]);
+			}
+			closeIdsAndCleanInput();
+		} else if (item.type === "folder") {
+			const path = item.id;
+			if (!selectedFolders.includes(path)) {
+				setSelectedFolders((prev) => [...prev, path]);
+			}
+			closeIdsAndCleanInput();
 		}
+	};
 
+	const closeIdsAndCleanInput = () => {
 		// Remove the Trigger from input
-		// We need to replace the last @... pattern
-		const match = input.match(/@(\w*)$/);
+		const match = input.match(/@([^@]*)$/);
 		if (match) {
 			const prefix = input.substring(0, match.index);
 			setInput(prefix);
 		}
 
 		setSuggestionQuery(null);
+		setContextPickerMode("root");
 		setShouldFocusInput(true);
 	};
 
@@ -379,8 +506,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 	};
 
 	const handleRegenerate = async () => {
-		// Just reuse handleSendMessage with empty text but ensuring state is logically correct beforehand?
-		// Actually, let's just trigger the retry logic manually:
 		if (messages.length === 0) return;
 
 		const newHistory = [...messages];
@@ -390,22 +515,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 			newHistory.pop();
 		}
 
-		// This effectively resets verification of last user msg
 		setMessages(newHistory);
-		// Then call send with empty? No, handleSendMessage logic is complex with contexts.
-		// It's better to just replicate the stream call on existing history.
-		// For brevity in this fix, I am leaving the duplicate logic for now or simple re-call if refactored.
-		// Simulating a re-send of the last user message seems easier but we don't want to duplicate user message.
-		// The block above (lines 380+) handles exactly this case (regenerating response for last user message).
-		// So we just need to confirm we update state 'messages' to remove the bad assistant response, then trigger the effect?
-		// But handleSendMessage is an async function, not an effect.
-		// So we call handleSendMessage() with no args?
-		// But handleSendMessage logic splits: if isNewMessage (which is true if !text)...
-		// wait, isNewMessage = !text. So handleSendMessage() -> isNewMessage=true.
-		// Then it tries to add 'input' as user message. That's WRONG for regeneration.
-
-		// Correct fix: Separate 'sendMessage' from 'regenerate'.
-		// For now, I'll copy the regeneration logic I saw in the previous file content (lines 428+).
 
 		const lastUserMsg =
 			newHistory.length > 0 ? newHistory[newHistory.length - 1] : undefined;
@@ -477,9 +587,13 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 
 	const handleTriggerContext = () => {
 		setInput((prev) => {
-			const newVal =
-				prev.endsWith(" ") || prev === "" ? `${prev}@` : `${prev} @`;
+			// Ensure we have a space before @ if not at start
+			const prefix = prev.length > 0 && !prev.endsWith(" ") ? " " : "";
+			const newVal = `${prev}${prefix}@`;
+
+			// We set query to "" specifically to trigger Root Menu
 			setSuggestionQuery("");
+			setContextPickerMode("root");
 			setShouldFocusInput(true);
 			return newVal;
 		});
@@ -508,34 +622,46 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 	};
 
 	const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+		// Handle Suggestion Navigation
+		if (suggestionQuery !== null && suggestions.length > 0) {
+			if (e.key === "ArrowDown") {
+				e.preventDefault();
+				setSuggestionIndex((prev) => (prev + 1) % suggestions.length);
+				return;
+			}
+			if (e.key === "ArrowUp") {
+				e.preventDefault();
+				setSuggestionIndex(
+					(prev) => (prev - 1 + suggestions.length) % suggestions.length,
+				);
+				return;
+			}
+			if (e.key === "Enter" || e.key === "Tab") {
+				e.preventDefault();
+				const selected = suggestions[suggestionIndex];
+				if (selected) {
+					handleSelectSuggestion(selected);
+				}
+				return;
+			}
+			if (e.key === "Escape") {
+				// If in submenu, go back to root?
+				if (contextPickerMode !== "root") {
+					setContextPickerMode("root");
+					return;
+				}
+				setSuggestionQuery(null);
+				return;
+			}
+		}
+
 		if (e.key === "Enter" && !e.shiftKey) {
 			e.preventDefault();
 			handleSendMessage();
 		}
 		if (e.key === "Escape") {
 			setShowCommands(false);
-		}
-	};
-
-	// --- New Handlers for Context Menu ---
-	const handleAddActiveNote = () => {
-		const activeFile = app.workspace.getActiveFile();
-		if (activeFile && activeFile.extension === "md") {
-			if (!selectedFiles.some((f) => f.path === activeFile.path)) {
-				setSelectedFiles((prev) => [...prev, activeFile]);
-			}
-		}
-	};
-
-	const handleAddFile = (file: TFile) => {
-		if (!selectedFiles.some((f) => f.path === file.path)) {
-			setSelectedFiles((prev) => [...prev, file]);
-		}
-	};
-
-	const handleAddFolder = (path: string) => {
-		if (!selectedFolders.includes(path)) {
-			setSelectedFolders((prev) => [...prev, path]);
+			setSuggestionQuery(null);
 		}
 	};
 
@@ -595,7 +721,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 					}
 				/>
 
-				{/* Input Area with Context Menu */}
+				{/* Input Area */}
 				<ChatInput
 					input={input}
 					isLoading={isLoading}
@@ -607,14 +733,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 					onModelChange={setSelectedModel}
 					availableModels={getAvailableModels()}
 					onTriggerContext={handleTriggerContext}
-					contextMenu={
-						<ChatContextMenu
-							app={app}
-							onAddActiveNote={handleAddActiveNote}
-							onAddFile={handleAddFile}
-							onAddFolder={handleAddFolder}
-						/>
-					}
+					// No contextMenu prop anymore!
 				/>
 			</div>
 		</div>
