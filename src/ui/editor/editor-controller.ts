@@ -63,4 +63,18 @@ export class EditorController {
 			cursor: cursor.line,
 		};
 	}
+	/**
+	 * Inserts text at the current cursor position.
+	 */
+	public insertText(text: string): boolean {
+		const activeLeaf = this.app.workspace.activeLeaf;
+		if (!activeLeaf || activeLeaf.view.getViewType() !== "markdown") {
+			return false;
+		}
+
+		const activeView = activeLeaf.view as MarkdownView;
+		const editor = activeView.editor;
+		editor.replaceSelection(text);
+		return true;
+	}
 }

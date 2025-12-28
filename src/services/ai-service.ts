@@ -11,7 +11,7 @@ export class AIService {
 		this.settings = settings;
 	}
 
-	async streamChat(messages: any[]) {
+	async streamChat(messages: any[], modelId?: string) {
 		let model;
 
 		switch (this.settings.provider) {
@@ -25,7 +25,7 @@ export class AIService {
 				const openai = createOpenAI({
 					apiKey: this.settings.openaiApiKey,
 				});
-				model = openai(this.settings.openaiModel || "gpt-4o");
+				model = openai(modelId || this.settings.openaiModel || "gpt-4o");
 				break;
 			}
 
@@ -39,7 +39,9 @@ export class AIService {
 				const google = createGoogleGenerativeAI({
 					apiKey: this.settings.geminiApiKey,
 				});
-				model = google(this.settings.geminiModel || "gemini-1.5-flash");
+				model = google(
+					modelId || this.settings.geminiModel || "gemini-1.5-flash",
+				);
 				break;
 			}
 
@@ -54,7 +56,9 @@ export class AIService {
 					apiKey: this.settings.deepseekApiKey,
 					baseURL: "https://api.deepseek.com",
 				});
-				model = deepseek(this.settings.deepseekModel || "deepseek-chat");
+				model = deepseek(
+					modelId || this.settings.deepseekModel || "deepseek-chat",
+				);
 				break;
 			}
 
