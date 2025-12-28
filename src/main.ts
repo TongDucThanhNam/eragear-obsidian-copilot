@@ -27,6 +27,7 @@ import {
 	SampleSettingTab,
 } from "./settings";
 import { ERAGEAR_VIEW_TYPE, EragearView } from "./ui/eragear-view";
+import { diffViewExtension } from "./ui/editor/diff-view-plugin";
 
 /**
  * Main Plugin Class
@@ -56,6 +57,9 @@ export default class EragearPlugin extends Plugin {
 
 			// 3. Register UI components
 			this.registerUIComponents();
+
+			// Register Editor Extensions
+			this.registerEditorExtension(diffViewExtension);
 
 			// 4. Register commands
 			this.registerCommands();
@@ -140,15 +144,16 @@ export default class EragearPlugin extends Plugin {
 	 */
 	private registerUIComponents(): void {
 		// Register custom view
-		this.registerView(
-			ERAGEAR_VIEW_TYPE,
-			(leaf) => {
-				if (!this.vaultManager || !this.contextAssembler || !this.cloudflareService) {
-					throw new Error("Services not initialized");
-				}
-				return new EragearView(leaf);
-			},
-		);
+		this.registerView(ERAGEAR_VIEW_TYPE, (leaf) => {
+			if (
+				!this.vaultManager ||
+				!this.contextAssembler ||
+				!this.cloudflareService
+			) {
+				throw new Error("Services not initialized");
+			}
+			return new EragearView(leaf);
+		});
 
 		// Add ribbon icon
 		this.addRibbonIcon("bot", "Open Eragear Copilot", () => {

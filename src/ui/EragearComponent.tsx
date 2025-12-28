@@ -2,7 +2,6 @@ import type { App } from "obsidian";
 import type React from "react";
 import { AppContextProvider } from "./context/AppContext";
 import { TestPanel } from "./views/TestPanel";
-import "./EragearComponent.css";
 
 interface EragearComponentProps {
 	app: App;

@@ -11,6 +11,7 @@ import type React from "react";
 import { useState } from "react";
 
 import { ConsoleLog, GlobalContextBar, TabNavigation } from "../../components";
+import { ChatPanel } from "../ChatPanel/ChatPanel";
 import { useFileOperations, useSearch, useTestOutput } from "../../hooks";
 import type {
 	FilesState,
@@ -28,7 +29,6 @@ import {
 	OperationsTabRenderer,
 	SearchTabRenderer,
 } from "./tabs";
-import "./TestPanel.css";
 
 export interface TestPanelProps {
 	app: App;
@@ -456,6 +456,10 @@ export const TestPanel: React.FC<TestPanelProps> = ({ app }) => {
 						onReadCanvas={handleReadCanvas}
 					/>
 				);
+
+			case "chat":
+				// Pass app to ChatPanel so it can use EditorController
+				return <ChatPanel app={app} />;
 
 			default:
 				return null;

@@ -1,5 +1,7 @@
+import type { App } from "obsidian";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { EditorController } from "../../editor/editor-controller";
 
 interface Message {
 	id: string;
@@ -8,7 +10,11 @@ interface Message {
 	timestamp: Date;
 }
 
-export const ChatPanel: React.FC = () => {
+interface ChatPanelProps {
+	app: App;
+}
+
+export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 	const [messages, setMessages] = useState<Message[]>([
 		{
 			id: "1",
@@ -22,7 +28,7 @@ export const ChatPanel: React.FC = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
-	const handleSendMessage = async () => {
+	const handleSendMessage = () => {
 		if (!input.trim()) return;
 
 		// Add user message
