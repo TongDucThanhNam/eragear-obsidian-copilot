@@ -7,6 +7,8 @@ import {
 	MessageList,
 	SlashCommandMenu,
 	SuggestionPopover,
+	ContextBadges,
+	ChatContextMenu,
 } from "./components";
 import {
 	IconLink,
@@ -62,6 +64,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 
 	// Context & Suggestion State
 	const [selectedFiles, setSelectedFiles] = useState<TFile[]>([]);
+	const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
 	const [suggestionQuery, setSuggestionQuery] = useState<string | null>(null);
 	const [suggestions, setSuggestions] = useState<TFile[]>([]);
 	const [suggestionIndex, setSuggestionIndex] = useState(0);
@@ -426,15 +429,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 	};
 
 	const handleRegenerate = async () => {
+		// Just reuse handleSendMessage with empty text but ensuring state is logically correct beforehand?
+		// Actually, let's just trigger the retry logic manually:
 		if (messages.length === 0) return;
-		// Logic reused from bottom half of handleSendMessage
-		// In this implementation I'm duplicating logic which is fine for now but refactoring earlier would have been better
-		// BUT wait, I can just call the logic. I'll just copy paste the core logic here again to be safe.
-		// Actually, let's keep it simple and just rely on the fact that handleSendMessage handles both?
-		// No, handleSendMessage's 'regenerate' logic (the else block) is implicitly triggered only if !text passed AND messages exist.
-		// But handleKeyboard calls handleSendMessage() [undefined] -> isNewMessage = true.
-		// So we need a distinct regenerate function or flag.
-		// Let's just implement it directly here to be safe and clean.
 
 		const newHistory = [...messages];
 		const lastMsg = newHistory[newHistory.length - 1];
@@ -443,15 +440,29 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 			newHistory.pop();
 		}
 
+		// This effectively resets verification of last user msg
+		setMessages(newHistory);
+		// Then call send with empty? No, handleSendMessage logic is complex with contexts.
+		// It's better to just replicate the stream call on existing history.
+		// For brevity in this fix, I am leaving the duplicate logic for now or simple re-call if refactored.
+		// Simulating a re-send of the last user message seems easier but we don't want to duplicate user message.
+		// The block above (lines 380+) handles exactly this case (regenerating response for last user message).
+		// So we just need to confirm we update state 'messages' to remove the bad assistant response, then trigger the effect?
+		// But handleSendMessage is an async function, not an effect.
+		// So we call handleSendMessage() with no args?
+		// But handleSendMessage logic splits: if isNewMessage (which is true if !text)...
+		// wait, isNewMessage = !text. So handleSendMessage() -> isNewMessage=true.
+		// Then it tries to add 'input' as user message. That's WRONG for regeneration.
+
+		// Correct fix: Separate 'sendMessage' from 'regenerate'.
+		// For now, I'll copy the regeneration logic I saw in the previous file content (lines 428+).
+
 		const lastUserMsg =
 			newHistory.length > 0 ? newHistory[newHistory.length - 1] : undefined;
-
 		if (lastUserMsg && lastUserMsg.role === "user") {
-			setMessages(newHistory);
 			setIsLoading(true);
 			const settings = getPluginSettings();
 			const aiService = new AIService(settings);
-
 			try {
 				const coreMessages = newHistory.map((m) => ({
 					role: m.role,
@@ -556,6 +567,28 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 		}
 	};
 
+	// --- New Handlers for Context Menu ---
+	const handleAddActiveNote = () => {
+		const activeFile = app.workspace.getActiveFile();
+		if (activeFile && activeFile.extension === "md") {
+			if (!selectedFiles.some((f) => f.path === activeFile.path)) {
+				setSelectedFiles((prev) => [...prev, activeFile]);
+			}
+		}
+	};
+
+	const handleAddFile = (file: TFile) => {
+		if (!selectedFiles.some((f) => f.path === file.path)) {
+			setSelectedFiles((prev) => [...prev, file]);
+		}
+	};
+
+	const handleAddFolder = (path: string) => {
+		if (!selectedFolders.includes(path)) {
+			setSelectedFolders((prev) => [...prev, path]);
+		}
+	};
+
 	return (
 		<div className="eragear-container">
 			{/* Header Toolbar */}
@@ -649,68 +682,41 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 				</div>
 			)}
 
-			{/* Selected Files Chips - Keep them above input, but styled */}
-			{selectedFiles.length > 0 && (
-				<div
-					className="eragear-context-chips"
-					style={{
-						display: "flex",
-						flexWrap: "wrap",
-						gap: "4px",
-						padding: "0 16px 8px 16px",
-						fontSize: "0.85em",
-					}}
-				>
-					{selectedFiles.map((file) => (
-						<div
-							key={file.path}
-							style={{
-								background: "var(--background-modifier-form-field)",
-								border: "1px solid var(--background-modifier-border)",
-								borderRadius: "12px",
-								padding: "2px 8px",
-								display: "flex",
-								alignItems: "center",
-								gap: "4px",
-							}}
-						>
-							<span>📄 {file.basename}</span>
-							<button
-								type="button"
-								onClick={() =>
-									setSelectedFiles((prev) =>
-										prev.filter((f) => f.path !== file.path),
-									)
-								}
-								style={{
-									background: "none",
-									border: "none",
-									cursor: "pointer",
-									padding: 0,
-									marginLeft: "4px",
-									opacity: 0.6,
-								}}
-								title="Remove file"
-							>
-								✕
-							</button>
-						</div>
-					))}
-				</div>
-			)}
+			<div className="eragear-input-container">
+				{/* Context Badges */}
+				<ContextBadges
+					selectedFiles={selectedFiles}
+					selectedFolders={selectedFolders}
+					onRemoveFile={(path) =>
+						setSelectedFiles((prev) => prev.filter((f) => f.path !== path))
+					}
+					onRemoveFolder={(path) =>
+						setSelectedFolders((prev) => prev.filter((f) => f !== path))
+					}
+				/>
 
-			<ChatInput
-				input={input}
-				isLoading={isLoading}
-				onInputChange={handleInputChange}
-				onSendMessage={() => handleSendMessage()}
-				onKeyDown={handleKeyPress}
-				shouldFocus={shouldFocusInput}
-				selectedModel={selectedModel}
-				onModelChange={setSelectedModel}
-				availableModels={getAvailableModels()}
-				onTriggerContext={handleTriggerContext}
-			/>
+				{/* Input Area with Context Menu */}
+				<ChatInput
+					input={input}
+					isLoading={isLoading}
+					onInputChange={handleInputChange}
+					onSendMessage={() => handleSendMessage()}
+					onKeyDown={handleKeyPress}
+					shouldFocus={shouldFocusInput}
+					selectedModel={selectedModel}
+					onModelChange={setSelectedModel}
+					availableModels={getAvailableModels()}
+					onTriggerContext={handleTriggerContext}
+					contextMenu={
+						<ChatContextMenu
+							app={app}
+							onAddActiveNote={handleAddActiveNote}
+							onAddFile={handleAddFile}
+							onAddFolder={handleAddFolder}
+						/>
+					}
+				/>
+			</div>
 
 			{/* Footer Status */}
 			<div className="eragear-status-bar">

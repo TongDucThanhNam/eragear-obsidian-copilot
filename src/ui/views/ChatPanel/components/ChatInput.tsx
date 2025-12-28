@@ -13,6 +13,7 @@ interface ChatInputProps {
 	onModelChange?: (model: string) => void;
 	availableModels?: string[];
 	onTriggerContext?: () => void;
+	contextMenu?: React.ReactNode;
 	shouldFocus?: boolean;
 }
 
@@ -27,6 +28,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 	onModelChange,
 	availableModels = [],
 	onTriggerContext,
+	contextMenu,
 }) => {
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -103,14 +105,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 								</select>
 							)}
 						</div>
-						<button
-							type="button"
-							className="eragear-context-btn-footer"
-							onClick={onTriggerContext}
-							title="Add Context"
-						>
-							<IconAt />
-						</button>
+
+						{/* Context Menu Slot or Default Button */}
+						{contextMenu ||
+							(onTriggerContext && (
+								<button
+									type="button"
+									className="eragear-context-btn-footer"
+									onClick={onTriggerContext}
+									title="Add Context"
+								>
+									<IconAt />
+								</button>
+							))}
 					</div>
 
 					<button
