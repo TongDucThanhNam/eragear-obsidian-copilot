@@ -372,8 +372,9 @@ If your plugin does not need CSS, delete this file.
 	box-shadow: none;
 }
 .console-log-panel.collapsed {
-	flex: 0;
-	display: none;
+	flex: 0 0 auto;
+	height: auto;
+	min-height: 0;
 }
 .console-header {
 	display: flex;
