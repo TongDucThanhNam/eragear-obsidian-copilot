@@ -1,11 +1,13 @@
 import type React from "react";
+import Markdown from "react-markdown";
 import type { Message } from "../types";
+import { IconCopy, IconRotate, IconTrash, IconPen } from "./Icons";
 
 interface MessageBubbleProps {
 	message: Message;
-	onDelete?: () => void;
+	onDelete: () => void;
 	onRegenerate?: () => void;
-	onInsert?: (content: string) => void;
+	onInsert: (content: string) => void;
 }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
@@ -14,111 +16,73 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 	onRegenerate,
 	onInsert,
 }) => {
-	const renderContent = () => {
-		return message.parts.map((part, index) => {
-			if (part.type === "text") {
-				return <span key={index}>{part.text}</span>;
-			}
-			return null;
-		});
-	};
+	const isUser = message.role === "user";
 
-	const copyToClipboard = () => {
-		const text = message.parts
-			.map((p) => (p.type === "text" ? p.text : ""))
-			.join("");
-		navigator.clipboard.writeText(text);
-		// TODO: Show toast
+	// Extract text content for copy/insert
+	const textContent = message.parts
+		.map((p) => (p.type === "text" ? p.text : ""))
+		.join("\n");
+
+	const handleCopy = () => {
+		navigator.clipboard.writeText(textContent);
+		// Optional: toast notification
 	};
 
 	return (
-		<div
-			className={`message message-${message.role}`}
-			style={{ position: "relative" }}
-		>
-			<div className="message-avatar">
-				{message.role === "user" ? "👤" : "🤖"}
-			</div>
-			<div className="message-content">
-				<div className="message-bubble">{renderContent()}</div>
+		<div className={`eragear-message-group ${isUser ? "user" : "assistant"}`}>
+			{!isUser && <div className="eragear-avatar">🤖</div>}
 
-				<div
-					className="message-actions"
-					style={{
-						display: "flex",
-						gap: "4px",
-						marginTop: "4px",
-						opacity: 0,
-						transition: "opacity 0.2s",
-						position: "absolute",
-						top: "2px",
-						right: "2px",
-						background: "rgba(0,0,0,0.5)",
-						borderRadius: "4px",
-						padding: "2px",
-					}}
-				>
-					{/* Show actions on hover (handled by CSS ideally, but here distinct layout) */}
-					{/* Actually, let's just make them visible or put them below */}
+			<div style={{ width: "100%", overflow: "hidden" }}>
+				<div className="eragear-bubble">
+					{message.parts.map((part, index) => {
+						if (part.type === "text") {
+							return <Markdown key={index}>{part.text}</Markdown>;
+						}
+						return null;
+					})}
 				</div>
-				<div
-					className="message-footer"
-					style={{
-						display: "flex",
-						gap: "8px",
-						marginTop: "4px",
-						fontSize: "0.8em",
-						color: "var(--text-muted)",
-					}}
-				>
-					{message.role === "assistant" && (
-						<>
+
+				{!isUser && (
+					<div className="eragear-msg-actions">
+						<button
+							type="button"
+							className="eragear-action-icon"
+							title="Copy"
+							onClick={handleCopy}
+						>
+							<IconCopy />
+						</button>
+						{onRegenerate && (
 							<button
 								type="button"
-								onClick={() => {
-									const text = message.parts
-										.map((p) => (p.type === "text" ? p.text : ""))
-										.join("");
-									if (onInsert) onInsert(text);
-								}}
-								title="Insert to Editor"
+								className="eragear-action-icon"
+								title="Regenerate"
+								onClick={onRegenerate}
 							>
-								📋
+								<IconRotate />
 							</button>
-							<button
-								type="button"
-								onClick={copyToClipboard}
-								title="Copy Message"
-							>
-								📑
-							</button>
-						</>
-					)}
-					{onRegenerate && (
-						<button type="button" onClick={onRegenerate} title="Regenerate">
-							🔄
+						)}
+						<button
+							type="button"
+							className="eragear-action-icon"
+							title="Insert to Editor"
+							onClick={() => onInsert(textContent)}
+						>
+							<IconPen />
 						</button>
-					)}
-					{onDelete && (
-						<button type="button" onClick={onDelete} title="Delete">
-							🗑️
+						<button
+							type="button"
+							className="eragear-action-icon"
+							title="Delete"
+							onClick={onDelete}
+						>
+							<IconTrash />
 						</button>
-					)}
-				</div>
+					</div>
+				)}
 			</div>
-			<style>{`
-				.message:hover .message-actions { opacity: 1; }
-				.message-footer button {
-					background: none;
-					border: none;
-					cursor: pointer;
-					opacity: 0.5;
-					padding: 2px;
-				}
-				.message-footer button:hover {
-					opacity: 1;
-				}
-			`}</style>
+
+			{isUser && <div className="eragear-avatar">👤</div>}
 		</div>
 	);
 };

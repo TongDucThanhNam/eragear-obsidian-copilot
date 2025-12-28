@@ -32,6 +32,7 @@
 		"ai": "^6.0.3",
 		"obsidian": "latest",
 		"react": "^19.2.3",
-		"react-dom": "^19.2.3"
+		"react-dom": "^19.2.3",
+		"react-markdown": "^10.1.0"
 	}
 }

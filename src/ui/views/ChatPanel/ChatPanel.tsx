@@ -8,6 +8,20 @@ import {
 	SlashCommandMenu,
 	SuggestionPopover,
 } from "./components";
+import {
+	IconLink,
+	IconBranch,
+	IconArchive,
+	IconList,
+	IconTag,
+	IconMinus,
+	IconSquare,
+	IconX,
+	IconMessage,
+	IconWrench,
+	IconPlus,
+	IconPen,
+} from "./components/Icons";
 import type { Message } from "./types";
 import { AIService } from "../../../services/ai-service";
 import { AIProviderType } from "../../../settings";
@@ -16,6 +30,8 @@ interface ChatPanelProps {
 	app: App;
 }
 
+type PanelMode = "chat" | "playground";
+
 export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 	// Retrieve plugin settings
 	const getPluginSettings = () => {
@@ -23,6 +39,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 		const plugin = app.plugins.getPlugin("eragear-obsidian-copilot");
 		return plugin?.settings;
 	};
+
+	const [activeMode, setActiveMode] = useState<PanelMode>("chat");
 
 	const [messages, setMessages] = useState<Message[]>([
 		{
@@ -99,7 +117,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 		} else {
 			setSuggestions([]);
 		}
-	}, [suggestionQuery]);
+	}, [
+		suggestionQuery,
+		app.vault.getMarkdownFiles,
+		app.workspace.getActiveViewOfType,
+	]);
 
 	const handleInputChange = (val: string) => {
 		setInput(val);
@@ -405,22 +427,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 
 	const handleRegenerate = async () => {
 		if (messages.length === 0) return;
-		// Reuse handleSendMessage logic by passing undefined? NO, handled above.
-		// Wait, I need to call the logic. I can just call handleSendMessage() with NO text?
-		// No, `handleSendMessage()` with no text assumes New Message from Input.
-		// I need to trigger the internal part of handleSendMessage or duplicate the logic?
-		// Let's just use the logic I implemented above inside handleSendMessage (it handles !isNewMessage branch? No wait).
-		// My code structure above: if (isNewMessage) { ... } return;
-		// So if text passed (regeneration trigger passes text?), actually handleSendMessage signature is `(text?: string)`.
-		// If I want to regenerate, I generally re-submit the Last User Message?
-		// Or I assume history is there.
-		// My implementation above has a specific block for regeneration if `!isNewMessage` at the bottom.
-		// But `handleSendMessage` is called on Enter with `text` undefined -> `isNewMessage = true`.
-		// How do I trigger regeneration?
-		// `onRegenerate={handleRegenerate}`.
-		// `handleRegenerate` calls... what?
-		// I am PASTING the regeneration logic into `handleRegenerate` directly in previous steps (or I thought I was).
-		// Yes, `handleRegenerate` function has the logic inside it in my overwrite content.
+		// Logic reused from bottom half of handleSendMessage
+		// In this implementation I'm duplicating logic which is fine for now but refactoring earlier would have been better
+		// BUT wait, I can just call the logic. I'll just copy paste the core logic here again to be safe.
+		// Actually, let's keep it simple and just rely on the fact that handleSendMessage handles both?
+		// No, handleSendMessage's 'regenerate' logic (the else block) is implicitly triggered only if !text passed AND messages exist.
+		// But handleKeyboard calls handleSendMessage() [undefined] -> isNewMessage = true.
+		// So we need a distinct regenerate function or flag.
+		// Let's just implement it directly here to be safe and clean.
 
 		const newHistory = [...messages];
 		const lastMsg = newHistory[newHistory.length - 1];
@@ -431,6 +445,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 
 		const lastUserMsg =
 			newHistory.length > 0 ? newHistory[newHistory.length - 1] : undefined;
+
 		if (lastUserMsg && lastUserMsg.role === "user") {
 			setMessages(newHistory);
 			setIsLoading(true);
@@ -479,7 +494,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 
 	const handleInsert = (content: string) => {
 		const success = editorCtrl.current.insertText(content);
-		// ...
 	};
 
 	const handleNewChat = () => {
@@ -544,41 +558,80 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 
 	return (
 		<div className="eragear-container">
-			<div
-				className="eragear-header"
-				style={{
-					padding: "8px 12px",
-					borderBottom: "1px solid var(--background-modifier-border)",
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					fontSize: "0.85em",
-				}}
-			>
-				<span style={{ fontWeight: 600 }}>Chat</span>
+			{/* Header Toolbar */}
+			<div className="eragear-header-toolbar">
+				<div className="eragear-tool-icons">
+					<button type="button" className="icon-btn" title="Link">
+						<IconLink />
+					</button>
+					<button type="button" className="icon-btn" title="Branch">
+						<IconBranch />
+					</button>
+					<button type="button" className="icon-btn" title="Archive">
+						<IconArchive />
+					</button>
+					<button type="button" className="icon-btn" title="List">
+						<IconList />
+					</button>
+					<button type="button" className="icon-btn" title="Tags">
+						<IconTag />
+					</button>
+				</div>
+				<div className="eragear-tool-icons">
+					<button type="button" className="icon-btn" title="Minimize">
+						<IconMinus />
+					</button>
+					<button type="button" className="icon-btn" title="Maximize">
+						<IconSquare />
+					</button>
+					<button type="button" className="icon-btn" title="Close">
+						<IconX />
+					</button>
+				</div>
+			</div>
+
+			{/* Toggle Tabs */}
+			<div className="eragear-mode-toggle">
 				<button
 					type="button"
-					onClick={handleNewChat}
-					title="New Chat"
-					style={{
-						background: "none",
-						border: "none",
-						cursor: "pointer",
-						opacity: 0.7,
-						fontSize: "1.1em",
-					}}
+					className={`eragear-toggle-btn ${activeMode === "chat" ? "active" : "inactive"}`}
+					onClick={() => setActiveMode("chat")}
 				>
-					➕
+					<IconMessage /> Chat
+				</button>
+				<button
+					type="button"
+					className={`eragear-toggle-btn ${activeMode === "playground" ? "active" : "inactive"}`}
+					onClick={() => setActiveMode("playground")}
+				>
+					<IconWrench /> Playground
 				</button>
 			</div>
 
-			<MessageList
-				messages={messages}
-				isLoading={isLoading}
-				onDelete={handleDelete}
-				onRegenerate={handleRegenerate}
-				onInsert={handleInsert}
-			/>
+			{/* Chat History */}
+			<div className="eragear-chat-area">
+				<div className="eragear-chat-header">
+					<span className="eragear-chat-title">
+						{activeMode === "chat" ? "Chat" : "Playground"}
+					</span>
+					<button
+						type="button"
+						className="eragear-add-btn"
+						onClick={handleNewChat}
+						title="New Chat"
+					>
+						<IconPlus />
+					</button>
+				</div>
+
+				<MessageList
+					messages={messages}
+					isLoading={isLoading}
+					onDelete={handleDelete}
+					onRegenerate={handleRegenerate}
+					onInsert={handleInsert}
+				/>
+			</div>
 
 			{showCommands && (
 				<SlashCommandMenu onCommandSelect={handleCommandClick} />
@@ -596,7 +649,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 				</div>
 			)}
 
-			{/* Selected Files Chips */}
+			{/* Selected Files Chips - Keep them above input, but styled */}
 			{selectedFiles.length > 0 && (
 				<div
 					className="eragear-context-chips"
@@ -604,7 +657,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 						display: "flex",
 						flexWrap: "wrap",
 						gap: "4px",
-						padding: "0 12px 8px 12px",
+						padding: "0 16px 8px 16px",
 						fontSize: "0.85em",
 					}}
 				>
@@ -637,6 +690,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 									marginLeft: "4px",
 									opacity: 0.6,
 								}}
+								title="Remove file"
 							>
 								✕
 							</button>
@@ -657,6 +711,15 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 				availableModels={getAvailableModels()}
 				onTriggerContext={handleTriggerContext}
 			/>
+
+			{/* Footer Status */}
+			<div className="eragear-status-bar">
+				<span>0 linked references</span>
+				<div className="eragear-status-pill">
+					<IconPen />
+					<span style={{ marginLeft: "4px" }}>Eragear: Ready</span>
+				</div>
+			</div>
 		</div>
 	);
 };
