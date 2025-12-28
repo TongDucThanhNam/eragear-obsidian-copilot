@@ -21,11 +21,8 @@ import type { ContextAssembler } from "./core/context-assembler";
 import type { VaultManager } from "./core/vault-manager";
 import type { CloudflareService } from "./services";
 import { createCloudflareService } from "./services";
-import {
-	DEFAULT_SETTINGS,
-	type MyPluginSettings,
-	SampleSettingTab,
-} from "./settings";
+import { DEFAULT_SETTINGS, type MyPluginSettings } from "./settings";
+import { CopilotSettingTab } from "./ui/settings/CopilotSettingTab";
 import { ERAGEAR_VIEW_TYPE, EragearView } from "./ui/eragear-view";
 import { diffViewExtension } from "./ui/editor/diff-view-plugin";
 
@@ -165,7 +162,7 @@ export default class EragearPlugin extends Plugin {
 		this.updateStatusBar("ready");
 
 		// Add settings tab
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new CopilotSettingTab(this.app, this));
 	}
 
 	/**
