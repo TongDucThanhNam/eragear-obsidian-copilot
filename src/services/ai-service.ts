@@ -15,7 +15,7 @@ export class AIService {
 		let model;
 
 		switch (this.settings.provider) {
-			case AIProviderType.BYOK_OPENAI:
+			case AIProviderType.BYOK_OPENAI: {
 				if (!this.settings.openaiApiKey) {
 					new Notice(
 						"Missing OpenAI API Key. Please configure it in settings.",
@@ -25,10 +25,11 @@ export class AIService {
 				const openai = createOpenAI({
 					apiKey: this.settings.openaiApiKey,
 				});
-				model = openai("gpt-4o");
+				model = openai(this.settings.openaiModel || "gpt-4o");
 				break;
+			}
 
-			case AIProviderType.BYOK_GEMINI:
+			case AIProviderType.BYOK_GEMINI: {
 				if (!this.settings.geminiApiKey) {
 					new Notice(
 						"Missing Gemini API Key. Please configure it in settings.",
@@ -38,14 +39,31 @@ export class AIService {
 				const google = createGoogleGenerativeAI({
 					apiKey: this.settings.geminiApiKey,
 				});
-				model = google("gemini-1.5-flash");
+				model = google(this.settings.geminiModel || "gemini-1.5-flash");
 				break;
+			}
 
-			case AIProviderType.ERAGEAR_CLOUD:
+			case AIProviderType.BYOK_DEEPSEEK: {
+				if (!this.settings.deepseekApiKey) {
+					new Notice(
+						"Missing DeepSeek API Key. Please configure it in settings.",
+					);
+					throw new Error("Missing DeepSeek API Key");
+				}
+				const deepseek = createOpenAI({
+					apiKey: this.settings.deepseekApiKey,
+					baseURL: "https://api.deepseek.com",
+				});
+				model = deepseek(this.settings.deepseekModel || "deepseek-chat");
+				break;
+			}
+
+			case AIProviderType.ERAGEAR_CLOUD: {
 				new Notice(
 					"Eragear Cloud is not implemented yet. Please switch to BYOK.",
 				);
 				throw new Error("Feature not available");
+			}
 
 			default:
 				throw new Error("Invalid Provider");

@@ -1,9 +1,11 @@
 import { type App, PluginSettingTab, Setting } from "obsidian";
 import type MyPlugin from "./main";
 
+// ... existing imports ...
 export enum AIProviderType {
 	BYOK_OPENAI = "openai",
 	BYOK_GEMINI = "google",
+	BYOK_DEEPSEEK = "deepseek", // New
 	ERAGEAR_CLOUD = "eragear_cloud",
 }
 
@@ -11,10 +13,14 @@ export interface MyPluginSettings {
 	// AI Settings
 	provider: AIProviderType;
 	openaiApiKey: string;
+	openaiModel: string; // New
 	geminiApiKey: string;
+	geminiModel: string; // New
+	deepseekApiKey: string; // New
+	deepseekModel: string; // New
 	eragearApiKey: string;
 
-	// Legacy/Other settings
+	// ... other settings ...
 	mySetting: string;
 	apiEndpoint: string;
 	enableDebugMode: boolean;
@@ -29,7 +35,11 @@ export interface MyPluginSettings {
 export const DEFAULT_SETTINGS: MyPluginSettings = {
 	provider: AIProviderType.BYOK_OPENAI,
 	openaiApiKey: "",
+	openaiModel: "gpt-4o",
 	geminiApiKey: "",
+	geminiModel: "gemini-1.5-flash",
+	deepseekApiKey: "",
+	deepseekModel: "deepseek-chat",
 	eragearApiKey: "",
 
 	mySetting: "default",
@@ -44,6 +54,7 @@ export const DEFAULT_SETTINGS: MyPluginSettings = {
 };
 
 export class SampleSettingTab extends PluginSettingTab {
+	// ... existing constructor ...
 	plugin: MyPlugin;
 
 	constructor(app: App, plugin: MyPlugin) {
@@ -68,6 +79,10 @@ export class SampleSettingTab extends PluginSettingTab {
 						AIProviderType.BYOK_GEMINI,
 						"Google Gemini (Bring Your Own Key)",
 					)
+					.addOption(
+						AIProviderType.BYOK_DEEPSEEK,
+						"DeepSeek (OpenAI Compatible)",
+					) // New
 					.addOption(
 						AIProviderType.ERAGEAR_CLOUD,
 						"Eragear Cloud (Managed - Coming Soon)",
@@ -94,6 +109,18 @@ export class SampleSettingTab extends PluginSettingTab {
 							await this.plugin.saveSettings();
 						}),
 				);
+			new Setting(containerEl)
+				.setName("OpenAI Model")
+				.setDesc("e.g., gpt-4o, gpt-3.5-turbo")
+				.addText((text) =>
+					text
+						.setPlaceholder("gpt-4o")
+						.setValue(this.plugin.settings.openaiModel)
+						.onChange(async (value) => {
+							this.plugin.settings.openaiModel = value;
+							await this.plugin.saveSettings();
+						}),
+				);
 		} else if (this.plugin.settings.provider === AIProviderType.BYOK_GEMINI) {
 			new Setting(containerEl)
 				.setName("Gemini API Key")
@@ -107,6 +134,49 @@ export class SampleSettingTab extends PluginSettingTab {
 							await this.plugin.saveSettings();
 						}),
 				);
+			new Setting(containerEl)
+				.setName("Gemini Model")
+				.setDesc("e.g., gemini-1.5-flash, gemini-1.5-pro")
+				.addText((text) =>
+					text
+						.setPlaceholder("gemini-1.5-flash")
+						.setValue(this.plugin.settings.geminiModel)
+						.onChange(async (value) => {
+							this.plugin.settings.geminiModel = value;
+							await this.plugin.saveSettings();
+						}),
+				);
+		} else if (this.plugin.settings.provider === AIProviderType.BYOK_DEEPSEEK) {
+			new Setting(containerEl)
+				.setName("DeepSeek API Key")
+				.setDesc("Enter your DeepSeek API key")
+				.addText((text) =>
+					text
+						.setPlaceholder("sk-...")
+						.setValue(this.plugin.settings.deepseekApiKey)
+						.onChange(async (value) => {
+							this.plugin.settings.deepseekApiKey = value;
+							await this.plugin.saveSettings();
+						}),
+				);
+			new Setting(containerEl)
+				.setName("DeepSeek Model")
+				.setDesc("e.g., deepseek-chat, deepseek-reasoner")
+				.addText((text) =>
+					text
+						.setPlaceholder("deepseek-chat")
+						.setValue(this.plugin.settings.deepseekModel)
+						.onChange(async (value) => {
+							this.plugin.settings.deepseekModel = value;
+							await this.plugin.saveSettings();
+						}),
+				);
+
+			const infoDiv = containerEl.createDiv();
+			infoDiv.addClass("eragear-info-box");
+			infoDiv.setText(
+				"ℹ️ DeepSeek-V3 is now available via 'deepseek-chat'. Use 'deepseek-reasoner' for reasoning tasks.",
+			);
 		} else if (this.plugin.settings.provider === AIProviderType.ERAGEAR_CLOUD) {
 			new Setting(containerEl)
 				.setName("Eragear Access Token")
@@ -126,10 +196,6 @@ export class SampleSettingTab extends PluginSettingTab {
 			infoDiv.setText(
 				"ℹ️ Eragear Cloud provides advanced RAG and syncing across devices. (Coming Soon)",
 			);
-			infoDiv.style.padding = "10px";
-			infoDiv.style.backgroundColor = "var(--background-secondary)";
-			infoDiv.style.borderRadius = "4px";
-			infoDiv.style.marginTop = "10px";
 		}
 
 		containerEl.createEl("h3", { text: "Advanced / Legacy Settings" });
