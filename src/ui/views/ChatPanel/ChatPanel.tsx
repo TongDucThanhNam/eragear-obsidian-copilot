@@ -1,32 +1,19 @@
-import { type TFile, MarkdownView, type App } from "obsidian";
+import { type App, MarkdownView, type TFile } from "obsidian";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { AIService } from "../../../services/ai-service";
+import { AIProviderType } from "../../../settings";
 import { EditorController } from "../../editor/editor-controller";
 import {
+	ChatContextMenu,
 	ChatInput,
+	ContextBadges,
 	MessageList,
 	SlashCommandMenu,
 	SuggestionPopover,
-	ContextBadges,
-	ChatContextMenu,
 } from "./components";
-import {
-	IconLink,
-	IconBranch,
-	IconArchive,
-	IconList,
-	IconTag,
-	IconMinus,
-	IconSquare,
-	IconX,
-	IconMessage,
-	IconWrench,
-	IconPlus,
-	IconPen,
-} from "./components/Icons";
+import { IconPlus } from "./components/Icons";
 import type { Message } from "./types";
-import { AIService } from "../../../services/ai-service";
-import { AIProviderType } from "../../../settings";
 
 interface ChatPanelProps {
 	app: App;
@@ -68,11 +55,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 	const [suggestionQuery, setSuggestionQuery] = useState<string | null>(null);
 	const [suggestions, setSuggestions] = useState<TFile[]>([]);
 	const [suggestionIndex, setSuggestionIndex] = useState(0);
+	const settings = getPluginSettings();
 
 	const editorCtrl = useRef(new EditorController(app));
 
 	useEffect(() => {
-		const settings = getPluginSettings();
 		if (settings) {
 			const defaultModel =
 				settings.provider === AIProviderType.BYOK_OPENAI
@@ -84,7 +71,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 							: "";
 			setSelectedModel(defaultModel);
 		}
-	}, []);
+	}, [settings]);
 
 	// Filter suggestions when query changes
 	useEffect(() => {
@@ -158,43 +145,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 
 		setSuggestionQuery(null);
 		setShouldFocusInput(true);
-	};
-
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-		if (suggestionQuery !== null && suggestions.length > 0) {
-			if (e.key === "ArrowDown") {
-				e.preventDefault();
-				setSuggestionIndex((prev) => (prev + 1) % suggestions.length);
-				return;
-			}
-			if (e.key === "ArrowUp") {
-				e.preventDefault();
-				setSuggestionIndex(
-					(prev) => (prev - 1 + suggestions.length) % suggestions.length,
-				);
-				return;
-			}
-			if (e.key === "Enter" || e.key === "Tab") {
-				e.preventDefault();
-				const selected = suggestions[suggestionIndex];
-				if (selected) {
-					handleSelectSuggestion(selected);
-				}
-				return;
-			}
-			if (e.key === "Escape") {
-				setSuggestionQuery(null);
-				return;
-			}
-		}
-
-		if (e.key === "Enter" && !e.shiftKey) {
-			e.preventDefault();
-			handleSendMessage();
-		}
-		if (e.key === "Escape") {
-			setShowCommands(false);
-		}
 	};
 
 	const handleSendMessage = async (text?: string) => {
@@ -591,56 +541,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 
 	return (
 		<div className="eragear-container">
-			{/* Header Toolbar */}
-			<div className="eragear-header-toolbar">
-				<div className="eragear-tool-icons">
-					<button type="button" className="icon-btn" title="Link">
-						<IconLink />
-					</button>
-					<button type="button" className="icon-btn" title="Branch">
-						<IconBranch />
-					</button>
-					<button type="button" className="icon-btn" title="Archive">
-						<IconArchive />
-					</button>
-					<button type="button" className="icon-btn" title="List">
-						<IconList />
-					</button>
-					<button type="button" className="icon-btn" title="Tags">
-						<IconTag />
-					</button>
-				</div>
-				<div className="eragear-tool-icons">
-					<button type="button" className="icon-btn" title="Minimize">
-						<IconMinus />
-					</button>
-					<button type="button" className="icon-btn" title="Maximize">
-						<IconSquare />
-					</button>
-					<button type="button" className="icon-btn" title="Close">
-						<IconX />
-					</button>
-				</div>
-			</div>
-
-			{/* Toggle Tabs */}
-			<div className="eragear-mode-toggle">
-				<button
-					type="button"
-					className={`eragear-toggle-btn ${activeMode === "chat" ? "active" : "inactive"}`}
-					onClick={() => setActiveMode("chat")}
-				>
-					<IconMessage /> Chat
-				</button>
-				<button
-					type="button"
-					className={`eragear-toggle-btn ${activeMode === "playground" ? "active" : "inactive"}`}
-					onClick={() => setActiveMode("playground")}
-				>
-					<IconWrench /> Playground
-				</button>
-			</div>
-
 			{/* Chat History */}
 			<div className="eragear-chat-area">
 				<div className="eragear-chat-header">
@@ -716,15 +616,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 						/>
 					}
 				/>
-			</div>
-
-			{/* Footer Status */}
-			<div className="eragear-status-bar">
-				<span>0 linked references</span>
-				<div className="eragear-status-pill">
-					<IconPen />
-					<span style={{ marginLeft: "4px" }}>Eragear: Ready</span>
-				</div>
 			</div>
 		</div>
 	);
