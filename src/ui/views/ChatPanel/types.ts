@@ -1,6 +1,3 @@
-export interface Message {
-	id: string;
-	role: "user" | "assistant";
-	content: string;
-	timestamp: Date;
-}
+import type { UIMessage } from "ai";
+
+export type Message = UIMessage;

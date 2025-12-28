@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import type { Message } from "../types";
 import { MessageBubble } from "./MessageBubble";
 

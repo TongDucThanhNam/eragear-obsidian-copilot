@@ -1109,3 +1109,17 @@ If your plugin does not need CSS, delete this file.
 .eragear-messages::-webkit-scrollbar-thumb:hover {
 	background-color: var(--text-muted);
 }
+
+/* Eragear Settings Info Box */
+.eragear-info-box {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 12px;
+	margin-top: 12px;
+	color: var(--text-muted);
+	font-size: 0.9em;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}

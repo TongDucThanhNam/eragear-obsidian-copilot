@@ -1,4 +1,4 @@
-import { ItemView, type WorkspaceLeaf } from "obsidian";
+import { ItemView } from "obsidian";
 import { createRoot, type Root } from "react-dom/client";
 import { EragearComponent } from "./EragearComponent";
 
