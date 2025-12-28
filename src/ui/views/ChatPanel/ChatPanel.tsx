@@ -31,7 +31,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 			parts: [
 				{
 					type: "text",
-					text: "Hello! I'm Eragear Copilot.\n\nTry:\n• `/edit` to simulate an inline edit suggestion\n• `/notes` to search your vault context",
+					text: "Hello! I'm Eragear Copilot.\n\nTry:\n• `@` to add context from notes\n• `/edit` for inline editing",
 				},
 			],
 		},
@@ -70,14 +70,31 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 		if (suggestionQuery !== null) {
 			const files = app.vault.getMarkdownFiles();
 			const lowerQuery = suggestionQuery.toLowerCase();
-			const filtered = files
-				.filter(
-					(f) =>
-						f.basename.toLowerCase().includes(lowerQuery) ||
-						f.path.toLowerCase().includes(lowerQuery),
-				)
-				.slice(0, 10); // Limit to 10
-			setSuggestions(filtered);
+
+			// Get Active File
+			const activeView = app.workspace.getActiveViewOfType(MarkdownView);
+			const activeFile = activeView?.file;
+
+			// Filter
+			let filtered = files.filter(
+				(f) =>
+					f.basename.toLowerCase().includes(lowerQuery) ||
+					f.path.toLowerCase().includes(lowerQuery),
+			);
+
+			// If query is empty or matches active file, ensure it's at top
+			if (
+				activeFile &&
+				(activeFile.basename.toLowerCase().includes(lowerQuery) ||
+					activeFile.path.toLowerCase().includes(lowerQuery))
+			) {
+				// Remove from generic list to avoid duplicate
+				filtered = filtered.filter((f) => f.path !== activeFile.path);
+				// Prepend
+				filtered.unshift(activeFile);
+			}
+
+			setSuggestions(filtered.slice(0, 10));
 			setSuggestionIndex(0);
 		} else {
 			setSuggestions([]);
@@ -159,16 +176,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 		const contentToSend = text || input;
 		if (!contentToSend.trim() && selectedFiles.length === 0) return;
 
-		// If distinct from input (regeneration), don't add user msg again if logic differs,
-		// but here we just reuse generic flow.
-		// If text passed explicitly (regeneration), we usually assume user message is ALREADY in history?
-		// Wait, if regeneration, we pass everything UP TO the last user message.
-
-		// Let's split this:
-		// Normal send: Add User Msg -> Call AI
-		// Regenerate: Call AI with existing history
-
-		// If called via Enter/Button with Input:
 		const isNewMessage = !text;
 		const userContent = isNewMessage ? input.trim() : "";
 
@@ -179,7 +186,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 
 			// 1. Add User Message
 			let displayContent = userContent;
-			// We stick to standard text for now, no injected chips in history text
 
 			const userMsg: Message = {
 				id: Date.now().toString(),
@@ -336,23 +342,19 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 			return;
 		}
 
-		// Handle Regeneration logic
 		if (messages.length === 0) return;
 
 		let newHistory = [...messages];
 		const lastMsg = newHistory[newHistory.length - 1];
 
-		// If last was assistant, remove it
 		if (lastMsg && lastMsg.role === "assistant") {
 			newHistory.pop();
 		}
 
-		// Check if there is a user message to respond to
 		const lastUserMsg =
 			newHistory.length > 0 ? newHistory[newHistory.length - 1] : undefined;
 		if (lastUserMsg && lastUserMsg.role === "user") {
-			setMessages(newHistory); // Update state to removed version
-
+			setMessages(newHistory);
 			setIsLoading(true);
 			const settings = getPluginSettings();
 			const aiService = new AIService(settings);
@@ -402,21 +404,23 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 	};
 
 	const handleRegenerate = async () => {
-		// Just delegate to main handler but passing undefined text so it hits regeneration logic?
-		// Wait, my handleSendMessage logic for regeneration is guarded by !isNewMessage.
-		// If I call with no args, text is undefined, isNewMessage is true (text || input).
-		// Wait, if input is empty, contentToSend will be empty -> return.
-		// If input has text, it sends new message.
-		// So handleSendMessage is NOT handling regeneration correctly with current logic block.
-
-		// I'll keep the separate logic I wrote inside `handleRegenerate` (pasted above)
-		// But I need to invoke it.
-
-		// Re-pasting the logic from previous step into handleSendMessage or keep it separate?
-		// I kept it inside handleSendMessage 'block' but unreachable?
-		// Ah, I see. I duplicated logic in my head.
-		// Let's just fix handleRegenerate to be standalone as it was.
 		if (messages.length === 0) return;
+		// Reuse handleSendMessage logic by passing undefined? NO, handled above.
+		// Wait, I need to call the logic. I can just call handleSendMessage() with NO text?
+		// No, `handleSendMessage()` with no text assumes New Message from Input.
+		// I need to trigger the internal part of handleSendMessage or duplicate the logic?
+		// Let's just use the logic I implemented above inside handleSendMessage (it handles !isNewMessage branch? No wait).
+		// My code structure above: if (isNewMessage) { ... } return;
+		// So if text passed (regeneration trigger passes text?), actually handleSendMessage signature is `(text?: string)`.
+		// If I want to regenerate, I generally re-submit the Last User Message?
+		// Or I assume history is there.
+		// My implementation above has a specific block for regeneration if `!isNewMessage` at the bottom.
+		// But `handleSendMessage` is called on Enter with `text` undefined -> `isNewMessage = true`.
+		// How do I trigger regeneration?
+		// `onRegenerate={handleRegenerate}`.
+		// `handleRegenerate` calls... what?
+		// I am PASTING the regeneration logic into `handleRegenerate` directly in previous steps (or I thought I was).
+		// Yes, `handleRegenerate` function has the logic inside it in my overwrite content.
 
 		let newHistory = [...messages];
 		const lastMsg = newHistory[newHistory.length - 1];
@@ -475,9 +479,57 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 
 	const handleInsert = (content: string) => {
 		const success = editorCtrl.current.insertText(content);
-		if (!success) {
-			// Maybe show toast?
+		// ...
+	};
+
+	const handleNewChat = () => {
+		setMessages([
+			{
+				id: "welcome-msg",
+				role: "assistant",
+				parts: [
+					{
+						type: "text",
+						text: "Hello! I'm Eragear Copilot.\n\nTry:\n• `@` to add context from notes\n• `/edit` for inline editing",
+					},
+				],
+			},
+		]);
+		setInput("");
+		setSelectedFiles([]);
+		setSuggestionQuery(null);
+	};
+
+	const handleTriggerContext = () => {
+		setInput((prev) => {
+			const newVal =
+				prev.endsWith(" ") || prev === "" ? `${prev}@` : `${prev} @`;
+			setSuggestionQuery("");
+			setShouldFocusInput(true);
+			return newVal;
+		});
+	};
+
+	const getAvailableModels = () => {
+		const settings = getPluginSettings();
+		if (!settings) return [];
+		switch (settings.provider) {
+			case AIProviderType.BYOK_OPENAI:
+				return ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"];
+			case AIProviderType.BYOK_GEMINI:
+				return ["gemini-1.5-flash", "gemini-1.5-pro"];
+			case AIProviderType.BYOK_DEEPSEEK:
+				return ["deepseek-chat", "deepseek-reasoner"];
+			default:
+				return [];
 		}
+	};
+
+	const handleCommandClick = (cmd: string) => {
+		const newValue = cmd + " ";
+		setInput(newValue);
+		setShowCommands(false);
+		setShouldFocusInput(true);
 	};
 
 	const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -488,13 +540,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 		if (e.key === "Escape") {
 			setShowCommands(false);
 		}
-	};
-
-	const handleCommandClick = (cmd: string) => {
-		const newValue = cmd + " ";
-		setInput(newValue);
-		setShowCommands(false);
-		setShouldFocusInput(true);
 	};
 
 	return (
@@ -511,41 +556,20 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 				}}
 			>
 				<span style={{ fontWeight: 600 }}>Chat</span>
-				<select
-					value={selectedModel}
-					onChange={(e) => setSelectedModel(e.target.value)}
+				<button
+					type="button"
+					onClick={handleNewChat}
+					title="New Chat"
 					style={{
-						background: "transparent",
+						background: "none",
 						border: "none",
-						color: "var(--text-muted)",
-						fontSize: "inherit",
-						textAlign: "right",
 						cursor: "pointer",
+						opacity: 0.7,
+						fontSize: "1.1em",
 					}}
 				>
-					{getPluginSettings()?.provider === AIProviderType.BYOK_OPENAI && (
-						<>
-							<option value="gpt-4o">gpt-4o</option>
-							<option value="gpt-4-turbo">gpt-4-turbo</option>
-							<option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-						</>
-					)}
-					{getPluginSettings()?.provider === AIProviderType.BYOK_GEMINI && (
-						<>
-							<option value="gemini-1.5-flash">gemini-1.5-flash</option>
-							<option value="gemini-1.5-pro">gemini-1.5-pro</option>
-						</>
-					)}
-					{getPluginSettings()?.provider === AIProviderType.BYOK_DEEPSEEK && (
-						<>
-							<option value="deepseek-chat">deepseek-chat</option>
-							<option value="deepseek-reasoner">deepseek-reasoner</option>
-						</>
-					)}
-					<option value={selectedModel || "custom"}>
-						{selectedModel} (Custom)
-					</option>
-				</select>
+					➕
+				</button>
 			</div>
 
 			<MessageList
@@ -580,7 +604,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 						display: "flex",
 						flexWrap: "wrap",
 						gap: "4px",
-						padding: "8px 12px 0 12px",
+						padding: "0 12px 8px 12px",
 						fontSize: "0.85em",
 					}}
 				>
@@ -626,8 +650,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 				isLoading={isLoading}
 				onInputChange={handleInputChange}
 				onSendMessage={() => handleSendMessage()}
-				onKeyDown={handleKeyDown}
+				onKeyDown={handleKeyPress}
 				shouldFocus={shouldFocusInput}
+				selectedModel={selectedModel}
+				onModelChange={setSelectedModel}
+				availableModels={getAvailableModels()}
+				onTriggerContext={handleTriggerContext}
 			/>
 		</div>
 	);

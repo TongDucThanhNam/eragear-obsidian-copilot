@@ -72,19 +72,27 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 					}}
 				>
 					{message.role === "assistant" && (
-						<button
-							type="button"
-							onClick={() => {
-								const text = message.parts
-									.map((p) => (p.type === "text" ? p.text : ""))
-									.join("");
-								if (onInsert) onInsert(text);
-								else copyToClipboard();
-							}}
-							title="Insert to Editor"
-						>
-							📋
-						</button>
+						<>
+							<button
+								type="button"
+								onClick={() => {
+									const text = message.parts
+										.map((p) => (p.type === "text" ? p.text : ""))
+										.join("");
+									if (onInsert) onInsert(text);
+								}}
+								title="Insert to Editor"
+							>
+								📋
+							</button>
+							<button
+								type="button"
+								onClick={copyToClipboard}
+								title="Copy Message"
+							>
+								📑
+							</button>
+						</>
 					)}
 					{onRegenerate && (
 						<button type="button" onClick={onRegenerate} title="Regenerate">
