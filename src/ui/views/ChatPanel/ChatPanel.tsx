@@ -185,7 +185,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 			setInput("");
 
 			// 1. Add User Message
-			let displayContent = userContent;
+			const displayContent = userContent;
 
 			const userMsg: Message = {
 				id: Date.now().toString(),
@@ -287,7 +287,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 			const aiService = new AIService(settings);
 
 			try {
-				let history = [...messages, userMsg];
+				const history = [...messages, userMsg];
 				const lastMsgIndex = history.length - 1;
 
 				const coreMessages = history.map((m, idx) => {
@@ -344,7 +344,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 
 		if (messages.length === 0) return;
 
-		let newHistory = [...messages];
+		const newHistory = [...messages];
 		const lastMsg = newHistory[newHistory.length - 1];
 
 		if (lastMsg && lastMsg.role === "assistant") {
@@ -422,7 +422,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 		// I am PASTING the regeneration logic into `handleRegenerate` directly in previous steps (or I thought I was).
 		// Yes, `handleRegenerate` function has the logic inside it in my overwrite content.
 
-		let newHistory = [...messages];
+		const newHistory = [...messages];
 		const lastMsg = newHistory[newHistory.length - 1];
 
 		if (lastMsg && lastMsg.role === "assistant") {
