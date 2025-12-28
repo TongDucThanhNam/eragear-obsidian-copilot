@@ -5,6 +5,7 @@
 		"inlineSources": true,
 		"module": "ESNext",
 		"target": "ES6",
+		"allowImportingTsExtensions": true,
 		"allowJs": true,
 		"noImplicitAny": true,
 		"noImplicitThis": true,

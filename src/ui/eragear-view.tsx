@@ -13,10 +13,6 @@ export const ERAGEAR_VIEW_TYPE = "eragear-copilot-view";
 export class EragearView extends ItemView {
 	root: Root | null = null;
 
-	constructor(leaf: WorkspaceLeaf) {
-		super(leaf);
-	}
-
 	/**
 	 * Returns the unique identifier for this view type.
 	 * Obsidian uses this to persist and restore the view.
@@ -53,8 +49,19 @@ export class EragearView extends ItemView {
 		container.empty();
 
 		// Mount React component into the container
-		// Pass the app instance as a prop to the component
+		// Pass app as props to the component
 		this.root = createRoot(container as HTMLElement);
 		this.root.render(<EragearComponent app={this.app} />);
+	}
+
+	/**
+	 * Lifecycle hook: Called when the view is closed.
+	 * Clean up React component.
+	 */
+	async onClose() {
+		if (this.root) {
+			this.root.unmount();
+			this.root = null;
+		}
 	}
 }

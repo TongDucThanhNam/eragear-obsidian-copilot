@@ -4,8 +4,8 @@
  */
 
 import type React from "react";
+import type { FilesState } from "ui/types/testPanel";
 import { ActionCard, ActionCardGroup } from "../../../components";
-import type { FilesState } from "../../../types";
 
 interface FilesTabProps {
 	filesState: FilesState;

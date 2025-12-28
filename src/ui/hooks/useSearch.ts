@@ -7,7 +7,6 @@ import { Notice } from "obsidian";
 import { useState } from "react";
 import type { SearchResult as VaultSearchResult } from "../../core/vault-handler";
 import { VaultHandler } from "../../core/vault-handler";
-import type { TestOutput } from "../types";
 
 interface UseSearchOptions {
     app: any;

@@ -5,8 +5,8 @@
 
 import type { TFile } from "obsidian";
 import type React from "react";
+import type { LabsState } from "ui/types/testPanel";
 import { ActionCard, ActionCardGroup } from "../../../components";
-import type { LabsState } from "../../../types";
 
 interface LabsTabProps {
 	labsState: LabsState;
@@ -16,8 +16,12 @@ interface LabsTabProps {
 	onSubpathChange: (path: string) => void;
 	onReadCanvasPathChange: (path: string) => void;
 	onGetRelatedFiles: () => void;
+	onGetSmartContext?: () => void;
+	onSmartContextDepthChange?: (depth: number) => void;
 	onReadSpecificSection: () => void;
 	onReadCanvas: () => void;
+	onGetGraphNeighborhood?: () => void;
+	onGetLinkDensity?: () => void;
 }
 
 export const LabsTabRenderer: React.FC<LabsTabProps> = ({
@@ -28,8 +32,12 @@ export const LabsTabRenderer: React.FC<LabsTabProps> = ({
 	onSubpathChange,
 	onReadCanvasPathChange,
 	onGetRelatedFiles,
+	onGetSmartContext,
+	onSmartContextDepthChange,
 	onReadSpecificSection,
 	onReadCanvas,
+	onGetGraphNeighborhood,
+	onGetLinkDensity,
 }) => {
 	return (
 		<div className="test-section">
@@ -49,6 +57,69 @@ export const LabsTabRenderer: React.FC<LabsTabProps> = ({
 						disabled={isLoading}
 					>
 						Get Links
+					</button>
+				</ActionCard>
+
+				<ActionCard
+					title="Smart Context (Worker)"
+					description="Snapshot & compute (BFS)"
+					icon="🧠"
+					variant="safe"
+				>
+					<div className="test-input-group">
+						<input
+							type="number"
+							className="test-input"
+							min={0}
+							max={10}
+							step={1}
+							placeholder="Max depth (0-10)"
+							value={labsState.smartContextDepth}
+							onChange={(e) =>
+								onSmartContextDepthChange?.(Number(e.target.value))
+							}
+							disabled={isLoading || !onSmartContextDepthChange}
+						/>
+						<button
+							type="button"
+							className="test-btn test-btn-primary"
+							onClick={onGetSmartContext}
+							disabled={isLoading || !onGetSmartContext}
+						>
+							{isLoading ? "⏳" : "🧠"} Analyze
+						</button>
+					</div>
+				</ActionCard>
+
+				<ActionCard
+					title="Neighborhood"
+					description="1-hop graph context"
+					icon="🕸️"
+					variant="safe"
+				>
+					<button
+						type="button"
+						className="test-btn test-btn-secondary"
+						onClick={onGetGraphNeighborhood}
+						disabled={isLoading || !onGetGraphNeighborhood}
+					>
+						Get Neighborhood
+					</button>
+				</ActionCard>
+
+				<ActionCard
+					title="Link Density"
+					description="Connectivity analysis"
+					icon="📊"
+					variant="safe"
+				>
+					<button
+						type="button"
+						className="test-btn test-btn-secondary"
+						onClick={onGetLinkDensity}
+						disabled={isLoading || !onGetLinkDensity}
+					>
+						Analyze Density
 					</button>
 				</ActionCard>
 			</ActionCardGroup>

@@ -4,8 +4,8 @@
  */
 
 import type React from "react";
+import type { SearchState } from "ui/types/testPanel";
 import { ActionCard, ActionCardGroup } from "../../../components";
-import type { SearchState } from "../../../types";
 
 interface SearchTabProps {
 	searchState: SearchState;

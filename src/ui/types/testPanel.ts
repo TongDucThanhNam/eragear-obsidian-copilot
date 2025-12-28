@@ -3,6 +3,8 @@
  * Defines all interfaces and types for the test panel functionality
  */
 
+import type { App, TFile } from "obsidian";
+
 export interface TestOutput {
     id: string;
     title: string;
@@ -11,18 +13,11 @@ export interface TestOutput {
     timestamp: string;
 }
 
-export interface Tab {
-    id: string;
-    icon: string;
-    label: string;
-    tooltip: string;
-}
-
 export type TabId = "search" | "ops" | "info" | "files" | "labs";
 
 export interface TestPanelState {
     activeTab: TabId;
-    selectedFile: any | null;
+    selectedFile: TFile | null;
     testOutputs: TestOutput[];
     isLoading: boolean;
 }
@@ -32,7 +27,7 @@ export interface SearchState {
     quickSearchQuery: string;
     enhancedSearchQuery: string;
     fuzzyQuery: string;
-    searchResults: any[];
+    searchResults: unknown[];
 }
 
 // Operations Tab State
@@ -59,8 +54,10 @@ export interface LabsState {
     readSectionPath: string;
     subpath: string;
     readCanvasPath: string;
+    /** Max depth for worker-based graph context */
+    smartContextDepth: number;
 }
 
 export interface TestPanelModernProps {
-    app: any;
+    app: App;
 }

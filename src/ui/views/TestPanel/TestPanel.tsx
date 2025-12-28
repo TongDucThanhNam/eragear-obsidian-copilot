@@ -42,7 +42,7 @@ export const TestPanel: React.FC<TestPanelProps> = ({ app }) => {
 
 	// Hooks
 	const { testOutputs, addTestOutput, clearTestOutputs } = useTestOutput();
-	const { searchResults, setSearchResults, ...searchHooks } = useSearch({
+	const { searchResults, ...searchHooks } = useSearch({
 		app,
 		onAddOutput: addTestOutput,
 	});
@@ -76,6 +76,7 @@ export const TestPanel: React.FC<TestPanelProps> = ({ app }) => {
 		readSectionPath: "",
 		subpath: "",
 		readCanvasPath: "",
+		smartContextDepth: 2,
 	});
 
 	// Search tab handlers
@@ -143,7 +144,7 @@ export const TestPanel: React.FC<TestPanelProps> = ({ app }) => {
 				return;
 			}
 			await fileOps.appendContent(path, opsState.appendText);
-			setOpsState((prev) => ({ ...prev, appendText: "" }));
+			setOpsState((prev: OperationsState) => ({ ...prev, appendText: "" }));
 		} finally {
 			setIsLoading(false);
 		}
@@ -230,7 +231,53 @@ export const TestPanel: React.FC<TestPanelProps> = ({ app }) => {
 
 	// Labs tab handlers
 	const handleGetRelatedFiles = async () => {
-		fileOps.getRelatedFiles();
+		try {
+			fileOps.getRelatedFiles();
+		} catch {
+			// Hook already reports the error via ConsoleLog + Notice
+		}
+	};
+
+	const handleGetSmartContext = async () => {
+		setIsLoading(true);
+		try {
+			try {
+				await fileOps.getSmartContext(
+					labsState.smartContextDepth,
+					selectedFile?.path,
+				);
+			} catch {
+				// Hook already reports the error via ConsoleLog + Notice
+			}
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleGetGraphNeighborhood = async () => {
+		setIsLoading(true);
+		try {
+			try {
+				fileOps.getGraphNeighborhood();
+			} catch {
+				// Hook already reports the error via ConsoleLog + Notice
+			}
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleGetLinkDensity = async () => {
+		setIsLoading(true);
+		try {
+			try {
+				fileOps.getLinkDensity();
+			} catch {
+				// Hook already reports the error via ConsoleLog + Notice
+			}
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	const handleReadSpecificSection = async () => {
@@ -274,16 +321,22 @@ export const TestPanel: React.FC<TestPanelProps> = ({ app }) => {
 						searchState={{ ...searchState, searchResults }}
 						isLoading={isLoading}
 						onQuickSearchChange={(query) =>
-							setSearchState((prev) => ({ ...prev, quickSearchQuery: query }))
+							setSearchState((prev: SearchState) => ({
+								...prev,
+								quickSearchQuery: query,
+							}))
 						}
 						onEnhancedSearchChange={(query) =>
-							setSearchState((prev) => ({
+							setSearchState((prev: SearchState) => ({
 								...prev,
 								enhancedSearchQuery: query,
 							}))
 						}
 						onFuzzySearchChange={(query) =>
-							setSearchState((prev) => ({ ...prev, fuzzyQuery: query }))
+							setSearchState((prev: SearchState) => ({
+								...prev,
+								fuzzyQuery: query,
+							}))
 						}
 						onQuickSearch={handleQuickSearch}
 						onEnhancedSearch={handleEnhancedSearch}
@@ -298,19 +351,34 @@ export const TestPanel: React.FC<TestPanelProps> = ({ app }) => {
 						isLoading={isLoading}
 						selectedFile={selectedFile}
 						onGetContentsPathChange={(path) =>
-							setOpsState((prev) => ({ ...prev, getContentsPath: path }))
+							setOpsState((prev: OperationsState) => ({
+								...prev,
+								getContentsPath: path,
+							}))
 						}
 						onAppendContentPathChange={(path) =>
-							setOpsState((prev) => ({ ...prev, appendContentPath: path }))
+							setOpsState((prev: OperationsState) => ({
+								...prev,
+								appendContentPath: path,
+							}))
 						}
 						onAppendTextChange={(text) =>
-							setOpsState((prev) => ({ ...prev, appendText: text }))
+							setOpsState((prev: OperationsState) => ({
+								...prev,
+								appendText: text,
+							}))
 						}
 						onPatchContentPathChange={(path) =>
-							setOpsState((prev) => ({ ...prev, patchContentPath: path }))
+							setOpsState((prev: OperationsState) => ({
+								...prev,
+								patchContentPath: path,
+							}))
 						}
 						onDeleteFilePathChange={(path) =>
-							setOpsState((prev) => ({ ...prev, deleteFilePath: path }))
+							setOpsState((prev: OperationsState) => ({
+								...prev,
+								deleteFilePath: path,
+							}))
 						}
 						onGetStructure={handleGetStructure}
 						onGetContents={handleGetContents}
@@ -323,11 +391,14 @@ export const TestPanel: React.FC<TestPanelProps> = ({ app }) => {
 			case "info":
 				return (
 					<InfoTabRenderer
-						updateFrontmatterPath={infoState.updateFrontmatterPath}
+						infoState={infoState}
 						isLoading={isLoading}
 						selectedFile={selectedFile}
 						onUpdateFrontmatterPathChange={(path) =>
-							setInfoState((prev) => ({ ...prev, updateFrontmatterPath: path }))
+							setInfoState((prev: InfoState) => ({
+								...prev,
+								updateFrontmatterPath: path,
+							}))
 						}
 						onGetMetadata={handleGetMetadata}
 						onUpdateFrontmatter={handleUpdateFrontmatter}
@@ -341,7 +412,7 @@ export const TestPanel: React.FC<TestPanelProps> = ({ app }) => {
 						filesState={filesState}
 						isLoading={isLoading}
 						onDirPathChange={(path) =>
-							setFilesState((prev) => ({ ...prev, dirPath: path }))
+							setFilesState((prev: FilesState) => ({ ...prev, dirPath: path }))
 						}
 						onListFilesInVault={handleListFilesInVault}
 						onListFilesInDir={handleListFilesInDir}
@@ -354,16 +425,33 @@ export const TestPanel: React.FC<TestPanelProps> = ({ app }) => {
 						labsState={labsState}
 						isLoading={isLoading}
 						selectedFile={selectedFile}
-						onReadSectionPathChange={(path) =>
-							setLabsState((prev) => ({ ...prev, readSectionPath: path }))
+						onReadSectionPathChange={(path: string) =>
+							setLabsState((prev: LabsState) => ({
+								...prev,
+								readSectionPath: path,
+							}))
 						}
-						onSubpathChange={(path) =>
-							setLabsState((prev) => ({ ...prev, subpath: path }))
+						onSubpathChange={(path: string) =>
+							setLabsState((prev: LabsState) => ({ ...prev, subpath: path }))
 						}
-						onReadCanvasPathChange={(path) =>
-							setLabsState((prev) => ({ ...prev, readCanvasPath: path }))
+						onReadCanvasPathChange={(path: string) =>
+							setLabsState((prev: LabsState) => ({
+								...prev,
+								readCanvasPath: path,
+							}))
+						}
+						onSmartContextDepthChange={(depth: number) =>
+							setLabsState((prev: LabsState) => ({
+								...prev,
+								smartContextDepth: Number.isFinite(depth)
+									? Math.max(0, Math.min(10, Math.floor(depth)))
+									: prev.smartContextDepth,
+							}))
 						}
 						onGetRelatedFiles={handleGetRelatedFiles}
+						onGetSmartContext={handleGetSmartContext}
+						onGetGraphNeighborhood={handleGetGraphNeighborhood}
+						onGetLinkDensity={handleGetLinkDensity}
 						onReadSpecificSection={handleReadSpecificSection}
 						onReadCanvas={handleReadCanvas}
 					/>

@@ -3,17 +3,19 @@
  * Manages file read/write operations
  */
 
+import type { App } from "obsidian";
 import { Notice } from "obsidian";
+import { createGraphService } from "../../core/graph-service";
 import { VaultHandler } from "../../core/vault-handler";
-import type { TestOutput } from "../types";
 
 interface UseFileOperationsOptions {
-    app: any;
+    app: App;
     onAddOutput: (title: string, content: string, status: "success" | "error" | "info") => void;
 }
 
 export function useFileOperations({ app, onAddOutput }: UseFileOperationsOptions) {
     const vaultHandler = new VaultHandler(app);
+    const graphService = createGraphService(app);
 
     const getFileContents = async (targetPath: string) => {
         try {
@@ -95,7 +97,7 @@ export function useFileOperations({ app, onAddOutput }: UseFileOperationsOptions
                 throw new Error(`File not found: ${targetPath}`);
             }
 
-            await vaultHandler.updateFrontmatter(file, (fm: any) => {
+            await vaultHandler.updateFrontmatter(file, (fm) => {
                 fm.eragear_test_timestamp = new Date().toISOString();
                 fm.eragear_test = true;
             });
@@ -163,20 +165,14 @@ export function useFileOperations({ app, onAddOutput }: UseFileOperationsOptions
 
     const listFilesInVault = () => {
         try {
-            const items = vaultHandler.listFilesInVault();
-            const formatted = items
-                .map(
-                    (item: any) =>
-                        `${item.isDirectory ? "📁" : "📄"} ${item.name}`,
-                )
-                .join("\n");
+            const tree = vaultHandler.listFilesInVault();
             onAddOutput(
                 "✓ listFilesInVault()",
-                `Found ${items.length} items:\n\n${formatted}`,
+                tree,
                 "success",
             );
-            new Notice(`Found ${items.length} items`, 2000);
-            return items;
+            new Notice(`Vault structure generated`, 2000);
+            return tree;
         } catch (error) {
             onAddOutput("✗ listFilesInVault()", `Error: ${error}`, "error");
             new Notice(`Failed: ${error}`, 2000);
@@ -188,24 +184,18 @@ export function useFileOperations({ app, onAddOutput }: UseFileOperationsOptions
         if (!dirPath.trim()) {
             onAddOutput("✗ listFilesInDir()", "Enter directory path", "info");
             new Notice("No directory specified", 2000);
-            return [];
+            return "";
         }
 
         try {
-            const items = vaultHandler.listFilesInDir(dirPath);
-            const formatted = items
-                .map(
-                    (item: any) =>
-                        `${item.isDirectory ? "📁" : "📄"} ${item.name}`,
-                )
-                .join("\n");
+            const tree = vaultHandler.listFilesInDir(dirPath);
             onAddOutput(
                 `✓ listFilesInDir("${dirPath}")`,
-                `Found ${items.length} items:\n\n${formatted}`,
+                tree,
                 "success",
             );
-            new Notice(`Found ${items.length} items`, 2000);
-            return items;
+            new Notice("Directory structure generated", 2000);
+            return tree;
         } catch (error) {
             onAddOutput(
                 `✗ listFilesInDir("${dirPath}")`,
@@ -226,8 +216,8 @@ export function useFileOperations({ app, onAddOutput }: UseFileOperationsOptions
 
             const { outlinks, backlinks } = vaultHandler.getRelatedFiles(activeFile);
             const formatted = `📤 Outlinks (${outlinks.length}):\n${outlinks.length > 0
-                    ? outlinks.map((p) => `  → ${p}`).join("\n")
-                    : "  (none)"
+                ? outlinks.map((p) => `  → ${p}`).join("\n")
+                : "  (none)"
                 }\n\n📥 Backlinks (${backlinks.length}):\n${backlinks.length > 0
                     ? backlinks.map((p) => `  ← ${p}`).join("\n")
                     : "  (none)"
@@ -306,6 +296,170 @@ export function useFileOperations({ app, onAddOutput }: UseFileOperationsOptions
         return activeFile;
     };
 
+    const getGraphNeighborhood = (_maxHops: number = 1) => {
+        try {
+            const activeFile = vaultHandler.getActiveFile();
+            if (!activeFile) {
+                throw new Error("No active file");
+            }
+
+            // Get 1-hop neighborhood
+            const result = graphService.getNeighborhood(activeFile);
+
+            // Format output
+            const outgoingNodes = result.nodes.filter(n => n.type === "outgoing");
+            const incomingNodes = result.nodes.filter(n => n.type === "incoming");
+
+            const formatted = [
+                `🎯 Focal Node: ${result.focalNode.basename}`,
+                `   Path: ${result.focalNode.path}`,
+                "",
+                `📤 Outgoing Links (${result.outgoingCount}):`,
+                outgoingNodes.length > 0
+                    ? outgoingNodes.map(n => `   → ${n.basename} (${n.linkCount || 1}x)`).join("\n")
+                    : "   (none)",
+                "",
+                `📥 Incoming Links (${result.incomingCount}):`,
+                incomingNodes.length > 0
+                    ? incomingNodes.map(n => `   ← ${n.basename} (${n.linkCount || 1}x)`).join("\n")
+                    : "   (none)",
+                "",
+                `📊 Total connections: ${result.nodes.length - 1}`,
+            ].join("\n");
+
+            onAddOutput(
+                `✓ getGraphNeighborhood("${activeFile.basename}")`,
+                formatted,
+                "success",
+            );
+            new Notice(`Neighborhood: ${result.nodes.length - 1} connections`, 2000);
+            return result;
+        } catch (error) {
+            onAddOutput("✗ getGraphNeighborhood()", `Error: ${error}`, "error");
+            new Notice(`Failed: ${error}`, 2000);
+            throw error;
+        }
+    };
+
+    const getLinkDensity = () => {
+        try {
+            const activeFile = vaultHandler.getActiveFile();
+            if (!activeFile) {
+                throw new Error("No active file");
+            }
+
+            const density = graphService.getLinkDensity(activeFile);
+            const bidirectional = graphService.getBidirectionalLinks(activeFile);
+
+            const formatted = [
+                `📊 Link Density for: ${activeFile.basename}`,
+                "",
+                `   📤 Outgoing: ${density.outgoing}`,
+                `   📥 Incoming: ${density.incoming}`,
+                `   🔄 Total: ${density.total}`,
+                `   📈 Ratio (out/in): ${density.ratio.toFixed(2)}`,
+                "",
+                `🔗 Bidirectional Links (${bidirectional.length}):`,
+                bidirectional.length > 0
+                    ? bidirectional.map(p => `   ↔ ${p.split("/").pop()?.replace(/\.md$/, "")}`).join("\n")
+                    : "   (none)",
+            ].join("\n");
+
+            onAddOutput(
+                `✓ getLinkDensity("${activeFile.basename}")`,
+                formatted,
+                "success",
+            );
+            new Notice(`Density: ${density.total} total links`, 2000);
+            return { density, bidirectional };
+        } catch (error) {
+            onAddOutput("✗ getLinkDensity()", `Error: ${error}`, "error");
+            new Notice(`Failed: ${error}`, 2000);
+            throw error;
+        }
+    };
+
+    const getSmartContext = async (
+        maxDepth: number = 2,
+        targetPath?: string,
+    ) => {
+        try {
+            const file = targetPath?.trim()
+                ? vaultHandler.getFileByPath(targetPath.trim())
+                : vaultHandler.getActiveFile();
+
+            if (!file) throw new Error("No active file");
+
+            const depth = Number.isFinite(maxDepth) ? Math.max(0, Math.min(10, maxDepth)) : 2;
+            const result = await graphService.getSmartContext(file, depth);
+
+            const top = result.relatedFiles.slice(0, 20);
+
+            const relatedForAi = top.map((path) => {
+                const info = result.nodeMap[path];
+                return {
+                    path,
+                    title: path.split("/").pop()?.replace(/\.md$/, "") || path,
+                    hop: info?.hop ?? null,
+                    relation: info?.type ?? null,
+                    degree: info?.linkCount ?? null,
+                };
+            });
+
+            const aiPayload = {
+                kind: "graph_context_snapshot_v1",
+                focal: {
+                    path: file.path,
+                    title: file.basename,
+                },
+                depth,
+                stats: result.stats,
+                related: relatedForAi,
+                note: "Use hop=1 and bidirectional first; hop=2+ as supporting context.",
+            };
+
+            const formatted = [
+                `## Graph Context (Worker, resolvedLinks snapshot)`,
+                `- Focal: ${file.basename} (\`${file.path}\`)`,
+                `- Depth: ${depth}`,
+                `- Related files: ${result.relatedFiles.length}`,
+                `- Nodes processed: ${result.stats.totalNodes}`,
+                `- Execution: ${result.stats.executionMs.toFixed(1)}ms`,
+                "",
+                "### Ranked related notes (top)",
+                top.length > 0
+                    ? top
+                        .map((p, i) => {
+                            const info = result.nodeMap[p];
+                            const title = p.split("/").pop()?.replace(/\.md$/, "") || p;
+                            const hop = info?.hop ?? "?";
+                            const rel = info?.type ?? "?";
+                            const deg = info?.linkCount ?? "?";
+                            return `${i + 1}. ${title} (hop=${hop}, rel=${rel}, degree=${deg}) — \`${p}\``;
+                        })
+                        .join("\n")
+                    : "(none)",
+                "",
+                "### AI prompt payload (paste as JSON)",
+                "```json",
+                JSON.stringify(aiPayload, null, 2),
+                "```",
+            ].join("\n");
+
+            onAddOutput(
+                `✓ getSmartContext("${file.basename}")`,
+                formatted,
+                "success",
+            );
+            new Notice(`Smart context: ${result.relatedFiles.length} files`, 2000);
+            return result;
+        } catch (error) {
+            onAddOutput("✗ getSmartContext()", `Error: ${error}`, "error");
+            new Notice(`Failed: ${error}`, 2000);
+            throw error;
+        }
+    };
+
     return {
         getFileContents,
         appendContent,
@@ -320,5 +474,8 @@ export function useFileOperations({ app, onAddOutput }: UseFileOperationsOptions
         getNoteStructure,
         getMetadata,
         getActiveFile,
+        getGraphNeighborhood,
+        getLinkDensity,
+        getSmartContext,
     };
 }

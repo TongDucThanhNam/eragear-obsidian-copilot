@@ -128,21 +128,84 @@ export class VaultHandler {
 
     /**
      * Module 4: List Files in Vault Root
-     * Lists all files and directories in the root directory of the vault
-     * @returns Array of files and directories with metadata
+     * Lists all files and directories in the root directory of the vault in terminal tree format
+     * @param maxDepth - Maximum depth to traverse (default: 3)
+     * @returns Tree-formatted string representation of vault structure
      */
-    listFilesInVault(): FileListItem[] {
+    listFilesInVault(maxDepth: number = 3): string {
         const rootFolder = this.app.vault.getRoot();
-        return this.getDirectoryContents(rootFolder);
+        const rootName = rootFolder.name || "vault";
+        let tree = `${rootName}/\n`;
+
+        this.buildTreeString(
+            rootFolder,
+            "",
+            true,
+            maxDepth,
+            (line) => {
+                tree += line;
+            }
+        );
+
+        return tree;
+    }
+
+    /**
+     * Helper method to build tree string recursively
+     * @param folder - The folder to process
+     * @param prefix - Current line prefix for tree formatting
+     * @param isRoot - Whether this is the root folder
+     * @param maxDepth - Maximum depth remaining
+     * @param appendLine - Callback to append lines to the tree
+     */
+    private buildTreeString(
+        folder: TFolder,
+        prefix: string,
+        isRoot: boolean,
+        maxDepth: number,
+        appendLine: (line: string) => void,
+    ): void {
+        if (maxDepth <= 0) {
+            return;
+        }
+
+        const children = folder.children;
+
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            if (!child) continue;
+            const isLast = i === children.length - 1;
+            const currentPrefix = isRoot ? "" : prefix + (isLast ? "└── " : "├── ");
+            const nextPrefix = isRoot
+                ? ""
+                : prefix + (isLast ? "    " : "│   ");
+
+            const isFolder = child instanceof this.app.vault.getRoot().constructor;
+            const displayName = isFolder ? `${child.name}/` : child.name;
+
+            appendLine(`${currentPrefix}${displayName}\n`);
+
+            // Recursively process subdirectories
+            if (isFolder && maxDepth > 1) {
+                this.buildTreeString(
+                    child as TFolder,
+                    nextPrefix,
+                    false,
+                    maxDepth - 1,
+                    appendLine,
+                );
+            }
+        }
     }
 
     /**
      * Module 5: List Files in Directory
-     * Lists all files and directories in a specific directory
+     * Lists all files and directories in a specific directory in terminal tree format
      * @param dirPath - Path to the directory (e.g., "folder/subfolder")
-     * @returns Array of files and directories with metadata
+     * @param maxDepth - Maximum depth to traverse (default: 3)
+     * @returns Tree-formatted string representation of directory structure
      */
-    listFilesInDir(dirPath: string): FileListItem[] {
+    listFilesInDir(dirPath: string, maxDepth: number = 3): string {
         const normalizedPath = normalizePath(dirPath);
         const folder = this.app.vault.getAbstractFileByPath(normalizedPath);
 
@@ -150,7 +213,19 @@ export class VaultHandler {
             throw new Error(`Directory not found: ${dirPath}`);
         }
 
-        return this.getDirectoryContents(folder as TFolder);
+        let tree = `${folder.name}/\n`;
+
+        this.buildTreeString(
+            folder as TFolder,
+            "",
+            true,
+            maxDepth,
+            (line) => {
+                tree += line;
+            }
+        );
+
+        return tree;
     }
 
     /**

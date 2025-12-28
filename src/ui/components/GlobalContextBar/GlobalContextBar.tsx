@@ -85,7 +85,6 @@ export const GlobalContextBar: React.FC<GlobalContextBarProps> = ({
 						type="text"
 						className="context-file-input"
 						placeholder="Type to search files..."
-						autoFocus
 						onKeyDown={(e) => {
 							if (e.key === "Escape") setShowFilePicker(false);
 						}}
@@ -98,14 +97,14 @@ export const GlobalContextBar: React.FC<GlobalContextBarProps> = ({
 							.getFiles()
 							.slice(0, 10)
 							.map((file: TFile) => (
-								<div
+								<button
+									type="button"
 									key={file.path}
 									className="context-file-item"
 									onClick={() => {
 										onFileSelect(file);
 										setShowFilePicker(false);
 									}}
-									role="button"
 									tabIndex={0}
 									onKeyDown={(e) => {
 										if (e.key === "Enter") {
@@ -119,7 +118,7 @@ export const GlobalContextBar: React.FC<GlobalContextBarProps> = ({
 									</span>
 									<span className="context-file-name">{file.basename}</span>
 									<span className="context-file-path">{file.path}</span>
-								</div>
+								</button>
 							))}
 					</div>
 				</div>

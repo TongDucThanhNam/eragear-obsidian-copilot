@@ -4,7 +4,7 @@
  */
 
 import { useState } from "react";
-import type { TestOutput } from "../types";
+import type { TestOutput } from "ui/types/testPanel";
 
 export function useTestOutput() {
     const [testOutputs, setTestOutputs] = useState<TestOutput[]>([]);

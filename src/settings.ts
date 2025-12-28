@@ -5,12 +5,24 @@ export interface MyPluginSettings {
 	mySetting: string;
 	apiEndpoint: string;
 	enableDebugMode: boolean;
+	maxGraphHops: number;
+	searchMaxResults: number;
+	debounceDelay: number;
+	cloudflareAccessId: string;
+	cloudflareAccessSecret: string;
+	cloudflareApiEndpoint: string;
 }
 
 export const DEFAULT_SETTINGS: MyPluginSettings = {
 	mySetting: "default",
 	apiEndpoint: "https://eragear.app",
 	enableDebugMode: false,
+	maxGraphHops: 3,
+	searchMaxResults: 50,
+	debounceDelay: 300,
+	cloudflareAccessId: "",
+	cloudflareAccessSecret: "",
+	cloudflareApiEndpoint: "https://api.eragear.app",
 };
 
 export class SampleSettingTab extends PluginSettingTab {

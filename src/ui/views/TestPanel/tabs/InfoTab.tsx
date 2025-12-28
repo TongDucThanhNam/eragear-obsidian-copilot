@@ -20,7 +20,7 @@ interface InfoTabProps {
 }
 
 export const InfoTabRenderer: React.FC<InfoTabProps> = ({
-	updateFrontmatterPath,
+	infoState,
 	isLoading,
 	selectedFile,
 	onUpdateFrontmatterPathChange,
@@ -57,7 +57,7 @@ export const InfoTabRenderer: React.FC<InfoTabProps> = ({
 					type="text"
 					className="test-input"
 					placeholder="File path (or use context)"
-					value={updateFrontmatterPath}
+					value={infoState.updateFrontmatterPath}
 					onChange={(e) => onUpdateFrontmatterPathChange(e.target.value)}
 					disabled={isLoading}
 				/>
@@ -66,7 +66,8 @@ export const InfoTabRenderer: React.FC<InfoTabProps> = ({
 					className="test-btn test-btn-warning"
 					onClick={onUpdateFrontmatter}
 					disabled={
-						isLoading || (!updateFrontmatterPath.trim() && !selectedFile)
+						isLoading ||
+						(!infoState.updateFrontmatterPath.trim() && !selectedFile)
 					}
 				>
 					⚠️ Update Frontmatter (Writes!)

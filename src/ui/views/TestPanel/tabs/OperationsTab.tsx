@@ -5,8 +5,8 @@
 
 import type { TFile } from "obsidian";
 import type React from "react";
+import type { OperationsState } from "ui/types/testPanel";
 import { ActionCard, ActionCardGroup } from "../../../components";
-import type { OperationsState } from "../../../types";
 
 interface OperationsTabProps {
 	opsState: OperationsState;
