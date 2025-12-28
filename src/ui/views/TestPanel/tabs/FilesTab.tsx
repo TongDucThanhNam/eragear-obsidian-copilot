@@ -1,27 +1,53 @@
 /**
- * Files Tab Renderer
- * Renders the file organization and navigation tab
+ * Files Tab
+ * Manages file organization and navigation
  */
 
+import type { App } from "obsidian";
 import type React from "react";
-import type { FilesState } from "ui/types/testPanel";
+import { useState } from "react";
 import { ActionCard, ActionCardGroup } from "../../../components";
+import { useFileOperations } from "../../../hooks";
+import type { FilesState } from "../../../types";
 
 interface FilesTabProps {
-	filesState: FilesState;
-	isLoading: boolean;
-	onDirPathChange: (path: string) => void;
-	onListFilesInVault: () => void;
-	onListFilesInDir: () => void;
+	app: App;
+	onAddOutput: (
+		title: string,
+		content: string,
+		status: "success" | "error" | "info",
+	) => void;
 }
 
-export const FilesTabRenderer: React.FC<FilesTabProps> = ({
-	filesState,
-	isLoading,
-	onDirPathChange,
-	onListFilesInVault,
-	onListFilesInDir,
-}) => {
+export const FilesTab: React.FC<FilesTabProps> = ({ app, onAddOutput }) => {
+	const [filesState, setFilesState] = useState<FilesState>({
+		dirPath: "",
+	});
+	const [isLoading, setIsLoading] = useState(false);
+	const fileOps = useFileOperations({ app, onAddOutput });
+
+	const handleListFilesInVault = async () => {
+		setIsLoading(true);
+		try {
+			await fileOps.listFilesInVault();
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleListFilesInDir = async () => {
+		setIsLoading(true);
+		try {
+			if (!filesState.dirPath.trim()) {
+				onAddOutput("✗ listFilesInDir()", "Enter directory path", "info");
+				return;
+			}
+			await fileOps.listFilesInDir(filesState.dirPath);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
 	return (
 		<div className="test-section">
 			<h3>🗂️ Files & Organization</h3>
@@ -36,7 +62,7 @@ export const FilesTabRenderer: React.FC<FilesTabProps> = ({
 					<button
 						type="button"
 						className="test-btn test-btn-secondary"
-						onClick={onListFilesInVault}
+						onClick={handleListFilesInVault}
 						disabled={isLoading}
 					>
 						List Vault
@@ -55,13 +81,15 @@ export const FilesTabRenderer: React.FC<FilesTabProps> = ({
 							className="test-input"
 							placeholder="e.g., 'folder/subfolder'"
 							value={filesState.dirPath}
-							onChange={(e) => onDirPathChange(e.target.value)}
+							onChange={(e) =>
+								setFilesState((prev) => ({ ...prev, dirPath: e.target.value }))
+							}
 							disabled={isLoading}
 						/>
 						<button
 							type="button"
 							className="test-btn test-btn-secondary"
-							onClick={onListFilesInDir}
+							onClick={handleListFilesInDir}
 							disabled={!filesState.dirPath.trim() || isLoading}
 						>
 							List

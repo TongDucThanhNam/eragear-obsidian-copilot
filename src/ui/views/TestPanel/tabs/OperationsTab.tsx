@@ -1,44 +1,117 @@
 /**
- * Operations Tab Renderer
- * Renders the note operations tab content
+ * Operations Tab
+ * Manages note operations and internal state
  */
 
-import type { TFile } from "obsidian";
+import type { App, TFile } from "obsidian";
 import type React from "react";
-import type { OperationsState } from "ui/types/testPanel";
+import { useState } from "react";
 import { ActionCard, ActionCardGroup } from "../../../components";
+import { useFileOperations } from "../../../hooks";
+import type { OperationsState } from "../../../types";
 
 interface OperationsTabProps {
-	opsState: OperationsState;
-	isLoading: boolean;
+	app: App;
 	selectedFile: TFile | null;
-	onGetContentsPathChange: (path: string) => void;
-	onAppendContentPathChange: (path: string) => void;
-	onAppendTextChange: (text: string) => void;
-	onPatchContentPathChange: (path: string) => void;
-	onDeleteFilePathChange: (path: string) => void;
-	onGetStructure: () => void;
-	onGetContents: () => void;
-	onAppendContent: () => void;
-	onPatchContent: () => void;
-	onDeleteFile: () => void;
+	onAddOutput: (
+		title: string,
+		content: string,
+		status: "success" | "error" | "info",
+	) => void;
 }
 
-export const OperationsTabRenderer: React.FC<OperationsTabProps> = ({
-	opsState,
-	isLoading,
+export const OperationsTab: React.FC<OperationsTabProps> = ({
+	app,
 	selectedFile,
-	onGetContentsPathChange,
-	onAppendContentPathChange,
-	onAppendTextChange,
-	onPatchContentPathChange,
-	onDeleteFilePathChange,
-	onGetStructure,
-	onGetContents,
-	onAppendContent,
-	onPatchContent,
-	onDeleteFile,
+	onAddOutput,
 }) => {
+	const [opsState, setOpsState] = useState<OperationsState>({
+		getContentsPath: "",
+		appendContentPath: "",
+		appendText: "",
+		patchContentPath: "",
+		deleteFilePath: "",
+	});
+
+	const [isLoading, setIsLoading] = useState(false);
+
+	const fileOps = useFileOperations({ app, onAddOutput });
+
+	const handleGetStructure = async () => {
+		setIsLoading(true);
+		try {
+			// Note: getNoteStructure might need selectedFile path if not handled inside hook
+			// Checking hook implementation: often uses active file if not passed.
+			// Let's assume the hook handles it or we should be explicit.
+			// Ideally we pass selectedFile to hook or method.
+			// Based on TestPanel logic: fileOps.getNoteStructure()
+			await fileOps.getNoteStructure();
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleGetContents = async () => {
+		setIsLoading(true);
+		try {
+			const path = opsState.getContentsPath || selectedFile?.path;
+			if (!path?.trim()) {
+				onAddOutput("✗ getFileContents()", "Select a file first", "info");
+				return;
+			}
+			await fileOps.getFileContents(path);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleAppendContent = async () => {
+		setIsLoading(true);
+		try {
+			const path = opsState.appendContentPath || selectedFile?.path;
+			if (!path?.trim() || !opsState.appendText.trim()) {
+				onAddOutput(
+					"✗ appendContent()",
+					"Select file and enter content",
+					"info",
+				);
+				return;
+			}
+			await fileOps.appendContent(path, opsState.appendText);
+			setOpsState((prev) => ({ ...prev, appendText: "" }));
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handlePatchContent = async () => {
+		setIsLoading(true);
+		try {
+			const path = opsState.patchContentPath || selectedFile?.path;
+			if (!path?.trim()) {
+				onAddOutput("✗ patchContent()", "Select a file first", "info");
+				return;
+			}
+			await fileOps.patchContent(path);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleDeleteFile = async () => {
+		setIsLoading(true);
+		try {
+			const path = opsState.deleteFilePath || selectedFile?.path;
+			if (!path?.trim()) {
+				onAddOutput("✗ deleteFile()", "Select a file first", "info");
+				return;
+			}
+			await fileOps.deleteFile(path);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
 	return (
 		<div className="test-section">
 			<h3>🛠️ Note Operations</h3>
@@ -53,7 +126,7 @@ export const OperationsTabRenderer: React.FC<OperationsTabProps> = ({
 					<button
 						type="button"
 						className="test-btn test-btn-primary"
-						onClick={onGetStructure}
+						onClick={handleGetStructure}
 						disabled={isLoading}
 					>
 						{isLoading ? "⏳" : "📖"} Get Structure
@@ -72,13 +145,18 @@ export const OperationsTabRenderer: React.FC<OperationsTabProps> = ({
 							className="test-input"
 							placeholder="File path (or use context)"
 							value={opsState.getContentsPath}
-							onChange={(e) => onGetContentsPathChange(e.target.value)}
+							onChange={(e) =>
+								setOpsState((prev) => ({
+									...prev,
+									getContentsPath: e.target.value,
+								}))
+							}
 							disabled={isLoading}
 						/>
 						<button
 							type="button"
 							className="test-btn test-btn-secondary"
-							onClick={onGetContents}
+							onClick={handleGetContents}
 							disabled={
 								isLoading || (!opsState.getContentsPath.trim() && !selectedFile)
 							}
@@ -96,21 +174,28 @@ export const OperationsTabRenderer: React.FC<OperationsTabProps> = ({
 						className="test-input"
 						placeholder="File path (or use context)"
 						value={opsState.appendContentPath}
-						onChange={(e) => onAppendContentPathChange(e.target.value)}
+						onChange={(e) =>
+							setOpsState((prev) => ({
+								...prev,
+								appendContentPath: e.target.value,
+							}))
+						}
 						disabled={isLoading}
 					/>
 					<textarea
 						className="test-textarea"
 						placeholder="Content to append..."
 						value={opsState.appendText}
-						onChange={(e) => onAppendTextChange(e.target.value)}
+						onChange={(e) =>
+							setOpsState((prev) => ({ ...prev, appendText: e.target.value }))
+						}
 						disabled={isLoading}
 						rows={3}
 					/>
 					<button
 						type="button"
 						className="test-btn test-btn-warning"
-						onClick={onAppendContent}
+						onClick={handleAppendContent}
 						disabled={
 							isLoading ||
 							(!opsState.appendContentPath.trim() && !selectedFile) ||
@@ -127,13 +212,18 @@ export const OperationsTabRenderer: React.FC<OperationsTabProps> = ({
 						className="test-input"
 						placeholder="File path (or use context)"
 						value={opsState.patchContentPath}
-						onChange={(e) => onPatchContentPathChange(e.target.value)}
+						onChange={(e) =>
+							setOpsState((prev) => ({
+								...prev,
+								patchContentPath: e.target.value,
+							}))
+						}
 						disabled={isLoading}
 					/>
 					<button
 						type="button"
 						className="test-btn test-btn-warning"
-						onClick={onPatchContent}
+						onClick={handlePatchContent}
 						disabled={
 							isLoading || (!opsState.patchContentPath.trim() && !selectedFile)
 						}
@@ -148,13 +238,18 @@ export const OperationsTabRenderer: React.FC<OperationsTabProps> = ({
 						className="test-input"
 						placeholder="File path (or use context)"
 						value={opsState.deleteFilePath}
-						onChange={(e) => onDeleteFilePathChange(e.target.value)}
+						onChange={(e) =>
+							setOpsState((prev) => ({
+								...prev,
+								deleteFilePath: e.target.value,
+							}))
+						}
 						disabled={isLoading}
 					/>
 					<button
 						type="button"
 						className="test-btn test-btn-danger"
-						onClick={onDeleteFile}
+						onClick={handleDeleteFile}
 						disabled={
 							isLoading || (!opsState.deleteFilePath.trim() && !selectedFile)
 						}

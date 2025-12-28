@@ -1,33 +1,71 @@
 /**
- * Search Tab Renderer
- * Renders the search tab content
+ * Search Tab
+ * Manages search functionality and internal state
  */
 
+import type { App } from "obsidian";
 import type React from "react";
-import type { SearchState } from "ui/types/testPanel";
+import { useState } from "react";
 import { ActionCard, ActionCardGroup } from "../../../components";
+import { useSearch } from "../../../hooks";
+import type { SearchState } from "../../../types";
 
 interface SearchTabProps {
-	searchState: SearchState;
-	isLoading: boolean;
-	onQuickSearchChange: (query: string) => void;
-	onEnhancedSearchChange: (query: string) => void;
-	onFuzzySearchChange: (query: string) => void;
-	onQuickSearch: () => void;
-	onEnhancedSearch: () => void;
-	onFuzzySearch: () => void;
+	app: App;
+	onAddOutput: (
+		title: string,
+		content: string,
+		status: "success" | "error" | "info",
+	) => void;
 }
 
-export const SearchTabRenderer: React.FC<SearchTabProps> = ({
-	searchState,
-	isLoading,
-	onQuickSearchChange,
-	onEnhancedSearchChange,
-	onFuzzySearchChange,
-	onQuickSearch,
-	onEnhancedSearch,
-	onFuzzySearch,
-}) => {
+export const SearchTab: React.FC<SearchTabProps> = ({ app, onAddOutput }) => {
+	const [searchState, setSearchState] = useState<SearchState>({
+		quickSearchQuery: "",
+		enhancedSearchQuery: "",
+		fuzzyQuery: "",
+		searchResults: [],
+	});
+
+	const [isLoading, setIsLoading] = useState(false);
+
+	const { searchResults, ...searchHooks } = useSearch({
+		app,
+		onAddOutput,
+	});
+
+	// Handler wrappers to update local loading state
+	const handleQuickSearch = async () => {
+		setIsLoading(true);
+		try {
+			await searchHooks.handleQuickSearch(searchState.quickSearchQuery);
+			// Update local results from hook (if hook returned them, but hook updates its own state usually.
+			// Wait, the hook 'useSearch' returns 'searchResults'.
+			// We need to sync hook results to our local display or just use hook results directly.
+			// actually useSearch returns searchResults. We can just use that.
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleEnhancedSearch = async () => {
+		setIsLoading(true);
+		try {
+			await searchHooks.handleEnhancedSearch(searchState.enhancedSearchQuery);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleFuzzySearch = async () => {
+		setIsLoading(true);
+		try {
+			await searchHooks.handleFuzzySearch(searchState.fuzzyQuery);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
 	return (
 		<div className="test-section">
 			<h3>🔍 Search Notes</h3>
@@ -39,25 +77,30 @@ export const SearchTabRenderer: React.FC<SearchTabProps> = ({
 						className="test-input"
 						placeholder="Enter keyword..."
 						value={searchState.quickSearchQuery}
-						onChange={(e) => onQuickSearchChange(e.target.value)}
-						onKeyPress={(e) => e.key === "Enter" && onQuickSearch()}
+						onChange={(e) =>
+							setSearchState((prev) => ({
+								...prev,
+								quickSearchQuery: e.target.value,
+							}))
+						}
+						onKeyPress={(e) => e.key === "Enter" && handleQuickSearch()}
 						disabled={isLoading}
 					/>
 					<button
 						type="button"
 						className="test-btn test-btn-primary"
-						onClick={onQuickSearch}
+						onClick={handleQuickSearch}
 						disabled={!searchState.quickSearchQuery.trim() || isLoading}
 					>
 						{isLoading ? "⏳" : "🔍"} Search
 					</button>
 				</div>
 
-				{searchState.searchResults.length > 0 && (
+				{searchResults.length > 0 && (
 					<div className="test-results">
-						<h4>Found {searchState.searchResults.length} file(s):</h4>
+						<h4>Found {searchResults.length} file(s):</h4>
 						<ul className="test-result-list">
-							{searchState.searchResults.map((result: any) => (
+							{searchResults.map((result: any) => (
 								<li key={result.path} className="test-result-item">
 									<span className="result-basename">{result.baseName}</span>
 									<span className="result-path">{result.path}</span>
@@ -80,13 +123,18 @@ export const SearchTabRenderer: React.FC<SearchTabProps> = ({
 							className="test-input"
 							placeholder="Search query..."
 							value={searchState.enhancedSearchQuery}
-							onChange={(e) => onEnhancedSearchChange(e.target.value)}
+							onChange={(e) =>
+								setSearchState((prev) => ({
+									...prev,
+									enhancedSearchQuery: e.target.value,
+								}))
+							}
 							disabled={isLoading}
 						/>
 						<button
 							type="button"
 							className="test-btn test-btn-secondary"
-							onClick={onEnhancedSearch}
+							onClick={handleEnhancedSearch}
 							disabled={!searchState.enhancedSearchQuery.trim() || isLoading}
 						>
 							Test
@@ -105,13 +153,18 @@ export const SearchTabRenderer: React.FC<SearchTabProps> = ({
 							className="test-input"
 							placeholder="Try 'era' or 'obsapi'..."
 							value={searchState.fuzzyQuery}
-							onChange={(e) => onFuzzySearchChange(e.target.value)}
+							onChange={(e) =>
+								setSearchState((prev) => ({
+									...prev,
+									fuzzyQuery: e.target.value,
+								}))
+							}
 							disabled={isLoading}
 						/>
 						<button
 							type="button"
 							className="test-btn test-btn-secondary"
-							onClick={onFuzzySearch}
+							onClick={handleFuzzySearch}
 							disabled={!searchState.fuzzyQuery.trim() || isLoading}
 						>
 							Test

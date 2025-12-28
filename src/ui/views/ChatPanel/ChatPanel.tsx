@@ -1,14 +1,9 @@
 import type { App } from "obsidian";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { EditorController } from "../../editor/editor-controller";
-
-interface Message {
-	id: string;
-	role: "user" | "assistant";
-	content: string;
-	timestamp: Date;
-}
+import { ChatInput, MessageList, SlashCommandMenu } from "./components";
+import type { Message } from "./types";
 
 interface ChatPanelProps {
 	app: App;
@@ -27,8 +22,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 	const [input, setInput] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [showCommands, setShowCommands] = useState(false);
-	const messagesEndRef = useRef<HTMLDivElement>(null);
-	const inputRef = useRef<HTMLTextAreaElement>(null);
+	const [shouldFocusInput, setShouldFocusInput] = useState(false);
+
 	// Use Ref for controller to persist across renders
 	const editorCtrl = useRef(new EditorController(app));
 
@@ -49,11 +44,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 		setInput("");
 		setIsLoading(true);
 		setShowCommands(false);
-
-		// Reset textarea height
-		if (inputRef.current) {
-			inputRef.current.style.height = "auto";
-		}
+		setShouldFocusInput(true); // Keep focus on input
 
 		// Handle Slash Commands Logic
 		if (userContent.startsWith("/edit")) {
@@ -118,14 +109,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 		]);
 	};
 
-	const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-		const val = e.target.value;
+	const handleInputChange = (val: string) => {
 		setInput(val);
 		setShowCommands(val.trim() === "/");
-
-		// Auto-resize textarea
-		e.target.style.height = "auto";
-		e.target.style.height = `${e.target.scrollHeight}px`;
+		setShouldFocusInput(false);
 	};
 
 	const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -142,95 +129,26 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 	const handleCommandClick = (cmd: string) => {
 		setInput(cmd + " ");
 		setShowCommands(false);
-		inputRef.current?.focus();
+		setShouldFocusInput(true);
 	};
 
 	return (
 		<div className="eragear-container">
-			<div className="eragear-messages">
-				{messages.map((message) => (
-					<div key={message.id} className={`message message-${message.role}`}>
-						<div className="message-avatar">
-							{message.role === "user" ? "👤" : "🤖"}
-						</div>
-						<div className="message-content">
-							<div className="message-bubble">{message.content}</div>
-							<span className="message-time">
-								{message.timestamp.toLocaleTimeString([], {
-									hour: "2-digit",
-									minute: "2-digit",
-								})}
-							</span>
-						</div>
-					</div>
-				))}
-				{isLoading && (
-					<div className="message message-assistant">
-						<div className="message-avatar">🤖</div>
-						<div className="message-content">
-							<div className="message-bubble">
-								<div className="typing-indicator">
-									<span></span>
-									<span></span>
-									<span></span>
-								</div>
-							</div>
-						</div>
-					</div>
-				)}
-				<div ref={messagesEndRef} />
-			</div>
+			<MessageList messages={messages} isLoading={isLoading} />
 
 			{/* Slash Command Menu Overlay */}
 			{showCommands && (
-				<div className="eragear-slash-menu">
-					<div className="slash-menu-header">Commands</div>
-					<button
-						type="button"
-						className="slash-menu-item"
-						onClick={() => handleCommandClick("/edit")}
-					>
-						<span className="slash-command-name">/edit</span>
-						<span className="slash-command-desc">
-							Insert code suggestion in editor
-						</span>
-					</button>
-					<button
-						type="button"
-						className="slash-menu-item"
-						onClick={() => handleCommandClick("/notes")}
-					>
-						<span className="slash-command-name">/notes</span>
-						<span className="slash-command-desc">
-							Search and reference notes
-						</span>
-					</button>
-				</div>
+				<SlashCommandMenu onCommandSelect={handleCommandClick} />
 			)}
 
-			<div className="eragear-input-area">
-				<textarea
-					ref={inputRef}
-					value={input}
-					onChange={handleInputChange}
-					onKeyDown={handleKeyPress}
-					placeholder="Ask AI or type / for commands..."
-					className="eragear-input"
-					rows={1}
-				/>
-				<button
-					type="button"
-					onClick={handleSendMessage}
-					disabled={!input.trim() || isLoading}
-					className="eragear-send-btn"
-					title="Send Message"
-				>
-					<svg className="eragear-send-icon" viewBox="0 0 24 24">
-						<title>Send</title>
-						<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-					</svg>
-				</button>
-			</div>
+			<ChatInput
+				input={input}
+				isLoading={isLoading}
+				onInputChange={handleInputChange}
+				onSendMessage={handleSendMessage}
+				onKeyDown={handleKeyPress}
+				shouldFocus={shouldFocusInput}
+			/>
 		</div>
 	);
 };

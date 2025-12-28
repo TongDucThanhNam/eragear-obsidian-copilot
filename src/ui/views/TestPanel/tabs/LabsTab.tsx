@@ -1,44 +1,115 @@
 /**
- * Labs Tab Renderer
- * Renders the advanced features tab content
+ * Labs Tab
+ * Manages advanced features and experimental tools
  */
 
-import type { TFile } from "obsidian";
+import type { App, TFile } from "obsidian";
 import type React from "react";
-import type { LabsState } from "ui/types/testPanel";
+import { useState } from "react";
 import { ActionCard, ActionCardGroup } from "../../../components";
+import { useFileOperations } from "../../../hooks";
+import type { LabsState } from "../../../types";
 
 interface LabsTabProps {
-	labsState: LabsState;
-	isLoading: boolean;
+	app: App;
 	selectedFile: TFile | null;
-	onReadSectionPathChange: (path: string) => void;
-	onSubpathChange: (path: string) => void;
-	onReadCanvasPathChange: (path: string) => void;
-	onGetRelatedFiles: () => void;
-	onGetSmartContext?: () => void;
-	onSmartContextDepthChange?: (depth: number) => void;
-	onReadSpecificSection: () => void;
-	onReadCanvas: () => void;
-	onGetGraphNeighborhood?: () => void;
-	onGetLinkDensity?: () => void;
+	onAddOutput: (
+		title: string,
+		content: string,
+		status: "success" | "error" | "info",
+	) => void;
 }
 
-export const LabsTabRenderer: React.FC<LabsTabProps> = ({
-	labsState,
-	isLoading,
+export const LabsTab: React.FC<LabsTabProps> = ({
+	app,
 	selectedFile,
-	onReadSectionPathChange,
-	onSubpathChange,
-	onReadCanvasPathChange,
-	onGetRelatedFiles,
-	onGetSmartContext,
-	onSmartContextDepthChange,
-	onReadSpecificSection,
-	onReadCanvas,
-	onGetGraphNeighborhood,
-	onGetLinkDensity,
+	onAddOutput,
 }) => {
+	const [labsState, setLabsState] = useState<LabsState>({
+		readSectionPath: "",
+		subpath: "",
+		readCanvasPath: "",
+		smartContextDepth: 2,
+	});
+	const [isLoading, setIsLoading] = useState(false);
+	const fileOps = useFileOperations({ app, onAddOutput });
+
+	const handleGetRelatedFiles = async () => {
+		try {
+			await fileOps.getRelatedFiles();
+		} catch {
+			// handled in hook
+		}
+	};
+
+	const handleGetSmartContext = async () => {
+		setIsLoading(true);
+		try {
+			await fileOps.getSmartContext(
+				labsState.smartContextDepth,
+				selectedFile?.path,
+			);
+		} catch {
+			// handled in hook
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleGetGraphNeighborhood = async () => {
+		setIsLoading(true);
+		try {
+			await fileOps.getGraphNeighborhood();
+		} catch {
+			// handled in hook
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleGetLinkDensity = async () => {
+		setIsLoading(true);
+		try {
+			await fileOps.getLinkDensity();
+		} catch {
+			// handled in hook
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleReadSpecificSection = async () => {
+		setIsLoading(true);
+		try {
+			const path = labsState.readSectionPath || selectedFile?.path;
+			if (!path?.trim() || !labsState.subpath.trim()) {
+				onAddOutput(
+					"✗ readSpecificSection()",
+					"Enter file path and subpath",
+					"info",
+				);
+				return;
+			}
+			await fileOps.readSpecificSection(path, labsState.subpath);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleReadCanvas = async () => {
+		setIsLoading(true);
+		try {
+			const path = labsState.readCanvasPath || selectedFile?.path;
+			if (!path?.trim()) {
+				onAddOutput("✗ readCanvas()", "Select a .canvas file", "info");
+				return;
+			}
+			await fileOps.readCanvas(path);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
 	return (
 		<div className="test-section">
 			<h3>⚡ Advanced Features</h3>
@@ -53,7 +124,7 @@ export const LabsTabRenderer: React.FC<LabsTabProps> = ({
 					<button
 						type="button"
 						className="test-btn test-btn-secondary"
-						onClick={onGetRelatedFiles}
+						onClick={handleGetRelatedFiles}
 						disabled={isLoading}
 					>
 						Get Links
@@ -76,15 +147,21 @@ export const LabsTabRenderer: React.FC<LabsTabProps> = ({
 							placeholder="Max depth (0-10)"
 							value={labsState.smartContextDepth}
 							onChange={(e) =>
-								onSmartContextDepthChange?.(Number(e.target.value))
+								setLabsState((prev) => ({
+									...prev,
+									smartContextDepth: Math.max(
+										0,
+										Math.min(10, Math.floor(Number(e.target.value))),
+									),
+								}))
 							}
-							disabled={isLoading || !onSmartContextDepthChange}
+							disabled={isLoading}
 						/>
 						<button
 							type="button"
 							className="test-btn test-btn-primary"
-							onClick={onGetSmartContext}
-							disabled={isLoading || !onGetSmartContext}
+							onClick={handleGetSmartContext}
+							disabled={isLoading}
 						>
 							{isLoading ? "⏳" : "🧠"} Analyze
 						</button>
@@ -100,8 +177,8 @@ export const LabsTabRenderer: React.FC<LabsTabProps> = ({
 					<button
 						type="button"
 						className="test-btn test-btn-secondary"
-						onClick={onGetGraphNeighborhood}
-						disabled={isLoading || !onGetGraphNeighborhood}
+						onClick={handleGetGraphNeighborhood}
+						disabled={isLoading}
 					>
 						Get Neighborhood
 					</button>
@@ -116,8 +193,8 @@ export const LabsTabRenderer: React.FC<LabsTabProps> = ({
 					<button
 						type="button"
 						className="test-btn test-btn-secondary"
-						onClick={onGetLinkDensity}
-						disabled={isLoading || !onGetLinkDensity}
+						onClick={handleGetLinkDensity}
+						disabled={isLoading}
 					>
 						Analyze Density
 					</button>
@@ -136,7 +213,12 @@ export const LabsTabRenderer: React.FC<LabsTabProps> = ({
 						className="test-input"
 						placeholder="File path (or use context)"
 						value={labsState.readSectionPath}
-						onChange={(e) => onReadSectionPathChange(e.target.value)}
+						onChange={(e) =>
+							setLabsState((prev) => ({
+								...prev,
+								readSectionPath: e.target.value,
+							}))
+						}
 						disabled={isLoading}
 					/>
 					<input
@@ -144,13 +226,15 @@ export const LabsTabRenderer: React.FC<LabsTabProps> = ({
 						className="test-input"
 						placeholder="Subpath (e.g., '#Intro' or '#^blockid')"
 						value={labsState.subpath}
-						onChange={(e) => onSubpathChange(e.target.value)}
+						onChange={(e) =>
+							setLabsState((prev) => ({ ...prev, subpath: e.target.value }))
+						}
 						disabled={isLoading}
 					/>
 					<button
 						type="button"
 						className="test-btn test-btn-secondary"
-						onClick={onReadSpecificSection}
+						onClick={handleReadSpecificSection}
 						disabled={
 							isLoading ||
 							(!labsState.readSectionPath.trim() && !selectedFile) ||
@@ -171,13 +255,18 @@ export const LabsTabRenderer: React.FC<LabsTabProps> = ({
 						className="test-input"
 						placeholder="Canvas path (or use context)"
 						value={labsState.readCanvasPath}
-						onChange={(e) => onReadCanvasPathChange(e.target.value)}
+						onChange={(e) =>
+							setLabsState((prev) => ({
+								...prev,
+								readCanvasPath: e.target.value,
+							}))
+						}
 						disabled={isLoading}
 					/>
 					<button
 						type="button"
 						className="test-btn test-btn-secondary"
-						onClick={onReadCanvas}
+						onClick={handleReadCanvas}
 						disabled={
 							isLoading || (!labsState.readCanvasPath.trim() && !selectedFile)
 						}
