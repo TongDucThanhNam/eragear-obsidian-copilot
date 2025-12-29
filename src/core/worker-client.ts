@@ -27,7 +27,7 @@ import type {
 } from "../core/types";
 
 // Bundled worker blob (handled by esbuild webWorkerPlugin)
-import contextWorkerBlob from "../workers/context.worker.ts";
+import contextWorkerBlob from "../workers/context.worker";
 
 type PendingRequest = {
     resolve: (value: unknown) => void;
