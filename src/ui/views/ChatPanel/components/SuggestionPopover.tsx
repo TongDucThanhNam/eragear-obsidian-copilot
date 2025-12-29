@@ -59,6 +59,12 @@ export const SuggestionPopover: React.FC<SuggestionPopoverProps> = ({
 					<li
 						key={item.id}
 						onClick={() => onSelect(item)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === " ") {
+								onSelect(item);
+								e.preventDefault();
+							}
+						}}
 						style={{
 							padding: "8px 12px",
 							cursor: "pointer",

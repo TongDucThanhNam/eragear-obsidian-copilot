@@ -204,6 +204,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 		contextPickerMode,
 		app.vault.getMarkdownFiles,
 		app.workspace.getActiveViewOfType,
+		app.vault.getAllLoadedFiles,
+		selectedFiles.some,
 	]);
 
 	const handleInputChange = (val: string) => {
