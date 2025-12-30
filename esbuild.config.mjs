@@ -28,11 +28,15 @@ const prod = process.argv[2] === "production";
 const webWorkerPlugin = {
 	name: "web-worker",
 	setup(build) {
-		build.onResolve({ filter: /\.worker\.ts$/ }, (args) => {
+		build.onResolve({ filter: /\.worker(\.ts)?$/ }, (args) => {
 			// Resolve to absolute path so nested builds can find the entrypoint
-			const resolvedPath = path.isAbsolute(args.path)
+			let resolvedPath = path.isAbsolute(args.path)
 				? args.path
 				: path.join(args.resolveDir, args.path);
+
+			if (!resolvedPath.endsWith(".ts")) {
+				resolvedPath += ".ts";
+			}
 
 			// Mark as external to handle separately
 			return {

@@ -3,7 +3,8 @@
 export enum AIProviderType {
 	BYOK_OPENAI = "openai",
 	BYOK_GEMINI = "google",
-	BYOK_DEEPSEEK = "deepseek", // New
+	BYOK_DEEPSEEK = "deepseek",
+	ACP_LOCAL = "acp_local", // New
 	ERAGEAR_CLOUD = "eragear_cloud",
 }
 
@@ -15,7 +16,18 @@ export interface MyPluginSettings {
 	geminiApiKey: string;
 	geminiModel: string; // New
 	deepseekApiKey: string; // New
-	deepseekModel: string; // New
+	deepseekModel: string;
+
+	// ACP Settings
+	// ACP Settings
+	agentCommand: string;
+	agentArgs: string;
+	agentWorkingDir: string;
+	agentNodePath: string;
+
+	// Relay Settings
+	relayUrl: string;
+
 	eragearApiKey: string;
 
 	// ... other settings ...
@@ -38,6 +50,14 @@ export const DEFAULT_SETTINGS: MyPluginSettings = {
 	geminiModel: "gemini-1.5-flash",
 	deepseekApiKey: "",
 	deepseekModel: "deepseek-chat",
+
+	agentCommand: "python",
+	agentArgs: "agent.py",
+	agentWorkingDir: "",
+	agentNodePath: "",
+
+	relayUrl: "wss://relay.eragear.app",
+
 	eragearApiKey: "",
 
 	mySetting: "default",

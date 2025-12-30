@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import type EragearPlugin from "../../main";
-import { MyPluginSettings, AIProviderType } from "../../settings";
+import { MyPluginSettings } from "../../settings";
 import { GeneralSettings } from "./sections/GeneralSettings";
 import { ModelSettings } from "./sections/ModelSettings";
 import { AdvancedSettings } from "./sections/AdvancedSettings";
+import { PairingView } from "../views/PairingView";
 
 interface SettingsPageProps {
 	plugin: EragearPlugin;
 }
 
-type TabType = "general" | "models" | "advanced";
+type TabType = "general" | "models" | "advanced" | "remote";
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({ plugin }) => {
 	const [activeTab, setActiveTab] = useState<TabType>("general");
@@ -30,6 +31,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ plugin }) => {
 				<h1>Eragear Copilot</h1>
 				<div className="eragear-settings-tabs">
 					<button
+						type="button"
 						className={`eragear-tab-nav-item ${
 							activeTab === "general" ? "is-active" : ""
 						}`}
@@ -38,6 +40,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ plugin }) => {
 						General
 					</button>
 					<button
+						type="button"
 						className={`eragear-tab-nav-item ${
 							activeTab === "models" ? "is-active" : ""
 						}`}
@@ -46,12 +49,22 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ plugin }) => {
 						Models
 					</button>
 					<button
+						type="button"
 						className={`eragear-tab-nav-item ${
 							activeTab === "advanced" ? "is-active" : ""
 						}`}
 						onClick={() => setActiveTab("advanced")}
 					>
 						Advanced
+					</button>
+					<button
+						type="button"
+						className={`eragear-tab-nav-item ${
+							activeTab === "remote" ? "is-active" : ""
+						}`}
+						onClick={() => setActiveTab("remote")}
+					>
+						Remote
 					</button>
 				</div>
 			</div>
@@ -71,6 +84,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ plugin }) => {
 						settings={settings}
 						updateSettings={updateSettings}
 					/>
+				)}
+				{activeTab === "remote" && (
+					<PairingView app={plugin.app} relayUrl={settings.relayUrl} />
 				)}
 			</div>
 		</div>

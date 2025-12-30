@@ -15,6 +15,7 @@ import { Notice, Plugin } from "obsidian";
 import {
 	createContextAssembler,
 	createVaultManager,
+	createGraphService,
 	getWorkerClient,
 } from "./core";
 import type { ContextAssembler } from "./core/context-assembler";
@@ -99,14 +100,22 @@ export default class EragearPlugin extends Plugin {
 		// Create VaultManager (wraps Obsidian Vault API)
 		this.vaultManager = createVaultManager(this.app);
 
+		// Create GraphService (now required for ContextAssembler)
+		const graphService = createGraphService(this.app);
+		await graphService.initializeGraph();
+
 		// Create ContextAssembler (orchestrates data flow)
 		if (!this.vaultManager) throw new Error("VaultManager not initialized");
-		this.contextAssembler = createContextAssembler(this.vaultManager, {
-			maxGraphHops: this.settings.maxGraphHops,
-			maxRelatedNotes: 5,
-			searchMaxResults: this.settings.searchMaxResults,
-			debounceDelay: this.settings.debounceDelay,
-		});
+		this.contextAssembler = createContextAssembler(
+			this.vaultManager,
+			graphService,
+			{
+				maxGraphHops: this.settings.maxGraphHops,
+				maxRelatedNotes: 5,
+				searchMaxResults: this.settings.searchMaxResults,
+				debounceDelay: this.settings.debounceDelay,
+			},
+		);
 
 		// Create CloudflareService (handles AI API communication)
 		this.cloudflareService = createCloudflareService(
@@ -121,17 +130,17 @@ export default class EragearPlugin extends Plugin {
 			},
 		);
 
-		// Validate Cloudflare config
-		const validation = this.cloudflareService.validateConfig();
-		if (!validation.valid) {
-			console.warn(
-				"[Eragear] Cloudflare config incomplete:",
-				validation.errors,
-			);
-			new Notice(
-				"Eragear: Please configure Cloudflare credentials in settings",
-			);
-		}
+		// // Validate Cloudflare config
+		// const validation = this.cloudflareService.validateConfig();
+		// if (!validation.valid) {
+		// 	console.warn(
+		// 		"[Eragear] Cloudflare config incomplete:",
+		// 		validation.errors,
+		// 	);
+		// 	new Notice(
+		// 		"Eragear: Please configure Cloudflare credentials in settings",
+		// 	);
+		// }
 
 		console.log("[Eragear] Services initialized");
 	}
@@ -149,7 +158,7 @@ export default class EragearPlugin extends Plugin {
 			) {
 				throw new Error("Services not initialized");
 			}
-			return new EragearView(leaf);
+			return new EragearView(leaf, this);
 		});
 
 		// Add ribbon icon

@@ -40,6 +40,9 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
 					<option value={AIProviderType.ERAGEAR_CLOUD}>
 						Eragear Cloud (Managed)
 					</option>
+					<option value={AIProviderType.ACP_LOCAL}>
+						ACP Local Agent (Experimental)
+					</option>
 				</select>
 			</SettingItem>
 
@@ -158,6 +161,140 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
 					<div className="eragear-info-box">
 						ℹ️ Eragear Cloud provides advanced RAG and syncing across devices.
 						(Coming Soon)
+					</div>
+				</div>
+			)}
+
+			{settings.provider === AIProviderType.ACP_LOCAL && (
+				<div className="eragear-provider-card active">
+					<div className="eragear-provider-header">
+						<span className="eragear-provider-title">
+							Local Agent Configuration
+						</span>
+					</div>
+
+					<SettingItem
+						name="Active agent"
+						description="Choose which agent handles new chat sessions."
+					>
+						<select
+							className="dropdown"
+							value={
+								settings.agentCommand === "gemini"
+									? "gemini"
+									: settings.agentCommand === "claude-code-acp"
+										? "claude-code-acp"
+										: settings.agentCommand === "opencode"
+											? "opencode"
+											: "custom"
+							}
+							onChange={(e) => {
+								const val = e.target.value;
+								if (val === "gemini") {
+									updateSettings({
+										agentCommand: "gemini",
+										agentArgs: "--experimental-acp",
+									});
+								} else if (val === "claude") {
+									updateSettings({
+										agentCommand: "claude-code-acp",
+										agentArgs: "",
+									});
+								} else if (val === "opencode") {
+									updateSettings({
+										agentCommand: "opencode",
+										agentArgs: "acp",
+									});
+								} else {
+									// Switch to custom mode by clearing the preset command
+									// or setting it to a default placeholder if emptiness causes issues.
+									// Setting to empty string allows the user to type fresh.
+									updateSettings({
+										agentCommand: "",
+										agentArgs: "",
+									});
+								}
+							}}
+						>
+							<option value="custom">Custom Agent</option>
+							<option value="gemini">Gemini CLI (gemini-cli)</option>
+							<option value="claude">Claude Code (claude)</option>
+							<option value="opencode">OpenCode</option>
+						</select>
+					</SettingItem>
+
+					<SettingItem
+						name="Node.js path"
+						description="Absolute path to Node.js executable. Useful if 'node' is not in PATH."
+					>
+						<input
+							type="text"
+							placeholder="/usr/local/bin/node"
+							value={settings.agentNodePath || ""}
+							onChange={(e) =>
+								updateSettings({ agentNodePath: e.target.value })
+							}
+						/>
+					</SettingItem>
+
+					{/* Only show raw command details if Custom is selected OR user wants to override */}
+					<details>
+						<summary style={{ cursor: "pointer", marginBottom: "10px" }}>
+							Advanced Configuration
+						</summary>
+						<SettingItem
+							name="Command"
+							description="Command to spawn the agent"
+						>
+							<input
+								type="text"
+								placeholder="python"
+								value={settings.agentCommand}
+								onChange={(e) =>
+									updateSettings({ agentCommand: e.target.value })
+								}
+							/>
+						</SettingItem>
+						<SettingItem
+							name="Arguments"
+							description="Arguments for the command"
+						>
+							<input
+								type="text"
+								placeholder="-m my_agent"
+								value={settings.agentArgs}
+								onChange={(e) => updateSettings({ agentArgs: e.target.value })}
+							/>
+						</SettingItem>
+					</details>
+
+					<SettingItem
+						name="Working Directory"
+						description="Absolute path to the agent's working directory"
+					>
+						<input
+							type="text"
+							placeholder="/path/to/project"
+							value={settings.agentWorkingDir}
+							onChange={(e) =>
+								updateSettings({ agentWorkingDir: e.target.value })
+							}
+						/>
+					</SettingItem>
+
+					<SettingItem
+						name="Auto-allow permissions"
+						description="Automatically allow all permission requests from agents. ⚠️ Use with caution."
+					>
+						<div className="checkbox-container">
+							<input type="checkbox" checked={true} disabled />
+							<span>(Coming soon)</span>
+						</div>
+					</SettingItem>
+
+					<div className="eragear-info-box">
+						ℹ️ This will spawn a local process using the Agent Communication
+						Protocol.
 					</div>
 				</div>
 			)}

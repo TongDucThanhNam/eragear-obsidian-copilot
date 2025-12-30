@@ -22,6 +22,13 @@ export const MessageList: React.FC<MessageListProps> = ({
 
 	return (
 		<div className="eragear-messages">
+			{/* Empty state */}
+			{messages.length === 0 && (
+				<div>
+					<p>No messages yet</p>
+				</div>
+			)}
+
 			{messages.map((message, index) => (
 				<MessageBubble
 					key={message.id}

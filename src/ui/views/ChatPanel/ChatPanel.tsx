@@ -12,6 +12,7 @@ import {
 	SuggestionPopover,
 	type SuggestionItem,
 } from "./components";
+import { useAgentClient } from "../../hooks/useAgentClient";
 import {
 	IconPlus,
 	IconFileText,
@@ -20,19 +21,18 @@ import {
 } from "./components/Icons";
 import type { Message } from "./types";
 
+import type EragearPlugin from "../../../main";
+
 interface ChatPanelProps {
 	app: App;
+	plugin: EragearPlugin;
 }
 
 type PanelMode = "chat" | "playground";
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
-	// Retrieve plugin settings
-	const getPluginSettings = () => {
-		// @ts-ignore
-		const plugin = app.plugins.getPlugin("eragear-obsidian-copilot");
-		return plugin?.settings;
-	};
+export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
+	// Retrieve plugin settings directly from prop
+	const settings = plugin.settings;
 
 	const [activeMode, setActiveMode] = useState<PanelMode>("chat");
 
@@ -65,12 +65,93 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 		"root" | "notes" | "folders"
 	>("root");
 
-	const settings = getPluginSettings();
+	// Slash Commands State
+	const [activeSlashCommands, setActiveSlashCommands] = useState<
+		SuggestionItem[]
+	>([]);
+	const [isAutoMentionEnabled, setIsAutoMentionEnabled] = useState(true);
 
 	const editorCtrl = useRef(new EditorController(app));
 
+	// Agent Client Hook
+	// Agent Client Hook
+	const {
+		agentClient,
+		isInitializing,
+		error: agentError,
+		modes,
+		setMode,
+		currentModeId,
+		setCurrentModeId,
+	} = useAgentClient(
+		settings || ({ provider: AIProviderType.BYOK_OPENAI } as any),
+	);
+	const [agentSessionId, setAgentSessionId] = useState<string | null>(null);
+
+	// Handle Agent Updates
+	useEffect(() => {
+		if (agentClient) {
+			agentClient.onSessionUpdate((update) => {
+				if (update.type === "agent_message_chunk") {
+					setMessages((prev) => {
+						const lastMsg = prev[prev.length - 1];
+						if (lastMsg && lastMsg.role === "assistant") {
+							// Append to last message
+							const newParts = [...lastMsg.parts];
+							const lastPart = newParts[newParts.length - 1];
+							if (lastPart && lastPart.type === "text") {
+								newParts[newParts.length - 1] = {
+									...lastPart,
+									text: lastPart.text + update.text,
+								};
+							} else {
+								newParts.push({ type: "text", text: update.text || "" });
+							}
+							return [...prev.slice(0, -1), { ...lastMsg, parts: newParts }];
+						}
+						// If no assistant message found (rare, maybe started with tool call?), create one?
+						// Usually we create a placeholder before sending.
+						return prev;
+					});
+				} else if (update.type === "agent_thought_chunk") {
+					// Optional: Show thoughts? For now ignore or log
+					console.log("Thought:", update.text);
+				} else if (update.type === "available_commands_update") {
+					console.log(
+						"[ChatPanel] Handling available_commands_update",
+						update.commands,
+					);
+					if (update.commands) {
+						const newCommands: SuggestionItem[] = update.commands.map((cmd) => {
+							const hintPart = cmd.hint ? ` (${cmd.hint})` : "";
+							return {
+								type: "action" as const,
+								label: `/${cmd.name}`,
+								id: `cmd_${cmd.name}`,
+								desc: `${cmd.description}${hintPart}`,
+								data: { hint: cmd.hint },
+							};
+						});
+						setActiveSlashCommands(newCommands);
+					}
+				}
+			});
+
+			// Attempt auto-session creation if not exists?
+			// But we need working directory from settings.
+			if (!agentSessionId && !isInitializing) {
+				const wd = settings?.agentWorkingDir || "";
+				agentClient
+					.newSession(wd)
+					.then((res) => setAgentSessionId(res.sessionId));
+			}
+		}
+	}, [agentClient, isInitializing, agentSessionId, settings?.agentWorkingDir]);
+
+	// Set default model when settings change
 	useEffect(() => {
 		if (settings) {
+			console.log("[ChatPanel] Settings loaded:", settings);
 			const defaultModel =
 				settings.provider === AIProviderType.BYOK_OPENAI
 					? settings.openaiModel || "gpt-4o"
@@ -80,6 +161,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 							? settings.deepseekModel || "deepseek-chat"
 							: "";
 			setSelectedModel(defaultModel);
+		} else {
+			console.log("[ChatPanel] Settings are missing or undefined");
 		}
 	}, [settings]);
 
@@ -371,7 +454,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 
 			// 2. Call AI Service (Hybrid Strategy)
 			setIsLoading(true);
-			const settings = getPluginSettings();
 			if (!settings) {
 				const errorMsg: Message = {
 					id: Date.now().toString(),
@@ -387,6 +469,64 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 				setIsLoading(false);
 				return;
 			}
+
+			// --- ACP LOCAL HANDLING ---
+			if (settings.provider === AIProviderType.ACP_LOCAL) {
+				if (!agentClient) {
+					const errorMsg: Message = {
+						id: Date.now().toString(),
+						role: "assistant",
+						parts: [
+							{
+								type: "text",
+								text: "Agent is initializing or failed to start.",
+							},
+						],
+					};
+					setMessages((prev) => [...prev, errorMsg]);
+					setIsLoading(false);
+					return;
+				}
+
+				try {
+					let sid = agentSessionId;
+					if (!sid) {
+						// Create new session
+						const wd = settings.agentWorkingDir || "/";
+						const res = await agentClient.newSession(wd);
+						sid = res.sessionId;
+						setAgentSessionId(sid);
+					}
+
+					// Append placeholder
+					const assistantMsgId = Date.now().toString();
+					setMessages((prev) => [
+						...prev,
+						{
+							id: assistantMsgId,
+							role: "assistant",
+							parts: [{ type: "text", text: "" }],
+						},
+					]);
+
+					// Send message
+					await agentClient.sendMessage(sid, userContent);
+
+					// Response handling is via useEffect event listener
+				} catch (e: any) {
+					console.error(e);
+					const errorMsg: Message = {
+						id: Date.now().toString(),
+						role: "assistant",
+						parts: [{ type: "text", text: `Agent Error: ${e.message}` }],
+					};
+					setMessages((prev) => [...prev, errorMsg]);
+				} finally {
+					setIsLoading(false);
+				}
+				return;
+			}
+			// --- END ACP LOCAL HANDLING ---
 
 			const aiService = new AIService(settings);
 
@@ -460,7 +600,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 		if (lastUserMsg && lastUserMsg.role === "user") {
 			setMessages(newHistory);
 			setIsLoading(true);
-			const settings = getPluginSettings();
 			const aiService = new AIService(settings);
 
 			try {
@@ -523,7 +662,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 			newHistory.length > 0 ? newHistory[newHistory.length - 1] : undefined;
 		if (lastUserMsg && lastUserMsg.role === "user") {
 			setIsLoading(true);
-			const settings = getPluginSettings();
 			const aiService = new AIService(settings);
 			try {
 				const coreMessages = newHistory.map((m) => ({
@@ -602,7 +740,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 	};
 
 	const getAvailableModels = () => {
-		const settings = getPluginSettings();
 		if (!settings) return [];
 		switch (settings.provider) {
 			case AIProviderType.BYOK_OPENAI:
@@ -667,14 +804,82 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 		}
 	};
 
+	const handleAutoMentionToggle = (disabled: boolean) => {
+		setIsAutoMentionEnabled(!disabled);
+	};
+
 	return (
 		<div className="eragear-container">
 			{/* Chat History */}
 			<div className="eragear-chat-area">
 				<div className="eragear-chat-header">
-					<span className="eragear-chat-title">
-						{activeMode === "chat" ? "Chat" : "Playground"}
-					</span>
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: "8px",
+						}}
+					>
+						<span className="eragear-chat-title">
+							{activeMode === "chat" ? "Chat" : "Playground"}
+						</span>
+						{settings && (
+							<span
+								className="eragear-model-badge"
+								style={{
+									fontSize: "0.75rem",
+									padding: "2px 6px",
+									borderRadius: "4px",
+									backgroundColor: "red", // Debug color
+									color: "white",
+									opacity: 1,
+								}}
+							>
+								{settings.provider === AIProviderType.ACP_LOCAL
+									? `Agent: ${settings.agentCommand || "Unknown"}`
+									: `Model: ${selectedModel || "Loading..."}`}
+							</span>
+						)}
+
+						{/* Mode Selector for ACP */}
+						{settings.provider === AIProviderType.ACP_LOCAL &&
+							modes.length > 0 && (
+								<div
+									style={{
+										display: "flex",
+										alignItems: "center",
+										fontSize: "0.7rem",
+										color: "var(--text-muted)",
+										marginLeft: "8px",
+									}}
+								>
+									<select
+										value={currentModeId}
+										onChange={(e) => {
+											const newMode = e.target.value;
+											if (agentSessionId) {
+												setMode(newMode, agentSessionId);
+											}
+											setCurrentModeId(newMode);
+										}}
+										style={{
+											background: "transparent",
+											border: "none",
+											color: "var(--text-muted)",
+											fontSize: "inherit",
+											cursor: "pointer",
+											padding: "0 4px",
+										}}
+									>
+										{modes.map((m: any) => (
+											<option key={m.id} value={m.id}>
+												{m.name}
+											</option>
+										))}
+									</select>
+								</div>
+							)}
+					</div>
 					<button
 						type="button"
 						className="eragear-add-btn"
@@ -725,17 +930,15 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app }) => {
 
 				{/* Input Area */}
 				<ChatInput
+					app={app}
 					input={input}
-					isLoading={isLoading}
 					onInputChange={handleInputChange}
-					onSendMessage={() => handleSendMessage()}
-					onKeyDown={handleKeyPress}
-					shouldFocus={shouldFocusInput}
-					selectedModel={selectedModel}
+					onSend={() => handleSendMessage()}
 					onModelChange={setSelectedModel}
-					availableModels={getAvailableModels()}
 					onTriggerContext={handleTriggerContext}
-					// No contextMenu prop anymore!
+					activeModelId={selectedModel}
+					slashCommandsList={activeSlashCommands}
+					onAutoMentionToggle={handleAutoMentionToggle}
 				/>
 			</div>
 		</div>

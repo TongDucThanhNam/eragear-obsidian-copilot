@@ -95,20 +95,6 @@ export const SearchTab: React.FC<SearchTabProps> = ({ app, onAddOutput }) => {
 						{isLoading ? "⏳" : "🔍"} Search
 					</button>
 				</div>
-
-				{searchResults.length > 0 && (
-					<div className="test-results">
-						<h4>Found {searchResults.length} file(s):</h4>
-						<ul className="test-result-list">
-							{searchResults.map((result: any) => (
-								<li key={result.path} className="test-result-item">
-									<span className="result-basename">{result.baseName}</span>
-									<span className="result-path">{result.path}</span>
-								</li>
-							))}
-						</ul>
-					</div>
-				)}
 			</ActionCard>
 
 			<ActionCardGroup title="Advanced Search">

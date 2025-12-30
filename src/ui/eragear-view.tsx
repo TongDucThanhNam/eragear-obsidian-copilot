@@ -1,8 +1,10 @@
-import { ItemView } from "obsidian";
+import { ItemView, WorkspaceLeaf } from "obsidian";
 import { createRoot, type Root } from "react-dom/client";
 import { EragearComponent } from "./EragearComponent";
 
 export const ERAGEAR_VIEW_TYPE = "eragear-copilot-view";
+
+import type EragearPlugin from "../main";
 
 /**
  * EragearView: Custom Obsidian View for Eragear Copilot Sidebar
@@ -12,6 +14,12 @@ export const ERAGEAR_VIEW_TYPE = "eragear-copilot-view";
  */
 export class EragearView extends ItemView {
 	root: Root | null = null;
+	plugin: EragearPlugin;
+
+	constructor(leaf: WorkspaceLeaf, plugin: EragearPlugin) {
+		super(leaf);
+		this.plugin = plugin;
+	}
 
 	/**
 	 * Returns the unique identifier for this view type.
@@ -51,7 +59,7 @@ export class EragearView extends ItemView {
 		// Mount React component into the container
 		// Pass app as props to the component
 		this.root = createRoot(container as HTMLElement);
-		this.root.render(<EragearComponent app={this.app} />);
+		this.root.render(<EragearComponent app={this.app} plugin={this.plugin} />);
 	}
 
 	/**

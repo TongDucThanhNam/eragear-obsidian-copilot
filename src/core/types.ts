@@ -1,6 +1,6 @@
 /**
  * Core Domain Types
- * 
+ *
  * This file defines shared interfaces used across the application.
  * These types ensure type safety between:
  * - Main Thread (Plugin, UI, Services)
@@ -13,54 +13,54 @@
 // ============================================================================
 
 export interface GraphNode {
-    filePath: string;
-    title: string;
-    level: number; // For hierarchical sorting
-    preview?: string; // First 100 chars of content
+	filePath: string;
+	title: string;
+	level: number; // For hierarchical sorting
+	preview?: string; // First 100 chars of content
 }
 
 export interface GraphEdge {
-    source: string; // source file path
-    target: string; // target file path
-    type: 'backlink' | 'tag' | 'alias' | 'mention';
-    weight: number; // relevance score (0-1)
+	source: string; // source file path
+	target: string; // target file path
+	type: "backlink" | "tag" | "alias" | "mention";
+	weight: number; // relevance score (0-1)
 }
 
 export interface GraphStructure {
-    nodes: GraphNode[];
-    edges: GraphEdge[];
-    metadata: {
-        generatedAt: number; // timestamp
-        rootFile: string;
-        hopCount: number;
-    };
+	nodes: GraphNode[];
+	edges: GraphEdge[];
+	metadata: {
+		generatedAt: number; // timestamp
+		rootFile: string;
+		hopCount: number;
+	};
 }
 
 // ============================================================================
 // Neighborhood Graph (MetadataCache-based)
 // ============================================================================
 
-export type NeighborhoodNodeType = 'focal' | 'outgoing' | 'incoming';
+export type NeighborhoodNodeType = "focal" | "outgoing" | "incoming";
 
 export interface NeighborhoodNode {
-    path: string;
-    basename: string;
-    type: NeighborhoodNodeType;
-    /** Link count (how many times this file is linked) */
-    linkCount?: number;
+	path: string;
+	basename: string;
+	type: NeighborhoodNodeType;
+	/** Link count (how many times this file is linked) */
+	linkCount?: number;
 }
 
 export interface NeighborhoodResult {
-    nodes: NeighborhoodNode[];
-    focalNode: NeighborhoodNode;
-    outgoingCount: number;
-    incomingCount: number;
+	nodes: NeighborhoodNode[];
+	focalNode: NeighborhoodNode;
+	outgoingCount: number;
+	incomingCount: number;
 }
 
 export interface BacklinkResult {
-    path: string;
-    basename: string;
-    linkCount: number;
+	path: string;
+	basename: string;
+	linkCount: number;
 }
 
 // ============================================================================
@@ -68,15 +68,15 @@ export interface BacklinkResult {
 // ============================================================================
 
 export interface SearchMatch {
-    filePath: string;
-    score: number;
-    positions: Array<{ start: number; end: number }>;
+	filePath: string;
+	score: number;
+	positions: Array<{ start: number; end: number }>;
 }
 
 export interface SearchResults {
-    matches: SearchMatch[];
-    query: string;
-    totalMatches: number;
+	matches: SearchMatch[];
+	query: string;
+	totalMatches: number;
 }
 
 // ============================================================================
@@ -84,17 +84,17 @@ export interface SearchResults {
 // ============================================================================
 
 export interface ContextPayload {
-    activeFile: string;
-    activeFileContent: string;
-    activeFileStructure: string;
-    graphContext: GraphStructure;
-    relatedNotes: Array<{
-        path: string;
-        title: string;
-        relevance: number;
-        excerpt: string;
-    }>;
-    userQuery: string;
+	activeFile: string;
+	activeFileContent: string;
+	activeFileStructure: string;
+	graphContext: GraphStructure;
+	relatedNotes: Array<{
+		path: string;
+		title: string;
+		relevance: number;
+		excerpt: string;
+	}>;
+	userQuery: string;
 }
 
 // ============================================================================
@@ -102,52 +102,73 @@ export interface ContextPayload {
 // ============================================================================
 
 export type WorkerMessageType =
-    | 'ANALYZE_GRAPH'
-    | 'ANALYZE_RESOLVED_GRAPH'
-    | 'SEARCH_CONTENT'
-    | 'UPDATE_METADATA'
-    | 'ANALYZE_CONTEXT'
-    | 'WORKER_READY'
-    | 'ERROR'
-    | 'RESPONSE';
+	| "ANALYZE_GRAPH"
+	| "ANALYZE_RESOLVED_GRAPH"
+	| "SEARCH_CONTENT"
+	| "UPDATE_METADATA"
+	| "ANALYZE_CONTEXT"
+	| "BUILD_GRAPH"
+	| "COMPUTE_PAGERANK"
+	| "SPREADING_ACTIVATION"
+	| "WORKER_READY"
+	| "ERROR"
+	| "RESPONSE";
 
 export interface WorkerMessage<T = unknown> {
-    id: string; // UUID for request/response matching
-    type: WorkerMessageType;
-    payload: T;
-    timestamp: number;
+	id: string; // UUID for request/response matching
+	type: WorkerMessageType;
+	payload: T;
+	timestamp: number;
 }
 
 // Request payloads
 export interface AnalyzeGraphPayload {
-    rootFilePath: string;
-    maxHops: number;
-    allFiles: Array<{ path: string; content: string }>;
+	rootFilePath: string;
+	maxHops: number;
+	allFiles: Array<{ path: string; content: string }>;
 }
 
 export interface SearchContentPayload {
-    query: string;
-    fileContents: Array<{ path: string; content: string }>;
-    fuzzy?: boolean;
+	query: string;
+	fileContents: Array<{ path: string; content: string }>;
+	fuzzy?: boolean;
+}
+
+export interface BuildGraphPayload {
+	nodes: Array<{ path: string; tags: string[] }>;
+	edges: Array<{ source: string; target: string; weight?: number }>;
+}
+
+export interface ComputePageRankPayload {
+	damping?: number;
+	maxIterations?: number;
+	tolerance?: number;
+}
+
+export interface SpreadingActivationPayload {
+	startNode: string;
+	decay?: number;
+	initialEnergy?: number;
+	threshold?: number;
 }
 
 export interface UpdateMetadataPayload {
-    files: Array<{
-        path: string;
-        title: string;
-        content: string;
-    }>;
+	files: Array<{
+		path: string;
+		title: string;
+		content: string;
+	}>;
 }
 
 export interface AnalyzeContextPayload {
-    activeFile: {
-        path: string;
-        content: string;
-        structure: string;
-    };
-    query: string;
-    graphContext: GraphStructure;
-    maxRelatedNotes: number;
+	activeFile: {
+		path: string;
+		content: string;
+		structure: string;
+	};
+	query: string;
+	graphContext: GraphStructure;
+	maxRelatedNotes: number;
 }
 
 // ============================================================================
@@ -165,41 +186,52 @@ export type ResolvedLinksSnapshot = Record<string, Record<string, number>>;
  * Contains pre-captured snapshot from Main Thread
  */
 export interface AnalyzeResolvedGraphPayload {
-    /** Starting node for BFS traversal */
-    startNode: string;
-    /** Snapshot of app.metadataCache.resolvedLinks */
-    links: ResolvedLinksSnapshot;
-    /** List of all existing file paths (for validation) */
-    allFiles: string[];
-    /** Maximum BFS depth (default: 2) */
-    maxDepth: number;
+	/** Starting node for BFS traversal */
+	startNode: string;
+	/** Snapshot of app.metadataCache.resolvedLinks */
+	links: ResolvedLinksSnapshot;
+	/** List of all existing file paths (for validation) */
+	allFiles: string[];
+	/** Maximum BFS depth (default: 2) */
+	maxDepth: number;
 }
 
 /**
  * Result from graph analysis in worker
  */
 export interface GraphAnalysisResult {
-    /** Files related to startNode, sorted by relevance */
-    relatedFiles: string[];
-    /** Node metadata with hop distance */
-    nodeMap: Record<string, {
-        hop: number;
-        type: 'focal' | 'outgoing' | 'incoming' | 'bidirectional';
-        linkCount: number;
-    }>;
-    /** Execution stats */
-    stats: {
-        totalNodes: number;
-        executionMs: number;
-    };
+	/** Files related to startNode, sorted by relevance */
+	relatedFiles: string[];
+	/** Node metadata with hop distance */
+	nodeMap: Record<
+		string,
+		{
+			hop: number;
+			type: "focal" | "outgoing" | "incoming" | "bidirectional";
+			linkCount: number;
+		}
+	>;
+	/** Execution stats */
+	stats: {
+		totalNodes: number;
+		executionMs: number;
+	};
+}
+
+export interface PageRankResult {
+	scores: Record<string, number>;
+}
+
+export interface SpreadingActivationResult {
+	activatedNodes: Array<{ path: string; score: number }>;
 }
 
 // Response payloads
 export interface WorkerResponse<T = unknown> {
-    id: string;
-    success: boolean;
-    data?: T;
-    error?: string;
+	id: string;
+	success: boolean;
+	data?: T;
+	error?: string;
 }
 
 // ============================================================================
@@ -207,17 +239,17 @@ export interface WorkerResponse<T = unknown> {
 // ============================================================================
 
 export interface CloudflareConfig {
-    accessClientId: string;
-    accessClientSecret: string;
-    apiEndpoint: string; // e.g., "https://eragear.cloudflare.workers.dev"
+	accessClientId: string;
+	accessClientSecret: string;
+	apiEndpoint: string; // e.g., "https://eragear.cloudflare.workers.dev"
 }
 
 export interface PluginSettings {
-    cloudflare: CloudflareConfig;
-    maxGraphHops: number; // default 2
-    searchMaxResults: number; // default 20
-    debounceDelay: number; // default 2000ms
-    enableLogging: boolean;
+	cloudflare: CloudflareConfig;
+	maxGraphHops: number; // default 2
+	searchMaxResults: number; // default 20
+	debounceDelay: number; // default 2000ms
+	enableLogging: boolean;
 }
 
 // ============================================================================
@@ -225,15 +257,15 @@ export interface PluginSettings {
 // ============================================================================
 
 export interface StreamChunk {
-    id: string;
-    chunk: string;
-    timestamp: number;
-    isDone: boolean;
+	id: string;
+	chunk: string;
+	timestamp: number;
+	isDone: boolean;
 }
 
 export interface ChatMessage {
-    role: 'user' | 'assistant';
-    content: string;
-    timestamp: number;
-    context?: ContextPayload; // only for user messages
+	role: "user" | "assistant";
+	content: string;
+	timestamp: number;
+	context?: ContextPayload; // only for user messages
 }

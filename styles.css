@@ -23,7 +23,7 @@ If your plugin does not need CSS, delete this file.
 	gap: 0;
 }
 .test-panel-top-section {
-	flex: 0 0 70%;
+	flex: 1;
 	display: flex;
 	flex-direction: column;
 	min-height: 0;
@@ -36,6 +36,10 @@ If your plugin does not need CSS, delete this file.
 	flex-direction: column;
 	min-height: 0;
 	background-color: var(--background-primary);
+	transition: flex-basis 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.test-panel-layout-container.has-collapsed-console .test-panel-bottom-section {
+	flex-basis: 38px; /* Fixed height of header when collapsed */
 }
 .global-context-bar {
 	display: flex;
@@ -370,179 +374,326 @@ If your plugin does not need CSS, delete this file.
 	border-radius: 0;
 	overflow: hidden;
 	box-shadow: none;
+	width: 100%;
 }
-.console-log-panel.collapsed {
+.console-log-panel.is-collapsed {
 	flex: 0 0 auto;
 	height: auto;
 	min-height: 0;
 }
+
+/* Collapsible UI System - Adapted from user request */
+.Collapsible {
+	--color-gray-900: var(--text-normal);
+	--color-gray-100: var(--background-secondary);
+	--color-gray-200: var(--background-modifier-border);
+	--color-blue: var(--interactive-accent);
+
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start;
+	color: var(--color-gray-900);
+}
+
+.Collapsible .Icon {
+	width: 1rem;
+	height: 1rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: transform 150ms ease-out;
+}
+
+.Collapsible .Trigger {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin: 0;
+	border: 0;
+	outline: 0;
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.25rem;
+	background-color: var(--color-gray-100);
+	color: var(--color-gray-900);
+	font-family: inherit;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background-color 150ms ease;
+}
+
+.Collapsible .Trigger:hover {
+	background-color: var(--background-tertiary);
+}
+
+.Collapsible .Trigger:active {
+	background-color: var(--background-modifier-border);
+}
+
+.Collapsible .Trigger:focus-visible {
+	outline: 2px solid var(--color-blue);
+}
+
+.Collapsible .Trigger[data-panel-open="true"] .Icon {
+	transform: rotate(90deg);
+}
+
+.Collapsible .Panel {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	transition:
+		opacity 0.2s ease,
+		max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	max-height: 1000px; /* Large enough to show content */
+	opacity: 1;
+}
+
+.Collapsible .Panel[hidden] {
+	display: flex; /* Keep in flow for parent transition */
+	max-height: 0;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.Collapsible .Content {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	margin-top: 0.25rem;
+	padding: 0.5rem;
+	border-radius: 0.25rem;
+	background-color: var(--background-primary);
+}
+
 .console-header {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	padding: 0.75rem 1rem;
+	padding: 0 4px; /* Slimmer padding */
+	height: 32px; /* Fixed slim height */
 	border-bottom: 1px solid var(--background-modifier-border);
 	flex-shrink: 0;
-	background-color: var(--background-secondary);
+	background-color: var(--background-secondary-alt);
+	user-select: none;
 }
-.console-title {
+
+.console-title.Trigger {
 	display: flex;
 	align-items: center;
-	gap: 0.5rem;
-	flex: 1;
-}
-.console-toggle {
-	background: none;
-	border: none;
-	color: var(--text-muted);
-	cursor: pointer;
-	padding: 0.25rem;
-	font-size: 0.9rem;
-	transition: color 0.2s ease;
-}
-.console-toggle:hover {
+	gap: 6px;
+	margin: 0;
+	border: 0;
+	outline: 0;
+	padding: 4px 8px;
+	border-radius: var(--radius-s);
+	background-color: transparent; /* No background by default */
 	color: var(--text-normal);
-}
-.console-label {
+	font-family: inherit;
+	font-size: 0.8rem;
 	font-weight: 600;
-	font-size: 0.9rem;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+	flex: 0 0 auto;
+}
+
+.console-title.Trigger:hover {
+	background-color: var(--background-modifier-hover);
+}
+.console-title.Trigger:active {
+	background-color: var(--background-modifier-border);
+}
+.console-title.Trigger .Icon {
+	width: 14px;
+	height: 14px;
+	color: var(--text-muted);
+}
+
+.console-label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
 	color: var(--text-normal);
 }
+
 .console-controls {
 	display: flex;
-	gap: 0.5rem;
+	align-items: center;
+	gap: 4px;
+	margin-right: 4px;
 }
+
 .console-btn {
-	padding: 0.375rem 0.75rem;
+	padding: 2px 8px;
+	height: 22px;
+	line-height: 1;
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-s);
-	background-color: var(--background-tertiary);
-	color: var(--text-normal);
+	background-color: var(--background-primary);
+	color: var(--text-muted);
 	cursor: pointer;
-	font-size: 0.75rem;
+	font-size: 0.72rem;
 	font-weight: 500;
 	transition: all 0.2s ease;
 }
+
 .console-btn:hover {
 	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+	border-color: var(--background-modifier-border-hover);
 }
-.console-btn-clear {
+
+.console-btn-clear:hover {
 	color: var(--text-error);
+	border-color: var(--text-error);
 }
+
 .console-body {
 	flex: 1;
 	overflow-y: auto;
-	padding: 0.75rem;
+	padding: 0; /* Full width */
 	display: flex;
 	flex-direction: column;
-	gap: 0.5rem;
 	font-family: var(--font-monospace);
-	font-size: 0.85rem;
 	background-color: var(--background-primary);
 }
+
 .console-empty {
 	color: var(--text-muted);
 	font-style: italic;
 	text-align: center;
-	padding: 1rem;
+	padding: 2.5rem 1rem;
+	background-color: var(--background-primary);
 }
+
 .console-logs {
 	display: flex;
 	flex-direction: column;
-	gap: 0.5rem;
+	width: 100%;
 }
+
 .console-log-item {
 	display: flex;
 	flex-direction: column;
-	gap: 0.5rem;
-	padding: 0.875rem;
-	border-radius: 0.5rem;
-	background-color: var(--background-secondary);
-	border: 1.5px solid var(--background-modifier-border);
-	transition: all 0.2s ease;
+	border-bottom: 1px solid var(--background-modifier-border);
+	transition: background-color 0.1s ease;
+	width: 100%;
 }
+
 .console-log-item:hover {
-	border-color: var(--interactive-accent);
-	transform: translate(4px);
+	background-color: var(--background-modifier-hover);
 }
+
 .console-log-item.status-success {
-	border-color: var(--text-success, #4ade80);
-	background-color: #4ade8014;
-}
-.console-log-item.status-success:hover {
-	box-shadow: 0 2px 8px #4ade8033;
+	border-left: 3px solid var(--text-success, #4ade80);
 }
 .console-log-item.status-error {
-	border-color: var(--text-error);
-	background-color: #ff000014;
-}
-.console-log-item.status-error:hover {
-	box-shadow: 0 2px 8px #f003;
+	border-left: 3px solid var(--text-error);
 }
 .console-log-item.status-info {
-	border-color: var(--interactive-accent);
-	background-color: #6496ff14;
+	border-left: 3px solid var(--interactive-accent);
 }
-.console-log-item.status-info:hover {
-	box-shadow: 0 2px 8px #6496ff33;
-}
-.log-header {
+
+.console-log-item .log-header {
 	display: flex;
 	align-items: center;
-	gap: 0.625rem;
-	flex-wrap: wrap;
+	justify-content: space-between;
+	width: 100%;
+}
+
+.console-log-item .log-header-main.Trigger {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 12px;
 	cursor: pointer;
 	user-select: none;
+	background-color: transparent;
+	flex: 1;
+	border-radius: 0;
+	font-size: 0.82rem;
+	border: none;
+	text-align: left;
+	color: inherit;
+	font-family: inherit;
 }
-.log-status-icon {
-	flex-shrink: 0;
-	font-size: 1.1rem;
+
+.console-log-item .log-status-icon {
+	font-size: 0.9rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
 }
-.log-title {
-	font-weight: 600;
+
+.console-log-item .log-title {
+	font-weight: 500;
 	color: var(--text-normal);
 	flex: 1;
-	min-width: 0;
-	word-break: break-word;
-	font-size: 0.95rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
-.log-time {
-	font-size: 0.75rem;
+
+.console-log-item .log-time {
+	font-size: 0.7rem;
 	color: var(--text-muted);
-	flex-shrink: 0;
-	font-family: var(--font-monospace);
+	margin-right: 4px;
 }
-.log-copy-btn,
-.log-expand-btn {
+
+.log-actions {
+	display: flex;
+	align-items: center;
+	padding-right: 8px;
+}
+
+.log-copy-btn {
+	opacity: 0;
+	transition: opacity 0.2s ease;
 	background: none;
 	border: none;
-	color: var(--text-muted);
 	cursor: pointer;
-	padding: 0;
-	font-size: 0.9rem;
-	transition: color 0.2s ease;
-	flex-shrink: 0;
+	padding: 4px;
+	border-radius: var(--radius-s);
+	display: flex;
+	align-items: center;
+	color: var(--text-muted);
 }
-.log-copy-btn:hover,
-.log-expand-btn:hover {
+
+.console-log-item:hover .log-copy-btn {
+	opacity: 1;
+}
+
+.log-copy-btn:hover {
+	background-color: var(--background-modifier-border);
 	color: var(--text-normal);
 }
-.log-content {
-	overflow: hidden;
-	display: flex;
-	flex-direction: column;
+.console-log-item .Panel {
+	background-color: var(--background-secondary-alt);
 }
+
+.console-log-item .Content.log-content {
+	padding: 8px 12px 12px 42px; /* Indent content to align with title */
+	gap: 0;
+}
+
 .log-code {
 	margin: 0;
-	padding: 0.5rem;
+	padding: 8px;
 	background-color: var(--background-primary);
-	border-radius: var(--radius-s);
-	overflow-x: auto;
-	white-space: pre-wrap;
-	word-break: break-word;
-	max-height: 200px;
-	overflow-y: auto;
 	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	font-size: 0.8rem;
+	line-height: 1.4;
+	white-space: pre-wrap;
+	word-break: break-all;
+	color: var(--text-muted);
+	overflow-x: auto;
+	max-height: 400px;
+	overflow-y: auto;
 }
 .test-input,
 .test-textarea {
@@ -1159,7 +1310,6 @@ If your plugin does not need CSS, delete this file.
 }
 
 .eragear-tab-nav-item.is-active {
-	color: var(--text-normal);
 	background-color: var(--interactive-accent);
 	color: var(--text-on-accent);
 }
@@ -1415,76 +1565,184 @@ If your plugin does not need CSS, delete this file.
 }
 
 /* Input Area */
-.eragear-input-section {
-	border-top: 1px solid var(--eragear-border-color);
-	padding: 16px;
-	background-color: var(--eragear-bg-body);
-}
-
-.eragear-input-box {
-	border: 1px solid var(--eragear-border-color);
-	border-radius: var(--eragear-radius-lg);
-	padding: 12px;
+/* Modern Chat Input Styles */
+.eragear-chat-input-wrapper {
+	display: flex;
+	flex-direction: column;
+	width: 95%;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-xl);
+	padding: 1rem;
+	gap: 1rem;
+	margin: 1rem;
 	background-color: var(--background-primary);
-	box-shadow: var(--eragear-shadow-sm);
-	transition:
-		box-shadow 0.2s,
-		border-color 0.2s;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Soft premium shadow */
+	transition: all 0.2s ease;
 }
 
-.eragear-input-box:focus-within {
-	box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.15);
+.eragear-chat-input-wrapper:focus-within {
 	border-color: var(--interactive-accent);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
-.eragear-input-textarea {
+.eragear-chat-input-textarea {
 	width: 100%;
+	min-height: 2.5rem;
+	max-height: 200px;
+	padding: 0;
 	border: none;
+	background: transparent;
 	resize: none;
 	outline: none;
-	font-size: 14px;
-	color: var(--eragear-text-main);
-	min-height: 24px;
-	max-height: 200px;
-	background: transparent;
+	font-family: inherit;
+	font-size: 0.95rem;
 	line-height: 1.5;
+	color: var(--text-normal);
 }
 
-.eragear-input-textarea::placeholder {
+.eragear-chat-input-textarea:focus {
+	box-shadow: none;
+}
+
+.eragear-chat-input-textarea::placeholder {
 	color: var(--text-muted);
 }
 
-.eragear-input-footer {
+.eragear-chat-input-footer {
 	display: flex;
+	align-items: center;
 	justify-content: space-between;
-	align-items: center;
-	margin-top: 8px;
+	gap: 0.5rem;
 }
 
-.eragear-model-selector {
+.eragear-chat-input-left {
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 0.5rem;
 }
 
-.eragear-model-badge {
-	background-color: var(--background-primary);
-	border: 1px solid var(--eragear-border-color);
-	padding: 4px 10px;
-	border-radius: 6px;
-	font-size: 12px;
-	font-weight: 600;
-	color: var(--eragear-text-main);
+.eragear-chat-input-right {
+	display: flex;
+	align-items: center;
+	gap: 8px; /* Spacing between pills */
+	margin-left: auto;
+}
+
+/* Button Styles for Input */
+.eragear-btn-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	border-radius: 50%; /* Rounded full */
+	border: none;
 	cursor: pointer;
+	transition: all 0.2s ease;
+	color: var(--text-muted);
+	background: transparent;
+}
+
+.eragear-btn-icon:hover {
+	color: var(--text-normal);
+	background-color: var(--background-modifier-hover);
+}
+
+.eragear-chat-input-wrapper.is-dragging {
+	border-style: dashed;
+	border-color: var(--interactive-accent);
+	background-color: rgba(var(--interactive-accent-rgb), 0.05);
+}
+
+.eragear-chat-input-wrapper.is-listening {
+	border-color: var(--text-accent);
+}
+
+@keyframes pulse-ring {
+	0% {
+		box-shadow: 0 0 0 0 rgba(var(--interactive-accent-rgb), 0.4);
+	}
+	70% {
+		box-shadow: 0 0 0 6px rgba(var(--interactive-accent-rgb), 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(var(--interactive-accent-rgb), 0);
+	}
+}
+
+.eragear-btn-icon.animate-pulse {
+	color: var(--text-accent);
+	animation: pulse-ring 2s infinite;
+}
+
+/* Pill Buttons (Web / Model) */
+.eragear-pill-btn {
 	display: flex;
 	align-items: center;
 	gap: 6px;
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 14px; /* Pill shape */
+	background-color: var(--background-secondary);
+	border: 1px solid transparent;
+	color: var(--text-muted);
+	font-size: 0.75rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	user-select: none;
 }
 
-.eragear-model-badge:hover {
-	background-color: var(--eragear-bg-secondary);
+.eragear-pill-btn:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
 }
 
+.eragear-pill-btn.is-active {
+	background-color: rgba(var(--interactive-accent-rgb), 0.1);
+	color: var(--interactive-accent);
+}
+
+.eragear-pill-btn svg {
+	width: 14px;
+	height: 14px;
+	opacity: 0.8;
+}
+
+/* Specific Model Pill Styles */
+.eragear-model-pill {
+	position: relative;
+	padding-right: 12px;
+}
+
+.eragear-model-icon {
+	font-size: 14px;
+}
+
+/* Primary Send Button */
+.eragear-btn-primary {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.eragear-btn-primary:hover {
+	background-color: var(--interactive-accent-hover);
+	color: var(--text-on-accent);
+}
+
+.eragear-btn-disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+	background-color: var(--background-secondary);
+}
+
+.eragear-model-dropdown {
+	position: absolute;
+	inset: 0;
+	opacity: 0;
+	cursor: pointer;
+	width: 100%;
+}
 .eragear-context-btn-footer {
 	color: var(--eragear-text-muted);
 	padding: 6px;

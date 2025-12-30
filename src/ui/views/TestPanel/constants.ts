@@ -20,5 +20,4 @@ export const TABS: Tab[] = [
 		tooltip: "File & Folder organization",
 	},
 	{ id: "labs", icon: "⚡", label: "Labs", tooltip: "Advanced features" },
-	{ id: "chat", icon: "💬", label: "Chat", tooltip: "AI Chat & Copilot" },
 ];

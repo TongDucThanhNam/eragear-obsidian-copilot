@@ -21,6 +21,7 @@ export const TestPanel: React.FC<TestPanelProps> = ({ app }) => {
 	// Core state
 	const [activeTab, setActiveTab] = useState<TabId>("search");
 	const [selectedFile, setSelectedFile] = useState<TFile | null>(null);
+	const [isConsoleCollapsed, setIsConsoleCollapsed] = useState(false);
 
 	// Output management
 	const { testOutputs, addTestOutput, clearTestOutputs } = useTestOutput();
@@ -83,7 +84,9 @@ export const TestPanel: React.FC<TestPanelProps> = ({ app }) => {
 			/>
 
 			{/* Main Layout Container */}
-			<div className="test-panel-layout-container">
+			<div
+				className={`test-panel-layout-container ${isConsoleCollapsed ? "has-collapsed-console" : ""}`}
+			>
 				{/* Top Section (70%) - Test Content */}
 				<div className="test-panel-top-section">
 					<div className="test-panel-content-area">{renderTabContent()}</div>
@@ -91,7 +94,12 @@ export const TestPanel: React.FC<TestPanelProps> = ({ app }) => {
 
 				{/* Bottom Section (30%) - Results */}
 				<div className="test-panel-bottom-section">
-					<ConsoleLog testOutputs={testOutputs} onClear={clearTestOutputs} />
+					<ConsoleLog
+						testOutputs={testOutputs}
+						onClear={clearTestOutputs}
+						isCollapsed={isConsoleCollapsed}
+						setIsCollapsed={setIsConsoleCollapsed}
+					/>
 				</div>
 			</div>
 		</div>

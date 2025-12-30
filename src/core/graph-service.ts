@@ -2,150 +2,143 @@
  * Graph Service - Main Thread Graph Data Extraction
  *
  * This service wraps Obsidian's MetadataCache to extract graph data
- * for neighborhood analysis. Unlike the Web Worker GraphEngine which
- * processes content with regex, this service uses Obsidian's native
- * resolved links for accurate graph traversal.
- *
- * Key Concepts:
- * - Forward Links (Outgoing): Links FROM the current file TO other files
- * - Resolved Links: Cached mapping of source → targets (from MetadataCache)
- * - Backlinks (Incoming): Links TO the current file FROM other files
- *
- * Graph(File) = OutgoingLinks(File) + IncomingLinks(File)
+ * and communicates with the Worker Thread to perform graph analysis
+ * using Graphology (PageRank, Spreading Activation).
  */
 
 import type { App, TFile } from "obsidian";
 import { TFolder } from "obsidian";
 import type {
-	AnalyzeResolvedGraphPayload,
 	GraphAnalysisResult,
-	ResolvedLinksSnapshot,
+	NeighborhoodNode,
+	NeighborhoodResult,
+	BacklinkResult,
+	BuildGraphPayload,
 } from "./types";
 import { getWorkerClient, type WorkerClient } from "./worker-client";
 
-// ============================================================================
-// Types
-// ============================================================================
-
-export type NeighborhoodNodeType = "focal" | "outgoing" | "incoming";
-
-export interface NeighborhoodNode {
-	path: string;
-	basename: string;
-	type: NeighborhoodNodeType;
-	/** Link count (how many times this file is linked) */
-	linkCount?: number;
-}
-
-export interface NeighborhoodResult {
-	nodes: NeighborhoodNode[];
-	focalNode: NeighborhoodNode;
-	outgoingCount: number;
-	incomingCount: number;
-}
-
-export interface RawLinkInfo {
-	/** The raw link text (e.g., "Note B" from [[Note B]]) */
-	link: string;
-	/** Display text if aliased (e.g., "display" from [[Note B|display]]) */
-	displayText?: string;
-	/** Position in the source file */
-	position: {
-		start: { line: number; col: number; offset: number };
-		end: { line: number; col: number; offset: number };
-	};
-}
-
-export interface ResolvedLinkMap {
-	/** sourcePath → { targetPath → linkCount } */
-	[sourcePath: string]: Record<string, number>;
-}
-
-export interface BacklinkResult {
-	path: string;
-	basename: string;
-	linkCount: number;
-}
-
-// ============================================================================
-// Graph Service Implementation
-// ============================================================================
-
 export class GraphService {
 	private workerClient: WorkerClient;
+	private initialized = false;
 
 	constructor(private app: App) {
 		this.workerClient = getWorkerClient();
 	}
 
+	/**
+	 * Initialize the worker graph from current vault state
+	 */
+	public async initializeGraph(): Promise<void> {
+		const payload = this.extractGraph();
+		await this.workerClient.buildGraph(payload);
+
+		// Compute initial PageRank
+		await this.workerClient.computePageRank({
+			damping: 0.85,
+			tolerance: 1e-4,
+			maxIterations: 100,
+		});
+
+		this.initialized = true;
+		console.log("[GraphService] Graph initialized and PageRank computed.");
+	}
+
+	/**
+	 * Extract full graph from MetadataCache
+	 */
+	private extractGraph(): BuildGraphPayload {
+		const files = this.app.vault.getMarkdownFiles();
+		const nodes = files.map((f) => {
+			const cache = this.app.metadataCache.getFileCache(f);
+			return {
+				path: f.path,
+				tags: cache?.tags?.map((t) => t.tag) || [],
+			};
+		});
+
+		const edges: Array<{ source: string; target: string; weight?: number }> =
+			[];
+		const resolvedLinks = this.app.metadataCache.resolvedLinks;
+
+		for (const [source, targets] of Object.entries(resolvedLinks)) {
+			for (const [target] of Object.entries(targets)) {
+				edges.push({
+					source,
+					target,
+					weight: 1.0, // Simple weight for now
+				});
+			}
+		}
+
+		return { nodes, edges };
+	}
+
 	// ========================================================================
-	// Smart Context (Worker-based Analysis)
+	// Smart Context (Worker-based Spreading Activation)
 	// ========================================================================
 
 	/**
-	 * Get smart context using Worker for heavy computation
+	 * Get smart context using Spreading Activation
 	 *
-	 * This is the primary method for AI context building.
-	 * Uses the "Snapshot & Compute" pattern:
-	 * 1. Capture resolvedLinks snapshot from MetadataCache
-	 * 2. Send to Worker for BFS/PageRank computation
-	 * 3. Return ranked list of related files
-	 *
-	 * @param activeFile - The focal file to analyze
-	 * @param maxDepth - Maximum BFS traversal depth (default: 2)
+	 * Replaces the old BFS/Vector approach.
 	 */
 	public async getSmartContext(
 		activeFile: TFile,
-		maxDepth: number = 2,
+		maxDepth?: number,
 	): Promise<GraphAnalysisResult> {
-		// 1. Capture snapshot from MetadataCache
-		const snapshot = this.captureLinksSnapshot();
+		if (!this.initialized) {
+			await this.initializeGraph();
+		}
 
-		// 2. Prepare payload for worker
-		const payload: AnalyzeResolvedGraphPayload = {
+		// Run Spreading Activation
+		const activationResult = await this.workerClient.spreadingActivation({
 			startNode: activeFile.path,
-			links: snapshot.links,
-			allFiles: snapshot.allFiles,
-			maxDepth,
+			decay: 0.5,
+			initialEnergy: 1.0,
+			threshold: 0.05,
+		});
+
+		// Map result to GraphAnalysisResult format for compatibility
+		const relatedFiles = activationResult.activatedNodes.map((n) => n.path);
+		const nodeMap: Record<
+			string,
+			{
+				hop: number;
+				type: "focal" | "outgoing" | "incoming" | "bidirectional";
+				linkCount: number;
+			}
+		> = {};
+
+		// Populate nodeMap partially
+		activationResult.activatedNodes.forEach((node) => {
+			nodeMap[node.path] = {
+				hop: 1, // Unknown
+				type: "outgoing", // Assumed
+				linkCount: Math.round(node.score * 100),
+			};
+		});
+
+		return {
+			relatedFiles,
+			nodeMap,
+			stats: {
+				totalNodes: relatedFiles.length,
+				executionMs: 0,
+			},
 		};
-
-		// 3. Send to worker and await result
-		return this.workerClient.analyzeResolvedGraph(payload);
-	}
-
-	/**
-	 * Capture a snapshot of the current link graph
-	 *
-	 * Creates a serializable copy of MetadataCache data
-	 * that can be sent to the Worker thread.
-	 */
-	public captureLinksSnapshot(): {
-		links: ResolvedLinksSnapshot;
-		allFiles: string[];
-	} {
-		// Get resolved links (already serializable: Record<string, Record<string, number>>)
-		const links = this.app.metadataCache.resolvedLinks;
-
-		// Get all markdown file paths
-		const allFiles = this.app.vault.getMarkdownFiles().map((f) => f.path);
-
-		return { links, allFiles };
 	}
 
 	// ========================================================================
-	// Core API Methods
+	// Core API Methods (Direct Main Thread access)
 	// ========================================================================
 
 	/**
 	 * Get 1-hop neighborhood of a file (focal + direct connections)
-	 *
-	 * This is the primary method for context-aware features.
-	 * Returns all directly connected files in both directions.
 	 */
 	public getNeighborhood(file: TFile): NeighborhoodResult {
 		const nodes: NeighborhoodNode[] = [];
 
-		// 1. Add focal node (the file itself)
+		// 1. Add focal node
 		const focalNode: NeighborhoodNode = {
 			path: file.path,
 			basename: file.basename,
@@ -153,11 +146,11 @@ export class GraphService {
 		};
 		nodes.push(focalNode);
 
-		// 2. Get outgoing links (file → others)
+		// 2. Get outgoing links
 		const outgoingNodes = this.getOutgoingNodes(file);
 		nodes.push(...outgoingNodes);
 
-		// 3. Get incoming links (others → file)
+		// 3. Get incoming links
 		const incomingNodes = this.getIncomingNodes(file, outgoingNodes);
 		nodes.push(...incomingNodes);
 
@@ -170,139 +163,7 @@ export class GraphService {
 	}
 
 	/**
-	 * Get raw (unresolved) links from file content
-	 *
-	 * Returns the raw text of links as written in the file.
-	 * Useful for understanding link structure before resolution.
-	 */
-	public getRawLinks(file: TFile): RawLinkInfo[] {
-		const cache = this.app.metadataCache.getFileCache(file);
-		if (!cache?.links) return [];
-
-		return cache.links.map((link) => ({
-			link: link.link,
-			displayText: link.displayText,
-			position: link.position,
-		}));
-	}
-
-	/**
-	 * Get resolved outgoing links from file
-	 *
-	 * Uses Obsidian's resolvedLinks cache for accurate path resolution.
-	 * This accounts for aliases, folder structure, and renamed files.
-	 */
-	public getResolvedForwardLinks(file: TFile): Record<string, number> {
-		const resolvedLinks = this.app.metadataCache.resolvedLinks;
-		return resolvedLinks[file.path] || {};
-	}
-
-	/**
-	 * Get all backlinks to a file
-	 *
-	 * Note: Obsidian doesn't expose backlinks directly.
-	 * We compute them by scanning resolvedLinks in reverse.
-	 */
-	public getBacklinks(targetFilePath: string): BacklinkResult[] {
-		const resolvedLinks = this.app.metadataCache.resolvedLinks;
-		const backlinks: BacklinkResult[] = [];
-
-		// Iterate through all source files
-		for (const [sourcePath, targets] of Object.entries(resolvedLinks)) {
-			const linkCount = targets[targetFilePath];
-			if (linkCount && linkCount > 0) {
-				const sourceFile = this.app.vault.getAbstractFileByPath(sourcePath);
-				if (sourceFile instanceof TFolder) continue;
-
-				backlinks.push({
-					path: sourcePath,
-					basename:
-						sourcePath.split("/").pop()?.replace(/\.md$/, "") || sourcePath,
-					linkCount,
-				});
-			}
-		}
-
-		return backlinks;
-	}
-
-	/**
-	 * Get all resolved links in the vault
-	 *
-	 * Returns the complete link graph as maintained by Obsidian.
-	 * Format: { [sourcePath]: { [targetPath]: linkCount } }
-	 */
-	public getAllResolvedLinks(): ResolvedLinkMap {
-		return this.app.metadataCache.resolvedLinks;
-	}
-
-	/**
-	 * Get unresolved links (links pointing to non-existent files)
-	 */
-	public getUnresolvedLinks(): Record<string, Record<string, number>> {
-		return this.app.metadataCache.unresolvedLinks;
-	}
-
-	// ========================================================================
-	// Extended Graph Traversal
-	// ========================================================================
-
-	/**
-	 * Get n-hop neighborhood using BFS
-	 *
-	 * Traverses the graph up to maxHops levels deep.
-	 * Useful for building extended context windows.
-	 *
-	 * @param file - Starting file
-	 * @param maxHops - Maximum traversal depth (default: 2)
-	 */
-	public getNHopNeighborhood(
-		file: TFile,
-		maxHops: number = 2,
-	): Map<string, { node: NeighborhoodNode; hop: number }> {
-		const visited = new Map<string, { node: NeighborhoodNode; hop: number }>();
-		const queue: Array<{ file: TFile; hop: number }> = [{ file, hop: 0 }];
-
-		while (queue.length > 0) {
-			const current = queue.shift();
-			if (!current) continue;
-
-			const { file: currentFile, hop } = current;
-
-			// Skip if already visited
-			if (visited.has(currentFile.path)) continue;
-
-			visited.set(currentFile.path, {
-				node: {
-					path: currentFile.path,
-					basename: currentFile.basename,
-					type: hop === 0 ? "focal" : "outgoing",
-				},
-				hop,
-			});
-
-			// Stop traversing deeper if we've reached max hops
-			if (hop >= maxHops) continue;
-
-			// Get connected files and add to queue
-			const forwardLinks = this.getResolvedForwardLinks(currentFile);
-			for (const targetPath of Object.keys(forwardLinks)) {
-				if (!visited.has(targetPath)) {
-					const targetFile = this.app.vault.getAbstractFileByPath(targetPath);
-					if (targetFile && !(targetFile instanceof TFolder)) {
-						queue.push({ file: targetFile as TFile, hop: hop + 1 });
-					}
-				}
-			}
-		}
-
-		return visited;
-	}
-
-	/**
 	 * Calculate link density (connectivity) of a file
-	 *
-	 * Higher density = more connected = potentially more important
 	 */
 	public getLinkDensity(file: TFile): {
 		outgoing: number;
@@ -331,13 +192,6 @@ export class GraphService {
 		return [...forwardLinks].filter((path) => backlinks.has(path));
 	}
 
-	// ========================================================================
-	// Internal Helpers
-	// ========================================================================
-
-	/**
-	 * Convert resolved forward links to NeighborhoodNodes
-	 */
 	private getOutgoingNodes(file: TFile): NeighborhoodNode[] {
 		const forwardLinks = this.getResolvedForwardLinks(file);
 		const nodes: NeighborhoodNode[] = [];
@@ -353,13 +207,9 @@ export class GraphService {
 				});
 			}
 		}
-
 		return nodes;
 	}
 
-	/**
-	 * Get incoming nodes, avoiding duplicates with outgoing
-	 */
 	private getIncomingNodes(
 		file: TFile,
 		existingOutgoing: NeighborhoodNode[],
@@ -369,7 +219,6 @@ export class GraphService {
 		const nodes: NeighborhoodNode[] = [];
 
 		for (const backlink of backlinks) {
-			// Skip if already counted as outgoing (bidirectional link)
 			if (outgoingPaths.has(backlink.path)) continue;
 
 			nodes.push({
@@ -379,14 +228,35 @@ export class GraphService {
 				linkCount: backlink.linkCount,
 			});
 		}
-
 		return nodes;
 	}
-}
 
-// ============================================================================
-// Factory Function
-// ============================================================================
+	public getResolvedForwardLinks(file: TFile): Record<string, number> {
+		const resolvedLinks = this.app.metadataCache.resolvedLinks;
+		return resolvedLinks[file.path] || {};
+	}
+
+	public getBacklinks(targetFilePath: string): BacklinkResult[] {
+		const resolvedLinks = this.app.metadataCache.resolvedLinks;
+		const backlinks: BacklinkResult[] = [];
+
+		for (const [sourcePath, targets] of Object.entries(resolvedLinks)) {
+			const linkCount = targets[targetFilePath];
+			if (linkCount && linkCount > 0) {
+				const sourceFile = this.app.vault.getAbstractFileByPath(sourcePath);
+				if (sourceFile instanceof TFolder) continue;
+
+				backlinks.push({
+					path: sourcePath,
+					basename:
+						sourcePath.split("/").pop()?.replace(/\.md$/, "") || sourcePath,
+					linkCount,
+				});
+			}
+		}
+		return backlinks;
+	}
+}
 
 export function createGraphService(app: App): GraphService {
 	return new GraphService(app);

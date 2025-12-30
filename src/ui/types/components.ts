@@ -3,40 +3,44 @@
  */
 
 import type React from "react";
+import type { App, TFile } from "obsidian";
+import type { TestOutput } from "./testPanel";
 
 export interface ActionCardProps {
-    title: string;
-    description?: string;
-    icon: string;
-    variant?: "safe" | "destructive" | "default";
-    children: React.ReactNode;
+	title: string;
+	description?: string;
+	icon: string;
+	variant?: "safe" | "destructive" | "default";
+	children: React.ReactNode;
 }
 
 export interface ActionCardGroupProps {
-    title: string;
-    children: React.ReactNode;
+	title: string;
+	children: React.ReactNode;
 }
 
 export interface GlobalContextBarProps {
-    app: any;
-    selectedFile: any | null;
-    onFileSelect: (file: any) => void;
+	app: App;
+	selectedFile: TFile | null;
+	onFileSelect: (file: TFile | null) => void;
 }
 
 export interface TabNavigationProps {
-    tabs: Tab[];
-    activeTab: string;
-    onTabChange: (tabId: string) => void;
+	tabs: Tab[];
+	activeTab: string;
+	onTabChange: (tabId: string) => void;
 }
 
 export interface Tab {
-    id: string;
-    icon: string;
-    label: string;
-    tooltip: string;
+	id: string;
+	icon: string;
+	label: string;
+	tooltip: string;
 }
 
 export interface ConsoleLogProps {
-    testOutputs: any[];
-    onClear: () => void;
+	testOutputs: TestOutput[];
+	onClear: () => void;
+	isCollapsed: boolean;
+	setIsCollapsed: (collapsed: boolean) => void;
 }

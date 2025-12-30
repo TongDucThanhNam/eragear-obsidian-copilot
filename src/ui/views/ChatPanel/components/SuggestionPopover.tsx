@@ -14,7 +14,7 @@ interface SuggestionPopoverProps {
 	suggestions: SuggestionItem[];
 	selectedIndex: number;
 	onSelect: (item: SuggestionItem) => void;
-	position: { top: number | string; left: number | string };
+	position: React.CSSProperties;
 }
 
 export const SuggestionPopover: React.FC<SuggestionPopoverProps> = ({

@@ -5,13 +5,19 @@ import { AppContextProvider } from "./context/AppContext";
 import { ChatPanel } from "./views/ChatPanel/ChatPanel";
 import { TestPanel } from "./views/TestPanel";
 
+import type EragearPlugin from "../main";
+
 interface EragearComponentProps {
 	app: App;
+	plugin: EragearPlugin;
 }
 
 type ViewMode = "chat" | "playground";
 
-export const EragearComponent: React.FC<EragearComponentProps> = ({ app }) => {
+export const EragearComponent: React.FC<EragearComponentProps> = ({
+	app,
+	plugin,
+}) => {
 	const [viewMode, setViewMode] = useState<ViewMode>("chat");
 
 	return (
@@ -38,7 +44,7 @@ export const EragearComponent: React.FC<EragearComponentProps> = ({ app }) => {
 				{/* Content Area */}
 				<div className="eragear-panel-content">
 					{viewMode === "chat" ? (
-						<ChatPanel app={app} />
+						<ChatPanel app={app} plugin={plugin} />
 					) : (
 						<TestPanel app={app} />
 					)}

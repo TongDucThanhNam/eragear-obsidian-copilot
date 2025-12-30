@@ -394,3 +394,40 @@ export const IconChevronRight = () => (
 		<path d="m9 18 6-6-6-6" />
 	</svg>
 );
+
+export const IconMic = () => (
+	<svg
+		xmlns="http://www.w3.org/2000/svg"
+		width="14"
+		height="14"
+		viewBox="0 0 24 24"
+		fill="none"
+		stroke="currentColor"
+		strokeWidth="2"
+		strokeLinecap="round"
+		strokeLinejoin="round"
+	>
+		<title>Microphone</title>
+		<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+		<path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+		<line x1="12" x2="12" y1="19" y2="22" />
+	</svg>
+);
+
+export const IconCornerDownLeft = () => (
+	<svg
+		xmlns="http://www.w3.org/2000/svg"
+		width="14"
+		height="14"
+		viewBox="0 0 24 24"
+		fill="none"
+		stroke="currentColor"
+		strokeWidth="2"
+		strokeLinecap="round"
+		strokeLinejoin="round"
+	>
+		<title>Enter</title>
+		<polyline points="9 10 4 15 9 20" />
+		<path d="M20 4v7a4 4 0 0 1-4 4H4" />
+	</svg>
+);
