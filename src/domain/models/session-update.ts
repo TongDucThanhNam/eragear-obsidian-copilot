@@ -1,3 +1,8 @@
+export interface UserMessageChunk {
+	type: "user_message_chunk";
+	text: string;
+}
+
 export interface AgentMessageChunk {
 	type: "agent_message_chunk";
 	text: string;
@@ -119,6 +124,7 @@ export interface OutputUpdate {
 }
 
 export type SessionUpdate =
+	| UserMessageChunk
 	| AgentMessageChunk
 	| AgentThoughtChunk
 	| ToolCall
@@ -130,3 +136,25 @@ export type SessionUpdate =
 	| SessionEnd
 	| SessionError
 	| OutputUpdate;
+
+// ============================================================================
+// Session Model State - For agents that support model selection (experimental)
+// ============================================================================
+
+/** Represents a model available in an agent session */
+export interface SessionModel {
+	/** Unique identifier for the model */
+	modelId: string;
+	/** Human-readable name */
+	name: string;
+	/** Optional description */
+	description?: string;
+}
+
+/** State of models available in a session */
+export interface SessionModelState {
+	/** List of models available in this session */
+	availableModels: SessionModel[];
+	/** ID of the currently active model */
+	currentModelId: string;
+}

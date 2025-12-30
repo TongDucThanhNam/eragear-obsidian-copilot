@@ -1,5 +1,7 @@
+import type { App } from "obsidian";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AcpAdapter } from "../../adapters/acp/acp.adapter";
+import type { SessionModelState } from "../../domain/models/session-update";
 import type {
 	IAgentClient,
 	Subscription,
@@ -99,9 +101,14 @@ function getAvailableAgentsFromChatModels(
 	return [];
 }
 
-export function useAgentClient(settings: MyPluginSettings) {
+export function useAgentClient(settings: MyPluginSettings, app?: App) {
 	const [modes, setModes] = useState<AgentMode[]>([]);
 	const [currentModeId, setCurrentModeId] = useState<string>("");
+
+	// Agent models state (experimental - for agents that support model selection)
+	const [agentModels, setAgentModels] = useState<SessionModelState | null>(
+		null,
+	);
 
 	const [agentClient, setAgentClient] = useState<IAgentClient | null>(null);
 	const [isInitializing, setIsInitializing] = useState(false);
@@ -132,6 +139,41 @@ export function useAgentClient(settings: MyPluginSettings) {
 			// Ideally we wait for 'current_mode_update' notification but let's see.
 		},
 		[agentClient],
+	);
+
+	// Helper to set model (experimental)
+	const setAgentModel = useCallback(
+		async (modelId: string, sessionId: string) => {
+			if (!agentClient || !agentModels) return;
+
+			// Store previous model for rollback on error
+			const previousModelId = agentModels.currentModelId;
+
+			// Optimistic update - update UI immediately
+			setAgentModels((prev) => {
+				if (!prev) return prev;
+				return {
+					...prev,
+					currentModelId: modelId,
+				};
+			});
+
+			try {
+				await agentClient.setSessionModel(sessionId, modelId);
+				console.log("[useAgentClient] Agent model set:", modelId);
+			} catch (err) {
+				console.error("[useAgentClient] Failed to set agent model:", err);
+				// Rollback on error
+				setAgentModels((prev) => {
+					if (!prev) return prev;
+					return {
+						...prev,
+						currentModelId: previousModelId,
+					};
+				});
+			}
+		},
+		[agentClient, agentModels],
 	);
 
 	useEffect(() => {
@@ -165,7 +207,7 @@ export function useAgentClient(settings: MyPluginSettings) {
 				setIsInitializing(true);
 				setError(null);
 				try {
-					const adapter = new AcpAdapter();
+					const adapter = new AcpAdapter(app);
 					// Parse args from string to array
 					const args = agentConfig.args
 						? agentConfig.args.split(" ").filter((a) => a.length > 0)
@@ -221,6 +263,7 @@ export function useAgentClient(settings: MyPluginSettings) {
 				setAgentClient(null);
 				setModes([]);
 				setCurrentModeId("");
+				setAgentModels(null);
 			}
 		}
 
@@ -229,6 +272,7 @@ export function useAgentClient(settings: MyPluginSettings) {
 		setAgentClient(null);
 		setModes([]);
 		setCurrentModeId("");
+		setAgentModels(null);
 
 		init();
 
@@ -255,6 +299,10 @@ export function useAgentClient(settings: MyPluginSettings) {
 		currentModeId,
 		setCurrentModeId,
 		setMode,
+		// Agent models (experimental)
+		agentModels,
+		setAgentModels,
+		setAgentModel,
 		// Expose agent management
 		availableAgents,
 		activeAgentId,

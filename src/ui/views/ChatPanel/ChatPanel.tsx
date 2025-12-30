@@ -1,18 +1,25 @@
 import { type App, MarkdownView, type TFile } from "obsidian";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { AcpAdapter } from "../../../adapters/acp/acp.adapter";
+import type {
+	OutputUpdate,
+	PermissionRequest,
+	PlanEntry,
+	ToolCall,
+} from "../../../domain/models/session-update";
 import type EragearPlugin from "../../../main";
 import { AIService } from "../../../services/ai-service";
 import { AIProviderType, type ChatModelConfig } from "../../../settings";
+import { AcpContextProvider } from "../../context/AcpContext";
 import { EditorController } from "../../editor/editor-controller";
 import { useAgentClient } from "../../hooks/useAgentClient";
 import {
 	ChatInput,
 	ContextBadges,
 	MessageList,
-	SlashCommandMenu,
+	PermissionDialog,
 	type SuggestionItem,
-	SuggestionPopover,
 } from "./components";
 import {
 	IconChevronDown,
@@ -24,6 +31,13 @@ import type { Message } from "./types";
 
 // Chat mode type
 type ChatMode = "api" | "agent";
+
+// Unique ID generator to avoid duplicate keys
+let messageIdCounter = 0;
+const generateMessageId = (prefix = "msg") => {
+	messageIdCounter += 1;
+	return `${prefix}-${Date.now()}-${messageIdCounter}`;
+};
 
 interface CurrentChatContext {
 	mode: ChatMode;
@@ -101,13 +115,28 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 		isInitializing,
 		error: agentError,
 		modes,
+		setModes,
 		setMode,
 		currentModeId,
 		setCurrentModeId,
+		// Agent models (experimental)
+		agentModels,
+		setAgentModels,
+		setAgentModel,
 	} = useAgentClient(
 		settings || ({ provider: AIProviderType.BYOK_OPENAI } as any),
+		app,
 	);
 	const [agentSessionId, setAgentSessionId] = useState<string | null>(null);
+	// Agent plan state - stores the current execution plan from ACP agent
+	const [planEntries, setPlanEntries] = useState<PlanEntry[]>([]);
+	// Tool calls state - track active tool calls
+	const [toolCalls, setToolCalls] = useState<Map<string, ToolCall>>(new Map());
+	// Agent outputs state - store agent output messages
+	const [agentOutputs, setAgentOutputs] = useState<OutputUpdate[]>([]);
+	// Permission request state
+	const [permissionRequest, setPermissionRequest] =
+		useState<PermissionRequest | null>(null);
 
 	// Handler to switch API model (only for API models, not agents)
 	const handleModelChange = async (modelId: string) => {
@@ -155,21 +184,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	const handleNewAPIChat = () => {
 		setShowNewChatMenu(false);
 		setChatContext({ mode: "api", modelId: selectedModel });
-		setMessages([
-			{
-				id: "welcome-msg",
-				role: "assistant",
-				parts: [
-					{
-						type: "text",
-						text: "Hello! I'm Eragear Copilot.\n\nTry:\n• `@` to add context from notes\n• `/edit` for inline editing",
-					},
-				],
-			},
-		]);
+		setMessages([]);
 		setInput("");
 		setSelectedFiles([]);
 		setAgentSessionId(null);
+		setPlanEntries([]); // Clear any existing plan
 	};
 
 	// Start a new chat with an ACP agent
@@ -190,20 +209,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 
 		// Clear previous session - useAgentClient will create new one
 		setAgentSessionId(null);
+		setPlanEntries([]); // Clear any existing plan
 
 		// Reset messages
-		setMessages([
-			{
-				id: "welcome-msg",
-				role: "assistant",
-				parts: [
-					{
-						type: "text",
-						text: `Starting session with **${agentConfig.name}**...\n\nUse \`/\` for agent commands.`,
-					},
-				],
-			},
-		]);
+		setMessages([]);
 		setInput("");
 		setSelectedFiles([]);
 	};
@@ -222,7 +231,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 
 		// Subscribe to session updates and store the subscription for cleanup
 		const subscription = agentClient.onSessionUpdate((update) => {
-			if (update.type === "agent_message_chunk") {
+			if (update.type === "user_message_chunk") {
+				// Handle user message echo from agent (for session replay/loading)
+				console.log("[ChatPanel] User message chunk:", update.text);
+				// Optionally could append to user messages if needed for session loading
+			} else if (update.type === "agent_message_chunk") {
 				setMessages((prev) => {
 					const lastMsg = prev[prev.length - 1];
 					if (lastMsg && lastMsg.role === "assistant") {
@@ -244,8 +257,26 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 					return prev;
 				});
 			} else if (update.type === "agent_thought_chunk") {
-				// Optional: Show thoughts? For now ignore or log
+				// Stream thoughts to UI - append to last assistant message with thinking prefix
 				console.log("Thought:", update.text);
+				setMessages((prev) => {
+					const lastMsg = prev[prev.length - 1];
+					if (lastMsg && lastMsg.role === "assistant") {
+						const newParts = [...lastMsg.parts];
+						const lastPart = newParts[newParts.length - 1];
+						if (lastPart && lastPart.type === "text") {
+							// Append thought text (it will be replaced when actual message comes)
+							newParts[newParts.length - 1] = {
+								...lastPart,
+								text: lastPart.text + update.text,
+							};
+						} else {
+							newParts.push({ type: "text", text: update.text || "" });
+						}
+						return [...prev.slice(0, -1), { ...lastMsg, parts: newParts }];
+					}
+					return prev;
+				});
 			} else if (update.type === "available_commands_update") {
 				console.log(
 					"[ChatPanel] Handling available_commands_update",
@@ -264,6 +295,116 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 					});
 					setActiveSlashCommands(newCommands);
 				}
+			} else if (update.type === "plan") {
+				// Handle agent plan updates
+				console.log("[ChatPanel] Handling plan update", update.entries);
+				if (update.entries) {
+					setPlanEntries(update.entries);
+				}
+			} else if (update.type === "tool_call") {
+				// Handle new tool call - add as a message to the chat
+				console.log(
+					"[ChatPanel] Tool call:",
+					update.toolCallId,
+					update.title,
+					update.status,
+				);
+				// Store in map for updates
+				setToolCalls((prev) => {
+					const newMap = new Map(prev);
+					newMap.set(update.toolCallId, update);
+					return newMap;
+				});
+				// Add as message
+				const toolCallMsgId = `toolcall-${update.toolCallId}`;
+				setMessages((prev) => {
+					// Check if already exists
+					if (prev.find((m) => m.id === toolCallMsgId)) return prev;
+					return [
+						...prev,
+						{
+							id: toolCallMsgId,
+							role: "data" as const,
+							parts: [{ type: "tool-call" as const, toolCall: update }],
+						},
+					];
+				});
+			} else if (update.type === "tool_call_update") {
+				// Handle tool call status update - update existing entry
+				console.log(
+					"[ChatPanel] Tool call update:",
+					update.toolCallId,
+					update.status,
+				);
+				// Update in map
+				setToolCalls((prev) => {
+					const existing = prev.get(update.toolCallId);
+					if (existing) {
+						const newMap = new Map(prev);
+						newMap.set(update.toolCallId, {
+							...existing,
+							...update,
+							type: "tool_call", // Keep type as tool_call for UI
+						});
+						return newMap;
+					}
+					return prev;
+				});
+				// Update message in list
+				const toolCallMsgId = `toolcall-${update.toolCallId}`;
+				setMessages((prev) =>
+					prev.map((msg) => {
+						if (msg.id === toolCallMsgId) {
+							const existingPart = msg.parts[0];
+							if (existingPart?.type === "tool-call") {
+								return {
+									...msg,
+									parts: [
+										{
+											type: "tool-call" as const,
+											toolCall: {
+												...existingPart.toolCall,
+												...update,
+												type: "tool_call" as const,
+											},
+										},
+									],
+								};
+							}
+						}
+						return msg;
+					}),
+				);
+			} else if (update.type === "current_mode_update") {
+				// Handle mode change from agent
+				console.log("[ChatPanel] Mode changed to:", update.currentModeId);
+				setCurrentModeId(update.currentModeId);
+			} else if (update.type === "permission_requested") {
+				// Handle permission request - show dialog
+				console.log("[ChatPanel] Permission requested:", update.title);
+				setPermissionRequest(update);
+			} else if (update.type === "session_end") {
+				// Clear state when session ends
+				setPlanEntries([]);
+				setToolCalls(new Map());
+				setAgentOutputs([]);
+				setPermissionRequest(null);
+				setIsLoading(false);
+			} else if (update.type === "output") {
+				// Handle agent output - add as message in chat
+				console.log(`[ChatPanel] Agent ${update.outputType}:`, update.text);
+				// Keep in agentOutputs for reference
+				setAgentOutputs((prev) => [...prev.slice(-19), update]);
+				// Add as message
+				const outputMsgId = `output-${Date.now()}`;
+				setMessages((prev) => [
+					...prev,
+					{
+						id: outputMsgId,
+						role: "data" as const,
+						parts: [{ type: "output" as const, output: update }],
+					},
+				]);
 			}
 		});
 
@@ -271,7 +412,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 		return () => {
 			subscription.unsubscribe();
 		};
-	}, [agentClient]);
+	}, [agentClient, setCurrentModeId]);
 
 	// Handle click outside to close dropdown
 	useEffect(() => {
@@ -310,12 +451,41 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 			const wd = settings?.agentWorkingDir || "";
 			agentClient
 				.newSession(wd)
-				.then((res) => setAgentSessionId(res.sessionId))
+				.then((res) => {
+					setAgentSessionId(res.sessionId);
+					// Set modes if available from agent
+					if (res.availableModes && res.availableModes.length > 0) {
+						setModes(res.availableModes);
+						// Set current mode to the one marked as current, or first one
+						const currentMode = res.availableModes.find((m) => m.isCurrent);
+						if (currentMode) {
+							setCurrentModeId(currentMode.id);
+						} else if (res.availableModes[0]) {
+							setCurrentModeId(res.availableModes[0].id);
+						}
+					}
+					// Set models if available from agent (experimental)
+					if (res.models) {
+						setAgentModels(res.models);
+						console.log(
+							"[ChatPanel] Agent models loaded:",
+							res.models.availableModels.map((m) => m.name).join(", "),
+						);
+					}
+				})
 				.catch((err) =>
 					console.error("[ChatPanel] Failed to create session:", err),
 				);
 		}
-	}, [agentClient, isInitializing, agentSessionId, settings?.agentWorkingDir]);
+	}, [
+		agentClient,
+		isInitializing,
+		agentSessionId,
+		settings?.agentWorkingDir,
+		setModes,
+		setCurrentModeId,
+		setAgentModels,
+	]);
 
 	// Set default model when settings change
 	useEffect(() => {
@@ -550,7 +720,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 			const displayContent = userContent;
 
 			const userMsg: Message = {
-				id: Date.now().toString(),
+				id: generateMessageId(),
 				role: "user",
 				parts: [{ type: "text", text: displayContent }],
 			};
@@ -577,7 +747,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 					const context = editorCtrl.current.getContext();
 					if (context) {
 						const success = editorCtrl.current.injectDiff({
-							id: Date.now().toString(),
+							id: generateMessageId(),
 							from: context.cursor,
 							to: context.cursor,
 							originalText: "",
@@ -588,14 +758,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 							? "I've proposed an edit in your active editor.\n\nCheck the **green highlight** and use the [✓] button to accept."
 							: "Please open a Markdown file to use edit features.";
 						const assistantMsg: Message = {
-							id: Date.now().toString(),
+							id: generateMessageId(),
 							role: "assistant",
 							parts: [{ type: "text", text: response }],
 						};
 						setMessages((prev) => [...prev, assistantMsg]);
 					} else {
 						const errorMsg: Message = {
-							id: Date.now().toString(),
+							id: generateMessageId(),
 							role: "assistant",
 							parts: [
 								{
@@ -613,7 +783,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 			if (userContent.startsWith("/notes")) {
 				setTimeout(() => {
 					const assistantMsg: Message = {
-						id: Date.now().toString(),
+						id: generateMessageId(),
 						role: "assistant",
 						parts: [
 							{
@@ -631,7 +801,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 			setIsLoading(true);
 			if (!settings) {
 				const errorMsg: Message = {
-					id: Date.now().toString(),
+					id: generateMessageId(),
 					role: "assistant",
 					parts: [
 						{
@@ -649,7 +819,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 			if (settings.provider === AIProviderType.ACP_LOCAL) {
 				if (!agentClient) {
 					const errorMsg: Message = {
-						id: Date.now().toString(),
+						id: generateMessageId(),
 						role: "assistant",
 						parts: [
 							{
@@ -674,7 +844,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 					}
 
 					// Append placeholder
-					const assistantMsgId = Date.now().toString();
+					const assistantMsgId = generateMessageId();
 					setMessages((prev) => [
 						...prev,
 						{
@@ -691,7 +861,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 				} catch (e: any) {
 					console.error(e);
 					const errorMsg: Message = {
-						id: Date.now().toString(),
+						id: generateMessageId(),
 						role: "assistant",
 						parts: [{ type: "text", text: `Agent Error: ${e.message}` }],
 					};
@@ -723,7 +893,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 
 				// 3. Stream Response
 				let fullResponse = "";
-				const assistantMsgId = Date.now().toString();
+				const assistantMsgId = generateMessageId();
 				setMessages((prev) => [
 					...prev,
 					{
@@ -745,7 +915,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 				}
 			} catch (e: any) {
 				const errorMsg: Message = {
-					id: Date.now().toString(),
+					id: generateMessageId(),
 					role: "assistant",
 					parts: [
 						{
@@ -788,7 +958,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 				const result = await aiService.streamChat(coreMessages, selectedModel);
 
 				let fullResponse = "";
-				const assistantMsgId = Date.now().toString();
+				const assistantMsgId = generateMessageId();
 
 				setMessages((prev) => [
 					...prev,
@@ -849,7 +1019,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 				const result = await aiService.streamChat(coreMessages, selectedModel);
 
 				let fullResponse = "";
-				const assistantMsgId = Date.now().toString();
+				const assistantMsgId = generateMessageId();
 
 				setMessages((prev) => [
 					...prev,
@@ -907,6 +1077,33 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 			setShouldFocusInput(true);
 			return newVal;
 		});
+	};
+
+	/**
+	 * Handle user response to a permission request.
+	 * Calls the agent client to resolve the pending permission.
+	 */
+	const handlePermissionResponse = async (
+		requestId: string,
+		optionId: string,
+	) => {
+		if (!agentClient) {
+			console.warn("[ChatPanel] No agent client for permission response");
+			return;
+		}
+
+		try {
+			await agentClient.respondToPermission(requestId, optionId);
+			console.log("[ChatPanel] Permission response sent:", {
+				requestId,
+				optionId,
+			});
+		} catch (e) {
+			console.error("[ChatPanel] Failed to respond to permission:", e);
+		} finally {
+			// Clear the permission request from UI
+			setPermissionRequest(null);
+		}
 	};
 
 	// Get only API models (not agents) for the model selector
@@ -984,78 +1181,79 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	};
 
 	return (
-		<div className="eragear-container">
-			{/* Chat History */}
-			<div className="eragear-chat-area">
-				<div className="eragear-chat-header">
-					<div
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: "8px",
-						}}
-					>
-						<span className="eragear-chat-title">
-							{activeMode === "chat" ? "Chat" : "Playground"}
-						</span>
-						{settings && (
-							<span
-								className="eragear-model-badge"
-								style={{
-									fontSize: "0.75rem",
-									padding: "2px 6px",
-									borderRadius: "4px",
-									backgroundColor:
+		<AcpContextProvider acpAdapter={agentClient as AcpAdapter | null}>
+			<div className="eragear-container">
+				{/* Chat History */}
+				<div className="eragear-chat-area">
+					<div className="eragear-chat-header">
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "8px",
+							}}
+						>
+							<span className="eragear-chat-title">
+								{activeMode === "chat" ? "Chat" : "Playground"}
+							</span>
+							{settings && (
+								<span
+									className="eragear-model-badge"
+									style={{
+										fontSize: "0.75rem",
+										padding: "2px 6px",
+										borderRadius: "4px",
+										backgroundColor:
+											settings.provider === AIProviderType.ACP_LOCAL
+												? agentError
+													? "var(--color-red)"
+													: isInitializing
+														? "var(--color-yellow)"
+														: agentClient
+															? "var(--color-green)"
+															: "var(--text-muted)"
+												: "var(--interactive-accent)",
+										color: "black",
+										opacity: 1,
+									}}
+									title={
 										settings.provider === AIProviderType.ACP_LOCAL
 											? agentError
-												? "var(--color-red)"
+												? `Error: ${agentError.message}`
 												: isInitializing
-													? "var(--color-yellow)"
+													? "Initializing agent..."
 													: agentClient
-														? "var(--color-green)"
-														: "var(--text-muted)"
-											: "var(--interactive-accent)",
-									color: "white",
-									opacity: 1,
-								}}
-								title={
-									settings.provider === AIProviderType.ACP_LOCAL
+														? "Agent connected"
+														: "Agent not connected"
+											: undefined
+									}
+								>
+									{settings.provider === AIProviderType.ACP_LOCAL
 										? agentError
-											? `Error: ${agentError.message}`
+											? "Agent Error"
 											: isInitializing
-												? "Initializing agent..."
+												? "Connecting..."
 												: agentClient
-													? "Agent connected"
-													: "Agent not connected"
-										: undefined
-								}
-							>
-								{settings.provider === AIProviderType.ACP_LOCAL
-									? agentError
-										? "Agent Error"
-										: isInitializing
-											? "Connecting..."
-											: agentClient
-												? "Connected"
-												: "Disconnected"
-									: `Model: ${selectedModel || "Loading..."}`}
-							</span>
-						)}
+													? "Connected"
+													: "Disconnected"
+										: `Model: ${selectedModel || "Loading..."}`}
+								</span>
+							)}
 
-						{/* Mode Selector for ACP - Shows current agent name and mode */}
-						{chatContext.mode === "agent" && chatContext.agentName && (
-							<span
-								style={{
-									fontSize: "0.75rem",
-									color: "var(--text-muted)",
-									marginLeft: "4px",
-								}}
-							>
-								• {chatContext.agentName}
-							</span>
-						)}
+							{/* Mode Selector for ACP - Shows current agent name and mode */}
+							{chatContext.mode === "agent" && chatContext.agentName && (
+								<span
+									style={{
+										fontSize: "0.75rem",
+										color: "var(--text-muted)",
+										marginLeft: "4px",
+									}}
+								>
+									• {chatContext.agentName}
+								</span>
+							)}
 
-						{settings.provider === AIProviderType.ACP_LOCAL &&
+							{/* {settings.provider === AIProviderType.ACP_LOCAL &&
 							modes.length > 0 && (
 								<select
 									value={currentModeId}
@@ -1067,12 +1265,13 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 										setCurrentModeId(newMode);
 									}}
 									style={{
-										background: "transparent",
-										border: "none",
-										color: "var(--text-muted)",
-										fontSize: "0.7rem",
+										background: "var(--background-secondary)",
+										border: "1px solid var(--background-modifier-border)",
+										borderRadius: "4px",
+										color: "var(--text-normal)",
+										fontSize: "0.75rem",
 										cursor: "pointer",
-										padding: "0 4px",
+										padding: "2px 6px",
 										marginLeft: "8px",
 									}}
 								>
@@ -1082,141 +1281,181 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 										</option>
 									))}
 								</select>
-							)}
-					</div>
+							)} */}
+						</div>
 
-					{/* New Chat Button with Dropdown */}
-					<div style={{ position: "relative" }}>
-						<button
-							ref={newChatButtonRef}
-							type="button"
-							className="eragear-add-btn"
-							onClick={handleNewChat}
-							title="New Chat"
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "4px",
-							}}
-						>
-							<IconPlus />
-							<IconChevronDown />
-						</button>
-
-						{/* Dropdown Menu - Fixed positioning to prevent clipping */}
-						{showNewChatMenu && (
-							<div
-								ref={dropdownRef}
-								className="eragear-dropdown-menu"
+						{/* New Chat Button with Dropdown */}
+						<div style={{ position: "relative" }}>
+							<button
+								ref={newChatButtonRef}
+								type="button"
+								className="eragear-add-btn"
+								onClick={handleNewChat}
+								title="New Chat"
 								style={{
-									position: "fixed",
-									top: `${dropdownPos.top}px`,
-									right: `${dropdownPos.right}px`,
-									background: "var(--background-primary)",
-									border: "1px solid var(--background-modifier-border)",
-									borderRadius: "8px",
-									boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-									minWidth: "220px",
-									zIndex: 100,
-									overflow: "hidden",
+									display: "flex",
+									alignItems: "center",
+									gap: "4px",
 								}}
 							>
-								{/* API Models Section */}
+								<IconPlus />
+								<IconChevronDown />
+							</button>
+
+							{/* Dropdown Menu - Fixed positioning to prevent clipping */}
+							{showNewChatMenu && (
 								<div
+									ref={dropdownRef}
+									className="eragear-dropdown-menu"
 									style={{
-										padding: "8px 12px",
-										borderBottom: "1px solid var(--background-modifier-border)",
+										position: "fixed",
+										top: `${dropdownPos.top}px`,
+										right: `${dropdownPos.right}px`,
+										background: "var(--background-primary)",
+										border: "1px solid var(--background-modifier-border)",
+										borderRadius: "8px",
+										boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+										minWidth: "220px",
+										zIndex: 100,
+										overflow: "hidden",
 									}}
 								>
-									<button
-										type="button"
-										onClick={handleNewAPIChat}
-										className="eragear-dropdown-item"
-									>
-										<span>📝</span>
-										<span>New Chat (API Models)</span>
-									</button>
-								</div>
-
-								{/* ACP Agents Section */}
-								<div style={{ padding: "4px 0" }}>
+									{/* API Models Section */}
 									<div
 										style={{
-											padding: "4px 12px",
-											fontSize: "0.7rem",
-											color: "var(--text-muted)",
-											textTransform: "uppercase",
-											letterSpacing: "0.5px",
+											padding: "8px 12px",
+											borderBottom:
+												"1px solid var(--background-modifier-border)",
 										}}
 									>
-										External Agents
-									</div>
-									{getAvailableAgents().map((agent) => (
 										<button
 											type="button"
-											key={agent.id}
-											onClick={() => handleNewAgentChat(agent)}
+											onClick={handleNewAPIChat}
 											className="eragear-dropdown-item"
 										>
-											<span>🤖</span>
-											<span>{agent.name}</span>
+											<span>📝</span>
+											<span>New Chat (API Models)</span>
 										</button>
-									))}
-									{getAvailableAgents().length === 0 && (
+									</div>
+
+									{/* ACP Agents Section */}
+									<div style={{ padding: "4px 0" }}>
 										<div
 											style={{
-												padding: "8px 12px",
+												padding: "4px 12px",
+												fontSize: "0.7rem",
 												color: "var(--text-muted)",
-												fontSize: "0.8rem",
+												textTransform: "uppercase",
+												letterSpacing: "0.5px",
 											}}
 										>
-											No agents configured
+											External Agents
 										</div>
-									)}
+										{getAvailableAgents().map((agent) => (
+											<button
+												type="button"
+												key={agent.id}
+												onClick={() => handleNewAgentChat(agent)}
+												className="eragear-dropdown-item"
+											>
+												<span>🤖</span>
+												<span>{agent.name}</span>
+											</button>
+										))}
+										{getAvailableAgents().length === 0 && (
+											<div
+												style={{
+													padding: "8px 12px",
+													color: "var(--text-muted)",
+													fontSize: "0.8rem",
+												}}
+											>
+												No agents configured
+											</div>
+										)}
+									</div>
 								</div>
-							</div>
-						)}
+							)}
+						</div>
 					</div>
+
+					<MessageList
+						messages={messages}
+						isLoading={isLoading}
+						onDelete={handleDelete}
+						onRegenerate={handleRegenerate}
+						onInsert={handleInsert}
+					/>
 				</div>
 
-				<MessageList
-					messages={messages}
-					isLoading={isLoading}
-					onDelete={handleDelete}
-					onRegenerate={handleRegenerate}
-					onInsert={handleInsert}
-				/>
+				{/* Suggestion Popover */}
+
+				<div className="eragear-input-container">
+					{/* Context Badges */}
+					<ContextBadges
+						selectedFiles={selectedFiles}
+						selectedFolders={selectedFolders}
+						onRemoveFile={(path) =>
+							setSelectedFiles((prev) => prev.filter((f) => f.path !== path))
+						}
+						onRemoveFolder={(path) =>
+							setSelectedFolders((prev) => prev.filter((f) => f !== path))
+						}
+					/>
+
+					{/* Input Area */}
+					<ChatInput
+						app={app}
+						input={input}
+						onInputChange={handleInputChange}
+						onSend={() => handleSendMessage()}
+						onModelChange={handleModelChange}
+						onTriggerContext={handleTriggerContext}
+						activeModelId={selectedModel}
+						availableModels={availableModelsForInput}
+						slashCommandsList={activeSlashCommands}
+						onAutoMentionToggle={handleAutoMentionToggle}
+						// Agent mode props - only show when in agent mode with active session
+						agentModes={
+							chatContext.mode === "agent" && agentSessionId ? modes : []
+						}
+						currentModeId={currentModeId}
+						onModeChange={(modeId) => {
+							if (agentSessionId) {
+								setMode(modeId, agentSessionId);
+							}
+							setCurrentModeId(modeId);
+						}}
+						// Agent model props (experimental - only show when in ACP mode with active session)
+						agentModels={
+							chatContext.mode === "agent" && agentSessionId
+								? agentModels
+								: null
+						}
+						onAgentModelChange={(modelId) => {
+							if (agentSessionId) {
+								setAgentModel(modelId, agentSessionId);
+							}
+						}}
+						// Agent plan props
+						planEntries={planEntries}
+						onDismissPlan={() => setPlanEntries([])}
+					/>
+				</div>
+
+				{/* Permission Request Dialog - Modal overlay */}
+				{permissionRequest && (
+					<PermissionDialog
+						request={permissionRequest}
+						onRespond={(optionId) =>
+							handlePermissionResponse(permissionRequest.requestId, optionId)
+						}
+						onDismiss={() =>
+							handlePermissionResponse(permissionRequest.requestId, "cancelled")
+						}
+					/>
+				)}
 			</div>
-
-			{/* Suggestion Popover */}
-
-			<div className="eragear-input-container">
-				{/* Context Badges */}
-				<ContextBadges
-					selectedFiles={selectedFiles}
-					selectedFolders={selectedFolders}
-					onRemoveFile={(path) =>
-						setSelectedFiles((prev) => prev.filter((f) => f.path !== path))
-					}
-					onRemoveFolder={(path) =>
-						setSelectedFolders((prev) => prev.filter((f) => f !== path))
-					}
-				/>
-
-				{/* Input Area */}
-				<ChatInput
-					app={app}
-					input={input}
-					onInputChange={handleInputChange}
-					onSend={() => handleSendMessage()}
-					onModelChange={handleModelChange}
-					onTriggerContext={handleTriggerContext}
-					activeModelId={selectedModel}
-					availableModels={availableModelsForInput}
-					slashCommandsList={activeSlashCommands}
-					onAutoMentionToggle={handleAutoMentionToggle}
-				/>
-			</div>
-		</div>
+		</AcpContextProvider>
 	);
 };

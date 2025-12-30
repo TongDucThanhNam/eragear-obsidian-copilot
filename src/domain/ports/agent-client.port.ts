@@ -1,6 +1,9 @@
 import type { AgentConfig } from "../models/agent-config";
 import type { AgentError } from "../models/agent-error";
-import type { SessionUpdate } from "../models/session-update";
+import type {
+	SessionModelState,
+	SessionUpdate,
+} from "../models/session-update";
 
 // ============================================================================
 // Connection State - Tracks the lifecycle of the agent connection
@@ -46,6 +49,8 @@ export interface NewSessionResult {
 		description: string;
 		isCurrent: boolean;
 	}[];
+	/** Models available in this session (experimental, agent-dependent) */
+	models?: SessionModelState;
 }
 
 export interface IAgentClient {

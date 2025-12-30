@@ -112,42 +112,52 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
 export const BUILTIN_CHAT_MODELS: ChatModelConfig[] = [
 	// OpenAI Models
 	{
-		id: "openai-gpt-4o",
-		name: "GPT-4o",
+		id: "openai-gpt-5-nano",
+		name: "GPT-5 Nano",
 		provider: "openai",
 		type: "api",
-		model: "gpt-4o",
+		model: "gpt-5-nano",
 		enabled: true,
 		isBuiltIn: true,
 		capabilities: { streaming: true, vision: true, functionCalling: true },
 	},
 	{
-		id: "openai-gpt-4o-mini",
-		name: "GPT-4o Mini",
+		id: "openai-gpt-5-mini",
+		name: "GPT-5 Mini",
 		provider: "openai",
 		type: "api",
-		model: "gpt-4o-mini",
+		model: "gpt-5-mini",
 		enabled: true,
 		isBuiltIn: true,
 		capabilities: { streaming: true, vision: true, functionCalling: true },
 	},
 	// Gemini Models
 	{
-		id: "gemini-2.0-flash",
-		name: "Gemini 2.0 Flash",
+		id: "gemini-2.5-flash-lite",
+		name: "Gemini 2.5 Flash Lite",
 		provider: "gemini",
 		type: "api",
-		model: "gemini-2.0-flash-exp",
+		model: "gemini-2.5-flash-lite",
 		enabled: true,
 		isBuiltIn: true,
 		capabilities: { streaming: true, vision: true, functionCalling: true },
 	},
 	{
-		id: "gemini-1.5-pro",
-		name: "Gemini 1.5 Pro",
+		id: "gemini-3-flash",
+		name: "Gemini 3 Flash",
 		provider: "gemini",
 		type: "api",
-		model: "gemini-1.5-pro",
+		model: "gemini-3-flash",
+		enabled: true,
+		isBuiltIn: true,
+		capabilities: { streaming: true, vision: true, functionCalling: true },
+	},
+	{
+		id: "gemini-3-pro",
+		name: "Gemini 3 Pro",
+		provider: "gemini",
+		type: "api",
+		model: "gemini-3-pro",
 		enabled: true,
 		isBuiltIn: true,
 		capabilities: { streaming: true, vision: true, functionCalling: true },
@@ -155,7 +165,7 @@ export const BUILTIN_CHAT_MODELS: ChatModelConfig[] = [
 	// DeepSeek Models
 	{
 		id: "deepseek-chat",
-		name: "DeepSeek V3",
+		name: "DeepSeek V3.2",
 		provider: "deepseek",
 		type: "api",
 		model: "deepseek-chat",
@@ -165,7 +175,7 @@ export const BUILTIN_CHAT_MODELS: ChatModelConfig[] = [
 	},
 	{
 		id: "deepseek-reasoner",
-		name: "DeepSeek R1",
+		name: "DeepSeek V3 Thinking",
 		provider: "deepseek",
 		type: "api",
 		model: "deepseek-reasoner",
@@ -173,7 +183,7 @@ export const BUILTIN_CHAT_MODELS: ChatModelConfig[] = [
 		isBuiltIn: true,
 		capabilities: { streaming: true },
 	},
-
+	// ACP CLI Agent
 	{
 		id: "acp-gemini-cli",
 		name: "Gemini CLI",
@@ -184,7 +194,6 @@ export const BUILTIN_CHAT_MODELS: ChatModelConfig[] = [
 		enabled: true,
 		isBuiltIn: true,
 	},
-	// ACP Agents
 	{
 		id: "acp-claude-code",
 		name: "Claude Code",
@@ -241,3 +250,36 @@ export const DEFAULT_SETTINGS: MyPluginSettings = {
 	cloudflareAccessSecret: "",
 	cloudflareApiEndpoint: "https://api.eragear.app",
 };
+
+/**
+ * Initialize settings with vault directory path
+ * Called during plugin load to set default workingDir for agents
+ */
+export function initializeSettingsWithVaultPath(
+	settings: MyPluginSettings,
+	vaultPath: string,
+): MyPluginSettings {
+	// Set default working directory to vault if not already set
+	if (!settings.agentWorkingDir) {
+		settings.agentWorkingDir = vaultPath;
+	}
+
+	// Update agents with vault path if their workingDir is empty
+	settings.agents = settings.agents.map((agent) => ({
+		...agent,
+		workingDir: agent.workingDir || vaultPath,
+	}));
+
+	// Update chat models (ACP agents) with vault path if their workingDir is not set
+	settings.chatModels = settings.chatModels.map((model) => {
+		if (model.type === "agent" && !model.workingDir) {
+			return {
+				...model,
+				workingDir: vaultPath,
+			};
+		}
+		return model;
+	});
+
+	return settings;
+}

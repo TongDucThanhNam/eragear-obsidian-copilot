@@ -1,9 +1,15 @@
 import type { App } from "obsidian";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type {
+	PlanEntry,
+	SessionModelState,
+} from "../../../../domain/models/session-update";
 import { useMentions } from "../../../hooks/useMentions";
 import { useSlashCommands } from "../../../hooks/useSlashCommands";
+import { AgentPlan } from "./AgentPlan";
 import {
+	IconChevronDown,
 	IconCornerDownLeft,
 	IconMic,
 	IconPlus,
@@ -64,6 +70,13 @@ interface ChatModelOption {
 	type: "model" | "agent";
 }
 
+interface AgentMode {
+	id: string;
+	name: string;
+	description?: string;
+	isCurrent?: boolean;
+}
+
 interface ChatInputProps {
 	input: string;
 	onInputChange: (input: string) => void;
@@ -75,6 +88,16 @@ interface ChatInputProps {
 	app: App;
 	slashCommandsList?: SuggestionItem[];
 	onAutoMentionToggle?: (disabled: boolean) => void;
+	// Agent mode props
+	agentModes?: AgentMode[];
+	currentModeId?: string;
+	onModeChange?: (modeId: string) => void;
+	// Agent model props (experimental - for agents that support model selection)
+	agentModels?: SessionModelState | null;
+	onAgentModelChange?: (modelId: string) => void;
+	// Agent plan props
+	planEntries?: PlanEntry[];
+	onDismissPlan?: () => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -88,6 +111,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 	app,
 	slashCommandsList,
 	onAutoMentionToggle,
+	// Agent mode props
+	agentModes = [],
+	currentModeId = "",
+	onModeChange,
+	// Agent model props (experimental)
+	agentModels,
+	onAgentModelChange,
+	// Agent plan props
+	planEntries = [],
+	onDismissPlan,
 }) => {
 	// biome-ignore lint/style/noNonNullAssertion: Ref is always attached
 	const textareaRef = useRef<HTMLTextAreaElement>(null!);
@@ -221,6 +254,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
 	return (
 		<div className="eragear-input-section" style={{ position: "relative" }}>
+			{/* Agent Plan Display */}
+			{planEntries.length > 0 && (
+				<AgentPlan entries={planEntries} onDismiss={onDismissPlan} />
+			)}
+
 			{/* Popovers */}
 			{mentions.isOpen && (
 				<SuggestionPopover
@@ -265,46 +303,87 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 					</div>
 
 					<div className="eragear-chat-input-right">
-						<select
-							className="eragear-model-selector"
-							value={activeModelId}
-							onChange={(e) => onModelChange(e.target.value)}
-						>
-							{availableModels.length > 0 ? (
-								<>
-									{/* Group: API Models */}
-									{availableModels.filter((m) => m.type === "model").length >
-										0 && (
-										<optgroup label="API Models">
-											{availableModels
-												.filter((m) => m.type === "model")
-												.map((m) => (
-													<option key={m.id} value={m.id}>
-														{m.name}
-													</option>
-												))}
-										</optgroup>
-									)}
-									{/* Group: Local Agents */}
-									{availableModels.filter((m) => m.type === "agent").length >
-										0 && (
-										<optgroup label="Local Agents">
-											{availableModels
-												.filter((m) => m.type === "agent")
-												.map((m) => (
-													<option key={m.id} value={m.id}>
-														{m.name}
-													</option>
-												))}
-										</optgroup>
-									)}
-								</>
-							) : (
-								<option value="" disabled>
-									No models configured
-								</option>
-							)}
-						</select>
+						{/* Model Selector - Shows either Agent models OR API models, not both */}
+						{agentModels &&
+						agentModels.availableModels.length > 0 &&
+						onAgentModelChange ? (
+							// Agent Model Selector - When agent provides models
+							<div
+								className="eragear-model-selector-wrapper"
+								title="Agent Model"
+							>
+								<select
+									className="eragear-model-selector"
+									value={agentModels.currentModelId}
+									onChange={(e) => onAgentModelChange(e.target.value)}
+								>
+									{agentModels.availableModels.map((model) => (
+										<option key={model.modelId} value={model.modelId}>
+											{model.name}
+										</option>
+									))}
+								</select>
+								<IconChevronDown />
+							</div>
+						) : (
+							// API Model Selector - Default when no agent models
+							<select
+								className="eragear-model-selector"
+								value={activeModelId}
+								onChange={(e) => onModelChange(e.target.value)}
+							>
+								{availableModels.length > 0 ? (
+									<>
+										{/* Group: API Models */}
+										{availableModels.filter((m) => m.type === "model").length >
+											0 && (
+											<optgroup label="API Models">
+												{availableModels
+													.filter((m) => m.type === "model")
+													.map((m) => (
+														<option key={m.id} value={m.id}>
+															{m.name}
+														</option>
+													))}
+											</optgroup>
+										)}
+										{/* Group: Local Agents */}
+										{availableModels.filter((m) => m.type === "agent").length >
+											0 && (
+											<optgroup label="Local Agents">
+												{availableModels
+													.filter((m) => m.type === "agent")
+													.map((m) => (
+														<option key={m.id} value={m.id}>
+															{m.name}
+														</option>
+													))}
+											</optgroup>
+										)}
+									</>
+								) : (
+									<option value="" disabled>
+										No models configured
+									</option>
+								)}
+							</select>
+						)}
+
+						{/* Agent Mode Selector - Only shown when agent has modes */}
+						{agentModes.length > 0 && onModeChange && (
+							<select
+								className="eragear-mode-selector"
+								value={currentModeId}
+								onChange={(e) => onModeChange(e.target.value)}
+								title="Agent Mode"
+							>
+								{agentModes.map((mode) => (
+									<option key={mode.id} value={mode.id}>
+										{mode.name}
+									</option>
+								))}
+							</select>
+						)}
 
 						<button
 							type="button"

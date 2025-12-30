@@ -42,20 +42,6 @@ export const MessageList: React.FC<MessageListProps> = ({
 					onInsert={onInsert}
 				/>
 			))}
-			{isLoading && (
-				<div className="message message-assistant">
-					<div className="message-avatar">🤖</div>
-					<div className="message-content">
-						<div className="message-bubble">
-							<div className="typing-indicator">
-								<span></span>
-								<span></span>
-								<span></span>
-							</div>
-						</div>
-					</div>
-				</div>
-			)}
 			<div ref={messagesEndRef} />
 		</div>
 	);

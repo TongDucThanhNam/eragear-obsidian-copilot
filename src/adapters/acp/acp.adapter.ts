@@ -13,9 +13,13 @@
 
 import * as acp from "@agentclientprotocol/sdk";
 import { type ChildProcess, spawn } from "child_process";
+import type { App } from "obsidian";
+import { TerminalManager } from "../../core/terminal-manager";
+import { VaultManager } from "../../core/vault-manager";
 import type { AgentConfig } from "../../domain/models/agent-config";
 import { AgentError } from "../../domain/models/agent-error";
 import type {
+	SessionModelState,
 	SessionUpdate,
 	ToolCallLocation,
 } from "../../domain/models/session-update";
@@ -46,11 +50,12 @@ interface AcpSessionUpdatePayload {
 	locations?: ToolCallLocation[];
 	entries?: Array<{
 		id?: string;
-		title?: string;
-		description?: string;
+		content?: string;
+		priority?: string;
 		status?: string;
 	}>;
 	modeId?: string;
+	currentModeId?: string;
 	availableCommands?: Array<{
 		name: string;
 		description?: string;
@@ -80,6 +85,12 @@ export class AcpAdapter implements IAgentClient {
 	// Private State
 	// ========================================================================
 
+	/** Obsidian App instance for vault operations */
+	private app: App | undefined;
+
+	/** Vault manager for file operations */
+	private vaultManager: VaultManager | null = null;
+
 	/** The spawned agent process */
 	private agentProcess: ChildProcess | null = null;
 
@@ -94,6 +105,20 @@ export class AcpAdapter implements IAgentClient {
 
 	/** Currently connected agent's ID */
 	private currentAgentId: string | null = null;
+
+	/** Terminal manager for process execution */
+	private terminalManager = new TerminalManager();
+
+	// ========================================================================
+	// Constructor
+	// ========================================================================
+
+	constructor(app?: App) {
+		this.app = app;
+		if (app) {
+			this.vaultManager = new VaultManager(app);
+		}
+	}
 
 	// ========================================================================
 	// Subscription Management
@@ -120,6 +145,21 @@ export class AcpAdapter implements IAgentClient {
 	/** Array of cleanup functions for event listeners */
 	private cleanupFunctions: Array<() => void> = [];
 
+	/**
+	 * Pending permission requests awaiting user response.
+	 * Maps requestId -> { resolve, reject } for Promise-based flow.
+	 */
+	private pendingPermissions = new Map<
+		string,
+		{
+			resolve: (outcome: {
+				outcome: "selected" | "cancelled";
+				optionId?: string;
+			}) => void;
+			reject: (error: Error) => void;
+		}
+	>();
+
 	// ========================================================================
 	// ACP Client Interface Implementation
 	// Required by SDK: ClientSideConnection expects a Client-like object
@@ -129,14 +169,62 @@ export class AcpAdapter implements IAgentClient {
 	 * Handle permission requests from the agent.
 	 * Called by ACP SDK when agent needs user permission.
 	 *
-	 * TODO: Implement proper permission UI flow
-	 * Currently denies all requests as a safe default.
+	 * This method:
+	 * 1. Generates a unique request ID
+	 * 2. Emits a permission_requested session update
+	 * 3. Waits for UI to call respondToPermission()
+	 * 4. Returns the user's decision to the SDK
 	 */
-	async requestPermission(_params: unknown): Promise<{ decision: string }> {
-		console.warn(
-			"[AcpAdapter] Permission requested but not implemented, denying",
-		);
-		return { decision: "deny" };
+	async requestPermission(
+		params: unknown,
+	): Promise<{ outcome: { outcome: string; optionId?: string } }> {
+		const p = params as {
+			sessionId?: string;
+			toolCall?: { toolCallId?: string; title?: string };
+			options?: Array<{ optionId: string; name: string; kind?: string }>;
+			title?: string;
+			description?: string;
+		};
+
+		// Generate a unique request ID
+		const requestId = `perm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+		console.log("[AcpAdapter] Permission requested:", {
+			requestId,
+			title: p.title || p.toolCall?.title,
+			optionsCount: p.options?.length || 0,
+			optionsRaw: p.options,
+		});
+
+		// Create a promise that will be resolved when user responds
+		const responsePromise = new Promise<{
+			outcome: "selected" | "cancelled";
+			optionId?: string;
+		}>((resolve, reject) => {
+			this.pendingPermissions.set(requestId, { resolve, reject });
+		});
+
+		// Emit permission request as a session update for UI to display
+		const permissionUpdate: SessionUpdate = {
+			type: "permission_requested",
+			requestId,
+			title: p.title || p.toolCall?.title || "Permission Required",
+			description: p.description,
+			options: (p.options || []).map((o) => ({
+				id: o.optionId,
+				label: o.name,
+				isDefault: o.kind === "allow_once" || o.kind === "allow_session",
+			})),
+		};
+
+		this.notifySessionUpdate(permissionUpdate);
+
+		// Wait for user response (from respondToPermission)
+		const outcome = await responsePromise;
+
+		console.log("[AcpAdapter] Permission response:", outcome);
+
+		return { outcome };
 	}
 
 	// ========================================================================
@@ -345,10 +433,17 @@ export class AcpAdapter implements IAgentClient {
 
 			// SDK constructor: (toClient: (agent) => Client, stream)
 			// 'this' provides the Client interface (requestPermission, sessionUpdate, etc.)
-			this.connection = new acp.ClientSideConnection(
-				() => this as unknown as acp.Client,
-				stream,
-			);
+			this.connection = new acp.ClientSideConnection(() => {
+				console.log(
+					"[AcpAdapter] toClient callback invoked, returning this with methods:",
+					{
+						hasCreateTerminal: typeof this.createTerminal === "function",
+						hasTerminalOutput: typeof this.terminalOutput === "function",
+						hasReleaseTerminal: typeof this.releaseTerminal === "function",
+					},
+				);
+				return this as unknown as acp.Client;
+			}, stream);
 
 			// ================================================================
 			// Step 8: Perform ACP handshake
@@ -358,7 +453,8 @@ export class AcpAdapter implements IAgentClient {
 				clientCapabilities: {
 					// Declare capabilities we support
 					fs: { readTextFile: true, writeTextFile: true },
-					terminal: true,
+					// terminal: false - Disabled to force agent to use MCP tools
+					// Agent will use mcp__acp__BashOutput instead
 				},
 			});
 
@@ -465,6 +561,22 @@ export class AcpAdapter implements IAgentClient {
 
 			const modes = result.modes?.availableModes || [];
 
+			// Extract models from ACP session result (experimental)
+			let models: SessionModelState | undefined;
+			if (result.models) {
+				models = {
+					availableModels: result.models.availableModels.map((m) => ({
+						modelId: m.modelId,
+						name: m.name,
+						description: m.description ?? undefined,
+					})),
+					currentModelId: result.models.currentModelId,
+				};
+				console.log(
+					`[AcpAdapter] Session models: ${models.availableModels.map((m) => m.modelId).join(", ")} (current: ${models.currentModelId})`,
+				);
+			}
+
 			return {
 				sessionId: result.sessionId,
 				availableModes: modes.map((m) => ({
@@ -473,6 +585,7 @@ export class AcpAdapter implements IAgentClient {
 					description: m.description || "",
 					isCurrent: m.id === result.modes?.currentModeId,
 				})),
+				models,
 			};
 		} catch (e) {
 			console.error("[AcpAdapter] Failed to create new session:", e);
@@ -553,18 +666,37 @@ export class AcpAdapter implements IAgentClient {
 	/**
 	 * Respond to a permission request from the agent.
 	 *
-	 * TODO: Implement proper permission response flow.
+	 * Resolves the pending promise created by requestPermission(),
+	 * which in turn completes the SDK's permission request flow.
+	 *
+	 * @param requestId - The ID from the permission_requested update
+	 * @param optionId - The ID of the selected option, or "cancelled" to cancel
 	 */
 	async respondToPermission(
 		requestId: string,
 		optionId: string,
 	): Promise<void> {
-		console.warn(
-			"[AcpAdapter] respondToPermission() not implemented",
-			requestId,
-			optionId,
-		);
-		// TODO: Use extMethod or appropriate SDK method to respond
+		const pending = this.pendingPermissions.get(requestId);
+
+		if (!pending) {
+			console.warn(
+				"[AcpAdapter] No pending permission request for:",
+				requestId,
+			);
+			return;
+		}
+
+		// Remove from pending map
+		this.pendingPermissions.delete(requestId);
+
+		// Resolve with appropriate outcome
+		if (optionId === "cancelled") {
+			pending.resolve({ outcome: "cancelled" });
+		} else {
+			pending.resolve({ outcome: "selected", optionId });
+		}
+
+		console.log("[AcpAdapter] Permission resolved:", { requestId, optionId });
 	}
 
 	// ========================================================================
@@ -686,7 +818,11 @@ export class AcpAdapter implements IAgentClient {
 	 */
 	async sessionUpdate(params: acp.SessionNotification): Promise<void> {
 		const update = params.update as AcpSessionUpdatePayload;
-		console.log("[AcpAdapter] Session update received:", update.sessionUpdate);
+		// console.log(
+		// 	"[AcpAdapter] Session update received:",
+		// 	update.sessionUpdate,
+		// 	update,
+		// );
 
 		// Skip if no subscribers
 		if (this.sessionUpdateSubscribers.size === 0) {
@@ -696,7 +832,10 @@ export class AcpAdapter implements IAgentClient {
 		const parsedUpdate = this.parseSessionUpdate(update);
 
 		if (parsedUpdate) {
+			// console.log("[AcpAdapter] Parsed update:", parsedUpdate);
 			this.notifySessionUpdate(parsedUpdate);
+		} else {
+			console.warn("[AcpAdapter] Failed to parse update:", update);
 		}
 	}
 
@@ -717,8 +856,23 @@ export class AcpAdapter implements IAgentClient {
 			// ================================================================
 			// Text Content Updates
 			// ================================================================
+			case "user_message_chunk":
+				if (
+					update.content?.type === "text" &&
+					update.content.text !== undefined
+				) {
+					return {
+						type: "user_message_chunk",
+						text: update.content.text,
+					};
+				}
+				break;
+
 			case "agent_message_chunk":
-				if (update.content?.type === "text" && update.content.text) {
+				if (
+					update.content?.type === "text" &&
+					update.content.text !== undefined
+				) {
 					return {
 						type: "agent_message_chunk",
 						text: update.content.text,
@@ -727,7 +881,10 @@ export class AcpAdapter implements IAgentClient {
 				break;
 
 			case "agent_thought_chunk":
-				if (update.content?.type === "text" && update.content.text) {
+				if (
+					update.content?.type === "text" &&
+					update.content.text !== undefined
+				) {
 					return {
 						type: "agent_thought_chunk",
 						text: update.content.text,
@@ -739,6 +896,12 @@ export class AcpAdapter implements IAgentClient {
 			// Tool Call Updates
 			// ================================================================
 			case "tool_call":
+				console.log("[AcpAdapter] Processing tool_call:", {
+					toolCallId: update.toolCallId,
+					title: update.title,
+					status: update.status,
+					contentRaw: update.content,
+				});
 				return {
 					type: "tool_call",
 					toolCallId: update.toolCallId || "unknown",
@@ -778,8 +941,8 @@ export class AcpAdapter implements IAgentClient {
 					type: "plan",
 					entries: (update.entries || []).map((e) => ({
 						id: e.id || `step-${Math.random().toString(36).substr(2, 9)}`,
-						title: e.title || "Step",
-						description: e.description || "",
+						title: e.content || "Step",
+						description: e.priority || "",
 						status: this.mapPlanStatus(e.status),
 					})),
 				};
@@ -790,7 +953,7 @@ export class AcpAdapter implements IAgentClient {
 			case "current_mode_update":
 				return {
 					type: "current_mode_update",
-					currentModeId: update.modeId || "default",
+					currentModeId: update.currentModeId || update.modeId || "default",
 				};
 
 			// ================================================================
@@ -943,6 +1106,13 @@ export class AcpAdapter implements IAgentClient {
 		}
 		this.cleanupFunctions = [];
 
+		// Cancel all pending permission requests
+		for (const [requestId, pending] of this.pendingPermissions) {
+			pending.resolve({ outcome: "cancelled" });
+			console.log("[AcpAdapter] Cancelled pending permission:", requestId);
+		}
+		this.pendingPermissions.clear();
+
 		// Clear subscriptions
 		this.sessionUpdateSubscribers.clear();
 		this.errorSubscribers.clear();
@@ -956,6 +1126,163 @@ export class AcpAdapter implements IAgentClient {
 		// Update state
 		this.connectionState = ConnectionState.DISCONNECTED;
 
+		// Kill all running terminals
+		this.terminalManager.killAllTerminals();
+
 		console.log("[AcpAdapter] Cleanup complete");
+	}
+
+	// ========================================================================
+	// Terminal Operations (ACP Client interface)
+	// These methods are called by the ACP SDK when agent requests terminal ops
+	// ========================================================================
+
+	/**
+	 * Create a new terminal and execute a command.
+	 * Called by ACP SDK when agent wants to run a command.
+	 */
+	createTerminal(
+		params: acp.CreateTerminalRequest,
+	): Promise<acp.CreateTerminalResponse> {
+		console.log("[AcpAdapter] createTerminal called with params:", params);
+
+		// Use current config's working directory if cwd is not provided
+		const modifiedParams = {
+			...params,
+			cwd: params.cwd || this.currentConfig?.workingDirectory || "",
+		};
+		console.log("[AcpAdapter] Using modified params:", modifiedParams);
+
+		const terminalId = this.terminalManager.createTerminal(modifiedParams);
+		return Promise.resolve({ terminalId });
+	}
+
+	/**
+	 * Get terminal output.
+	 * Called by UI components to poll for output.
+	 */
+	terminalOutput(
+		params: acp.TerminalOutputRequest,
+	): Promise<acp.TerminalOutputResponse> {
+		const result = this.terminalManager.getOutput(params.terminalId);
+		if (!result) {
+			throw new Error(`Terminal ${params.terminalId} not found`);
+		}
+		return Promise.resolve(result);
+	}
+
+	/**
+	 * Wait for terminal to exit.
+	 */
+	async waitForTerminalExit(
+		params: acp.WaitForTerminalExitRequest,
+	): Promise<acp.WaitForTerminalExitResponse> {
+		return await this.terminalManager.waitForExit(params.terminalId);
+	}
+
+	/**
+	 * Kill a running terminal.
+	 */
+	killTerminal(
+		params: acp.KillTerminalCommandRequest,
+	): Promise<acp.KillTerminalCommandResponse> {
+		const success = this.terminalManager.killTerminal(params.terminalId);
+		if (!success) {
+			throw new Error(`Terminal ${params.terminalId} not found`);
+		}
+		return Promise.resolve({});
+	}
+
+	/**
+	 * Release terminal resources.
+	 */
+	releaseTerminal(
+		params: acp.ReleaseTerminalRequest,
+	): Promise<acp.ReleaseTerminalResponse> {
+		const success = this.terminalManager.releaseTerminal(params.terminalId);
+		if (!success) {
+			console.log(
+				`[AcpAdapter] releaseTerminal: Terminal ${params.terminalId} not found (may have been already cleaned up)`,
+			);
+		}
+		return Promise.resolve({});
+	}
+
+	/**
+	 * Read text file from Obsidian vault.
+	 * Called by ACP SDK when agent wants to read a file.
+	 */
+	async readTextFile(
+		params: acp.ReadTextFileRequest,
+	): Promise<acp.ReadTextFileResponse> {
+		console.log("[AcpAdapter] readTextFile called:", params.path);
+
+		if (!this.vaultManager) {
+			console.warn("[AcpAdapter] VaultManager not available");
+			return { content: "" };
+		}
+
+		try {
+			// Normalize path - remove leading slash if present
+			const normalizedPath = params.path.startsWith("/")
+				? params.path.slice(1)
+				: params.path;
+
+			const file = this.vaultManager.getFileByPath(normalizedPath);
+			if (!file) {
+				console.log("[AcpAdapter] File not found:", normalizedPath);
+				return { content: "" };
+			}
+
+			const content = await this.vaultManager.getFileContent(file);
+			console.log(
+				"[AcpAdapter] Read file successfully:",
+				normalizedPath,
+				`(${content.length} chars)`,
+			);
+			return { content };
+		} catch (error) {
+			console.error("[AcpAdapter] Error reading file:", error);
+			return { content: "" };
+		}
+	}
+
+	/**
+	 * Write text file to Obsidian vault.
+	 * Called by ACP SDK when agent wants to write a file.
+	 */
+	async writeTextFile(
+		params: acp.WriteTextFileRequest,
+	): Promise<acp.WriteTextFileResponse> {
+		console.log("[AcpAdapter] writeTextFile called:", params.path);
+
+		if (!this.vaultManager) {
+			console.warn("[AcpAdapter] VaultManager not available");
+			return {};
+		}
+
+		try {
+			// Normalize path - remove leading slash if present
+			const normalizedPath = params.path.startsWith("/")
+				? params.path.slice(1)
+				: params.path;
+
+			const existingFile = this.vaultManager.getFileByPath(normalizedPath);
+
+			if (existingFile) {
+				// Modify existing file
+				await this.vaultManager.modifyFile(existingFile, params.content);
+				console.log("[AcpAdapter] Modified file:", normalizedPath);
+			} else {
+				// Create new file
+				await this.vaultManager.createFile(normalizedPath, params.content);
+				console.log("[AcpAdapter] Created file:", normalizedPath);
+			}
+
+			return {};
+		} catch (error) {
+			console.error("[AcpAdapter] Error writing file:", error);
+			throw error;
+		}
 	}
 }

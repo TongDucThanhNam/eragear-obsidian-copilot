@@ -14,18 +14,22 @@
 import { Notice, Plugin } from "obsidian";
 import {
 	createContextAssembler,
-	createVaultManager,
 	createGraphService,
+	createVaultManager,
 	getWorkerClient,
 } from "./core";
 import type { ContextAssembler } from "./core/context-assembler";
 import type { VaultManager } from "./core/vault-manager";
 import type { CloudflareService } from "./services";
 import { createCloudflareService } from "./services";
-import { DEFAULT_SETTINGS, type MyPluginSettings } from "./settings";
-import { CopilotSettingTab } from "./ui/settings/CopilotSettingTab";
-import { ERAGEAR_VIEW_TYPE, EragearView } from "./ui/eragear-view";
+import {
+	DEFAULT_SETTINGS,
+	initializeSettingsWithVaultPath,
+	type MyPluginSettings,
+} from "./settings";
 import { diffViewExtension } from "./ui/editor/diff-view-plugin";
+import { ERAGEAR_VIEW_TYPE, EragearView } from "./ui/eragear-view";
+import { CopilotSettingTab } from "./ui/settings/CopilotSettingTab";
 
 /**
  * Main Plugin Class
@@ -244,6 +248,13 @@ export default class EragearPlugin extends Plugin {
 			DEFAULT_SETTINGS,
 			(await this.loadData()) as Partial<MyPluginSettings>,
 		);
+
+		// Initialize settings with vault path (set workingDir to vault directory)
+		const adapter = this.app.vault.adapter as { basePath?: string };
+		const vaultPath = adapter.basePath || "";
+		if (vaultPath) {
+			this.settings = initializeSettingsWithVaultPath(this.settings, vaultPath);
+		}
 	}
 
 	/**
