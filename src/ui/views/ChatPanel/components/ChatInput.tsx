@@ -1,16 +1,17 @@
-import React, { useEffect, useRef, useCallback, useState } from "react";
 import type { App } from "obsidian";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useMentions } from "../../../hooks/useMentions";
 import { useSlashCommands } from "../../../hooks/useSlashCommands";
-import { SuggestionPopover, type SuggestionItem } from "./SuggestionPopover";
 import {
-	IconSend,
+	IconCornerDownLeft,
+	IconMic,
 	IconPlus,
 	IconSearch,
-	IconMic,
-	IconCornerDownLeft,
+	IconSend,
 	IconSquare,
 } from "./Icons";
+import { type SuggestionItem, SuggestionPopover } from "./SuggestionPopover";
 
 // Speech Recognition Type Definition
 interface SpeechRecognition extends EventTarget {
@@ -56,6 +57,13 @@ interface SpeechRecognitionErrorEvent extends Event {
 	error: string;
 }
 
+interface ChatModelOption {
+	id: string;
+	name: string;
+	provider: string;
+	type: "model" | "agent";
+}
+
 interface ChatInputProps {
 	input: string;
 	onInputChange: (input: string) => void;
@@ -63,6 +71,7 @@ interface ChatInputProps {
 	onTriggerContext?: () => void;
 	activeModelId: string;
 	onModelChange: (modelId: string) => void;
+	availableModels?: ChatModelOption[];
 	app: App;
 	slashCommandsList?: SuggestionItem[];
 	onAutoMentionToggle?: (disabled: boolean) => void;
@@ -75,6 +84,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 	onTriggerContext,
 	activeModelId,
 	onModelChange,
+	availableModels = [],
 	app,
 	slashCommandsList,
 	onAutoMentionToggle,
@@ -260,8 +270,40 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 							value={activeModelId}
 							onChange={(e) => onModelChange(e.target.value)}
 						>
-							<option value="gemini-1.5-pro">Claude 3.5 Sonnet</option>
-							<option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+							{availableModels.length > 0 ? (
+								<>
+									{/* Group: API Models */}
+									{availableModels.filter((m) => m.type === "model").length >
+										0 && (
+										<optgroup label="API Models">
+											{availableModels
+												.filter((m) => m.type === "model")
+												.map((m) => (
+													<option key={m.id} value={m.id}>
+														{m.name}
+													</option>
+												))}
+										</optgroup>
+									)}
+									{/* Group: Local Agents */}
+									{availableModels.filter((m) => m.type === "agent").length >
+										0 && (
+										<optgroup label="Local Agents">
+											{availableModels
+												.filter((m) => m.type === "agent")
+												.map((m) => (
+													<option key={m.id} value={m.id}>
+														{m.name}
+													</option>
+												))}
+										</optgroup>
+									)}
+								</>
+							) : (
+								<option value="" disabled>
+									No models configured
+								</option>
+							)}
 						</select>
 
 						<button

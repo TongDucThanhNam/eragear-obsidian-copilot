@@ -1,27 +1,36 @@
 import { type App, MarkdownView, type TFile } from "obsidian";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type EragearPlugin from "../../../main";
 import { AIService } from "../../../services/ai-service";
-import { AIProviderType } from "../../../settings";
+import { AIProviderType, type ChatModelConfig } from "../../../settings";
 import { EditorController } from "../../editor/editor-controller";
+import { useAgentClient } from "../../hooks/useAgentClient";
 import {
 	ChatInput,
 	ContextBadges,
 	MessageList,
 	SlashCommandMenu,
-	SuggestionPopover,
 	type SuggestionItem,
+	SuggestionPopover,
 } from "./components";
-import { useAgentClient } from "../../hooks/useAgentClient";
 import {
-	IconPlus,
+	IconChevronDown,
 	IconFileText,
 	IconFolder,
-	IconSearch,
+	IconPlus,
 } from "./components/Icons";
 import type { Message } from "./types";
 
-import type EragearPlugin from "../../../main";
+// Chat mode type
+type ChatMode = "api" | "agent";
+
+interface CurrentChatContext {
+	mode: ChatMode;
+	modelId?: string; // For API mode
+	agentId?: string; // For ACP agent mode
+	agentName?: string;
+}
 
 interface ChatPanelProps {
 	app: App;
@@ -53,6 +62,19 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	const [showCommands, setShowCommands] = useState(false);
 	const [shouldFocusInput, setShouldFocusInput] = useState(false);
 	const [selectedModel, setSelectedModel] = useState<string>("");
+	// Current chat context - determines if using API or ACP agent
+	const [chatContext, setChatContext] = useState<CurrentChatContext>({
+		mode: "api",
+		modelId: "",
+	});
+	// Show new chat menu
+	const [showNewChatMenu, setShowNewChatMenu] = useState(false);
+	// Button ref for positioning dropdown
+	const newChatButtonRef = useRef<HTMLButtonElement>(null);
+	// Dropdown ref for click outside detection
+	const dropdownRef = useRef<HTMLDivElement>(null);
+	// Dropdown position state
+	const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
 
 	// Context & Suggestion State
 	const [selectedFiles, setSelectedFiles] = useState<TFile[]>([]);
@@ -74,7 +96,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	const editorCtrl = useRef(new EditorController(app));
 
 	// Agent Client Hook
-	// Agent Client Hook
 	const {
 		agentClient,
 		isInitializing,
@@ -88,63 +109,211 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	);
 	const [agentSessionId, setAgentSessionId] = useState<string | null>(null);
 
+	// Handler to switch API model (only for API models, not agents)
+	const handleModelChange = async (modelId: string) => {
+		if (!settings || chatContext.mode !== "api") return;
+
+		const chatModels = settings.chatModels || [];
+		const selectedConfig = chatModels.find(
+			(m: ChatModelConfig) => m.id === modelId && m.type === "api",
+		);
+
+		if (!selectedConfig) {
+			console.warn("[ChatPanel] API Model not found:", modelId);
+			return;
+		}
+
+		// Update local state
+		setSelectedModel(modelId);
+		setChatContext((prev) => ({ ...prev, modelId }));
+
+		// Update settings
+		const providerMap: Record<string, AIProviderType> = {
+			openai: AIProviderType.BYOK_OPENAI,
+			gemini: AIProviderType.BYOK_GEMINI,
+			deepseek: AIProviderType.BYOK_DEEPSEEK,
+		};
+
+		const newProvider =
+			providerMap[selectedConfig.provider] || AIProviderType.BYOK_OPENAI;
+		plugin.settings.provider = newProvider;
+		plugin.settings.activeChatModelId = modelId;
+
+		// Update legacy model fields for compatibility
+		if (selectedConfig.provider === "openai" && selectedConfig.model) {
+			plugin.settings.openaiModel = selectedConfig.model;
+		} else if (selectedConfig.provider === "gemini" && selectedConfig.model) {
+			plugin.settings.geminiModel = selectedConfig.model;
+		} else if (selectedConfig.provider === "deepseek" && selectedConfig.model) {
+			plugin.settings.deepseekModel = selectedConfig.model;
+		}
+
+		await plugin.saveSettings();
+	};
+
+	// Start a new chat with API models
+	const handleNewAPIChat = () => {
+		setShowNewChatMenu(false);
+		setChatContext({ mode: "api", modelId: selectedModel });
+		setMessages([
+			{
+				id: "welcome-msg",
+				role: "assistant",
+				parts: [
+					{
+						type: "text",
+						text: "Hello! I'm Eragear Copilot.\n\nTry:\n• `@` to add context from notes\n• `/edit` for inline editing",
+					},
+				],
+			},
+		]);
+		setInput("");
+		setSelectedFiles([]);
+		setAgentSessionId(null);
+	};
+
+	// Start a new chat with an ACP agent
+	const handleNewAgentChat = async (agentConfig: ChatModelConfig) => {
+		setShowNewChatMenu(false);
+
+		// Update chat context
+		setChatContext({
+			mode: "agent",
+			agentId: agentConfig.id,
+			agentName: agentConfig.name,
+		});
+
+		// Update settings to use this agent
+		plugin.settings.provider = AIProviderType.ACP_LOCAL;
+		plugin.settings.activeChatModelId = agentConfig.id;
+		await plugin.saveSettings();
+
+		// Clear previous session - useAgentClient will create new one
+		setAgentSessionId(null);
+
+		// Reset messages
+		setMessages([
+			{
+				id: "welcome-msg",
+				role: "assistant",
+				parts: [
+					{
+						type: "text",
+						text: `Starting session with **${agentConfig.name}**...\n\nUse \`/\` for agent commands.`,
+					},
+				],
+			},
+		]);
+		setInput("");
+		setSelectedFiles([]);
+	};
+
+	// Get available ACP agents from chatModels
+	const getAvailableAgents = (): ChatModelConfig[] => {
+		if (!settings) return [];
+		return (settings.chatModels || []).filter(
+			(m: ChatModelConfig) => m.type === "agent" && m.enabled,
+		);
+	};
+
 	// Handle Agent Updates
 	useEffect(() => {
-		if (agentClient) {
-			agentClient.onSessionUpdate((update) => {
-				if (update.type === "agent_message_chunk") {
-					setMessages((prev) => {
-						const lastMsg = prev[prev.length - 1];
-						if (lastMsg && lastMsg.role === "assistant") {
-							// Append to last message
-							const newParts = [...lastMsg.parts];
-							const lastPart = newParts[newParts.length - 1];
-							if (lastPart && lastPart.type === "text") {
-								newParts[newParts.length - 1] = {
-									...lastPart,
-									text: lastPart.text + update.text,
-								};
-							} else {
-								newParts.push({ type: "text", text: update.text || "" });
-							}
-							return [...prev.slice(0, -1), { ...lastMsg, parts: newParts }];
-						}
-						// If no assistant message found (rare, maybe started with tool call?), create one?
-						// Usually we create a placeholder before sending.
-						return prev;
-					});
-				} else if (update.type === "agent_thought_chunk") {
-					// Optional: Show thoughts? For now ignore or log
-					console.log("Thought:", update.text);
-				} else if (update.type === "available_commands_update") {
-					console.log(
-						"[ChatPanel] Handling available_commands_update",
-						update.commands,
-					);
-					if (update.commands) {
-						const newCommands: SuggestionItem[] = update.commands.map((cmd) => {
-							const hintPart = cmd.hint ? ` (${cmd.hint})` : "";
-							return {
-								type: "action" as const,
-								label: `/${cmd.name}`,
-								id: `cmd_${cmd.name}`,
-								desc: `${cmd.description}${hintPart}`,
-								data: { hint: cmd.hint },
-							};
-						});
-						setActiveSlashCommands(newCommands);
-					}
-				}
-			});
+		if (!agentClient) return;
 
-			// Attempt auto-session creation if not exists?
-			// But we need working directory from settings.
-			if (!agentSessionId && !isInitializing) {
-				const wd = settings?.agentWorkingDir || "";
-				agentClient
-					.newSession(wd)
-					.then((res) => setAgentSessionId(res.sessionId));
+		// Subscribe to session updates and store the subscription for cleanup
+		const subscription = agentClient.onSessionUpdate((update) => {
+			if (update.type === "agent_message_chunk") {
+				setMessages((prev) => {
+					const lastMsg = prev[prev.length - 1];
+					if (lastMsg && lastMsg.role === "assistant") {
+						// Append to last message
+						const newParts = [...lastMsg.parts];
+						const lastPart = newParts[newParts.length - 1];
+						if (lastPart && lastPart.type === "text") {
+							newParts[newParts.length - 1] = {
+								...lastPart,
+								text: lastPart.text + update.text,
+							};
+						} else {
+							newParts.push({ type: "text", text: update.text || "" });
+						}
+						return [...prev.slice(0, -1), { ...lastMsg, parts: newParts }];
+					}
+					// If no assistant message found (rare, maybe started with tool call?), create one?
+					// Usually we create a placeholder before sending.
+					return prev;
+				});
+			} else if (update.type === "agent_thought_chunk") {
+				// Optional: Show thoughts? For now ignore or log
+				console.log("Thought:", update.text);
+			} else if (update.type === "available_commands_update") {
+				console.log(
+					"[ChatPanel] Handling available_commands_update",
+					update.commands,
+				);
+				if (update.commands) {
+					const newCommands: SuggestionItem[] = update.commands.map((cmd) => {
+						const hintPart = cmd.hint ? ` (${cmd.hint})` : "";
+						return {
+							type: "action" as const,
+							label: `/${cmd.name}`,
+							id: `cmd_${cmd.name}`,
+							desc: `${cmd.description}${hintPart}`,
+							data: { hint: cmd.hint },
+						};
+					});
+					setActiveSlashCommands(newCommands);
+				}
 			}
+		});
+
+		// Cleanup: unsubscribe when effect re-runs or component unmounts
+		return () => {
+			subscription.unsubscribe();
+		};
+	}, [agentClient]);
+
+	// Handle click outside to close dropdown
+	useEffect(() => {
+		if (!showNewChatMenu) return;
+
+		const handleClickOutside = (event: MouseEvent) => {
+			const target = event.target as Node;
+			const isOutsideDropdown =
+				dropdownRef.current && !dropdownRef.current.contains(target);
+			const isOutsideButton =
+				newChatButtonRef.current && !newChatButtonRef.current.contains(target);
+
+			if (isOutsideDropdown && isOutsideButton) {
+				setShowNewChatMenu(false);
+			}
+		};
+
+		const handleEscape = (event: KeyboardEvent) => {
+			if (event.key === "Escape") {
+				setShowNewChatMenu(false);
+			}
+		};
+
+		document.addEventListener("mousedown", handleClickOutside);
+		document.addEventListener("keydown", handleEscape);
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+			document.removeEventListener("keydown", handleEscape);
+		};
+	}, [showNewChatMenu]);
+
+	// Auto-create session when agent is ready
+	useEffect(() => {
+		if (agentClient && !agentSessionId && !isInitializing) {
+			const wd = settings?.agentWorkingDir || "";
+			agentClient
+				.newSession(wd)
+				.then((res) => setAgentSessionId(res.sessionId))
+				.catch((err) =>
+					console.error("[ChatPanel] Failed to create session:", err),
+				);
 		}
 	}, [agentClient, isInitializing, agentSessionId, settings?.agentWorkingDir]);
 
@@ -152,19 +321,25 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	useEffect(() => {
 		if (settings) {
 			console.log("[ChatPanel] Settings loaded:", settings);
-			const defaultModel =
-				settings.provider === AIProviderType.BYOK_OPENAI
-					? settings.openaiModel || "gpt-4o"
-					: settings.provider === AIProviderType.BYOK_GEMINI
-						? settings.geminiModel || "gemini-1.5-flash"
-						: settings.provider === AIProviderType.BYOK_DEEPSEEK
-							? settings.deepseekModel || "deepseek-chat"
-							: "";
-			setSelectedModel(defaultModel);
+			// Use activeChatModelId from the new unified system
+			if (settings.activeChatModelId) {
+				setSelectedModel(settings.activeChatModelId);
+			} else {
+				// Fallback to legacy provider-based model selection
+				const defaultModel =
+					settings.provider === AIProviderType.BYOK_OPENAI
+						? settings.openaiModel || "gpt-4o"
+						: settings.provider === AIProviderType.BYOK_GEMINI
+							? settings.geminiModel || "gemini-1.5-flash"
+							: settings.provider === AIProviderType.BYOK_DEEPSEEK
+								? settings.deepseekModel || "deepseek-chat"
+								: "";
+				setSelectedModel(defaultModel);
+			}
 		} else {
 			console.log("[ChatPanel] Settings are missing or undefined");
 		}
-	}, [settings]);
+	}, [settings, settings?.activeChatModelId]);
 
 	// Filter suggestions when query changes
 	useEffect(() => {
@@ -708,21 +883,16 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	};
 
 	const handleNewChat = () => {
-		setMessages([
-			{
-				id: "welcome-msg",
-				role: "assistant",
-				parts: [
-					{
-						type: "text",
-						text: "Hello! I'm Eragear Copilot.\n\nTry:\n• `@` to add context from notes\n• `/edit` for inline editing",
-					},
-				],
-			},
-		]);
-		setInput("");
-		setSelectedFiles([]);
-		setSuggestionQuery(null);
+		// Calculate dropdown position relative to button
+		if (newChatButtonRef.current) {
+			const rect = newChatButtonRef.current.getBoundingClientRect();
+			setDropdownPos({
+				top: rect.bottom + 4,
+				right: window.innerWidth - rect.right,
+			});
+		}
+		// Toggle the new chat menu
+		setShowNewChatMenu((prev) => !prev);
 	};
 
 	const handleTriggerContext = () => {
@@ -739,19 +909,24 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 		});
 	};
 
+	// Get only API models (not agents) for the model selector
 	const getAvailableModels = () => {
 		if (!settings) return [];
-		switch (settings.provider) {
-			case AIProviderType.BYOK_OPENAI:
-				return ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"];
-			case AIProviderType.BYOK_GEMINI:
-				return ["gemini-1.5-flash", "gemini-1.5-pro"];
-			case AIProviderType.BYOK_DEEPSEEK:
-				return ["deepseek-chat", "deepseek-reasoner"];
-			default:
-				return [];
-		}
+		const models = settings.chatModels || [];
+		return models
+			.filter((m: ChatModelConfig) => m.type === "api" && m.enabled)
+			.map((m: ChatModelConfig) => ({
+				id: m.id,
+				name: m.name,
+				provider: m.provider,
+				type: "model" as const,
+			}));
 	};
+
+	const availableModelsForInput = useMemo(
+		() => getAvailableModels(),
+		[settings?.chatModels],
+	);
 
 	const handleCommandClick = (cmd: string) => {
 		const newValue = cmd + " ";
@@ -830,64 +1005,178 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 									fontSize: "0.75rem",
 									padding: "2px 6px",
 									borderRadius: "4px",
-									backgroundColor: "red", // Debug color
+									backgroundColor:
+										settings.provider === AIProviderType.ACP_LOCAL
+											? agentError
+												? "var(--color-red)"
+												: isInitializing
+													? "var(--color-yellow)"
+													: agentClient
+														? "var(--color-green)"
+														: "var(--text-muted)"
+											: "var(--interactive-accent)",
 									color: "white",
 									opacity: 1,
 								}}
+								title={
+									settings.provider === AIProviderType.ACP_LOCAL
+										? agentError
+											? `Error: ${agentError.message}`
+											: isInitializing
+												? "Initializing agent..."
+												: agentClient
+													? "Agent connected"
+													: "Agent not connected"
+										: undefined
+								}
 							>
 								{settings.provider === AIProviderType.ACP_LOCAL
-									? `Agent: ${settings.agentCommand || "Unknown"}`
+									? agentError
+										? "Agent Error"
+										: isInitializing
+											? "Connecting..."
+											: agentClient
+												? "Connected"
+												: "Disconnected"
 									: `Model: ${selectedModel || "Loading..."}`}
 							</span>
 						)}
 
-						{/* Mode Selector for ACP */}
+						{/* Mode Selector for ACP - Shows current agent name and mode */}
+						{chatContext.mode === "agent" && chatContext.agentName && (
+							<span
+								style={{
+									fontSize: "0.75rem",
+									color: "var(--text-muted)",
+									marginLeft: "4px",
+								}}
+							>
+								• {chatContext.agentName}
+							</span>
+						)}
+
 						{settings.provider === AIProviderType.ACP_LOCAL &&
 							modes.length > 0 && (
-								<div
+								<select
+									value={currentModeId}
+									onChange={(e) => {
+										const newMode = e.target.value;
+										if (agentSessionId) {
+											setMode(newMode, agentSessionId);
+										}
+										setCurrentModeId(newMode);
+									}}
 									style={{
-										display: "flex",
-										alignItems: "center",
-										fontSize: "0.7rem",
+										background: "transparent",
+										border: "none",
 										color: "var(--text-muted)",
+										fontSize: "0.7rem",
+										cursor: "pointer",
+										padding: "0 4px",
 										marginLeft: "8px",
 									}}
 								>
-									<select
-										value={currentModeId}
-										onChange={(e) => {
-											const newMode = e.target.value;
-											if (agentSessionId) {
-												setMode(newMode, agentSessionId);
-											}
-											setCurrentModeId(newMode);
-										}}
-										style={{
-											background: "transparent",
-											border: "none",
-											color: "var(--text-muted)",
-											fontSize: "inherit",
-											cursor: "pointer",
-											padding: "0 4px",
-										}}
-									>
-										{modes.map((m: any) => (
-											<option key={m.id} value={m.id}>
-												{m.name}
-											</option>
-										))}
-									</select>
-								</div>
+									{modes.map((m: { id: string; name: string }) => (
+										<option key={m.id} value={m.id}>
+											{m.name}
+										</option>
+									))}
+								</select>
 							)}
 					</div>
-					<button
-						type="button"
-						className="eragear-add-btn"
-						onClick={handleNewChat}
-						title="New Chat"
-					>
-						<IconPlus />
-					</button>
+
+					{/* New Chat Button with Dropdown */}
+					<div style={{ position: "relative" }}>
+						<button
+							ref={newChatButtonRef}
+							type="button"
+							className="eragear-add-btn"
+							onClick={handleNewChat}
+							title="New Chat"
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "4px",
+							}}
+						>
+							<IconPlus />
+							<IconChevronDown />
+						</button>
+
+						{/* Dropdown Menu - Fixed positioning to prevent clipping */}
+						{showNewChatMenu && (
+							<div
+								ref={dropdownRef}
+								className="eragear-dropdown-menu"
+								style={{
+									position: "fixed",
+									top: `${dropdownPos.top}px`,
+									right: `${dropdownPos.right}px`,
+									background: "var(--background-primary)",
+									border: "1px solid var(--background-modifier-border)",
+									borderRadius: "8px",
+									boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+									minWidth: "220px",
+									zIndex: 100,
+									overflow: "hidden",
+								}}
+							>
+								{/* API Models Section */}
+								<div
+									style={{
+										padding: "8px 12px",
+										borderBottom: "1px solid var(--background-modifier-border)",
+									}}
+								>
+									<button
+										type="button"
+										onClick={handleNewAPIChat}
+										className="eragear-dropdown-item"
+									>
+										<span>📝</span>
+										<span>New Chat (API Models)</span>
+									</button>
+								</div>
+
+								{/* ACP Agents Section */}
+								<div style={{ padding: "4px 0" }}>
+									<div
+										style={{
+											padding: "4px 12px",
+											fontSize: "0.7rem",
+											color: "var(--text-muted)",
+											textTransform: "uppercase",
+											letterSpacing: "0.5px",
+										}}
+									>
+										External Agents
+									</div>
+									{getAvailableAgents().map((agent) => (
+										<button
+											type="button"
+											key={agent.id}
+											onClick={() => handleNewAgentChat(agent)}
+											className="eragear-dropdown-item"
+										>
+											<span>🤖</span>
+											<span>{agent.name}</span>
+										</button>
+									))}
+									{getAvailableAgents().length === 0 && (
+										<div
+											style={{
+												padding: "8px 12px",
+												color: "var(--text-muted)",
+												fontSize: "0.8rem",
+											}}
+										>
+											No agents configured
+										</div>
+									)}
+								</div>
+							</div>
+						)}
+					</div>
 				</div>
 
 				<MessageList
@@ -899,21 +1188,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 				/>
 			</div>
 
-			{showCommands && (
-				<SlashCommandMenu onCommandSelect={handleCommandClick} />
-			)}
-
 			{/* Suggestion Popover */}
-			{suggestionQuery !== null && (
-				<div style={{ position: "relative" }}>
-					<SuggestionPopover
-						suggestions={suggestions}
-						selectedIndex={suggestionIndex}
-						onSelect={handleSelectSuggestion}
-						position={{ top: "auto", left: 0 }}
-					/>
-				</div>
-			)}
 
 			<div className="eragear-input-container">
 				{/* Context Badges */}
@@ -934,9 +1209,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 					input={input}
 					onInputChange={handleInputChange}
 					onSend={() => handleSendMessage()}
-					onModelChange={setSelectedModel}
+					onModelChange={handleModelChange}
 					onTriggerContext={handleTriggerContext}
 					activeModelId={selectedModel}
+					availableModels={availableModelsForInput}
 					slashCommandsList={activeSlashCommands}
 					onAutoMentionToggle={handleAutoMentionToggle}
 				/>

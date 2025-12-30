@@ -1,16 +1,125 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { type IAgentClient } from "../../domain/ports/agent-client.port";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AcpAdapter } from "../../adapters/acp/acp.adapter";
-import type { MyPluginSettings } from "../../settings";
+import type {
+	IAgentClient,
+	Subscription,
+} from "../../domain/ports/agent-client.port";
+import type {
+	AgentConfig,
+	ChatModelConfig,
+	MyPluginSettings,
+} from "../../settings";
 import { AIProviderType } from "../../settings";
 
+// Mode interface for agent modes
+interface AgentMode {
+	id: string;
+	name: string;
+	description: string;
+	isCurrent: boolean;
+}
+
+/**
+ * Get the active agent configuration from settings.
+ * Uses the new chatModels system, falls back to legacy settings.
+ */
+function getActiveAgentConfig(settings: MyPluginSettings): AgentConfig | null {
+	// First, try to get from new chatModels system
+	if (settings.chatModels && settings.chatModels.length > 0) {
+		// Get enabled agents only
+		const enabledAgents = settings.chatModels.filter(
+			(m: ChatModelConfig) => m.type === "agent" && m.enabled,
+		);
+
+		if (enabledAgents.length > 0) {
+			// Find active agent by activeChatModelId
+			let activeAgent = enabledAgents.find(
+				(a: ChatModelConfig) => a.id === settings.activeChatModelId,
+			);
+
+			// If activeChatModelId is not an agent, use first enabled agent
+			if (!activeAgent) {
+				activeAgent = enabledAgents[0];
+			}
+
+			if (activeAgent) {
+				return {
+					id: activeAgent.id,
+					name: activeAgent.name,
+					command: activeAgent.command || "",
+					args: activeAgent.args || "",
+					workingDir: activeAgent.workingDir || settings.agentWorkingDir || "",
+					nodePath: activeAgent.nodePath || settings.agentNodePath || "",
+				};
+			}
+		}
+	}
+
+	// Fallback: Try legacy agents array
+	if (settings.agents && settings.agents.length > 0) {
+		const activeAgent = settings.agents.find(
+			(a) => a.id === settings.activeAgentId,
+		);
+		if (activeAgent) return activeAgent;
+		return settings.agents[0] ?? null;
+	}
+
+	// Fallback: Legacy single agent settings
+	if (settings.agentCommand) {
+		return {
+			id: "legacy-agent",
+			name: "Local Agent",
+			command: settings.agentCommand,
+			args: settings.agentArgs || "",
+			workingDir: settings.agentWorkingDir || "",
+			nodePath: settings.agentNodePath || "",
+		};
+	}
+
+	return null;
+}
+
+/**
+ * Get list of available agents from chatModels
+ */
+function getAvailableAgentsFromChatModels(
+	settings: MyPluginSettings,
+): { id: string; name: string }[] {
+	if (settings.chatModels && settings.chatModels.length > 0) {
+		return settings.chatModels
+			.filter((m: ChatModelConfig) => m.type === "agent" && m.enabled)
+			.map((m: ChatModelConfig) => ({ id: m.id, name: m.name }));
+	}
+
+	// Fallback to legacy agents
+	if (settings.agents && settings.agents.length > 0) {
+		return settings.agents.map((a) => ({ id: a.id, name: a.name }));
+	}
+
+	return [];
+}
+
 export function useAgentClient(settings: MyPluginSettings) {
-	const [modes, setModes] = useState<any[]>([]);
+	const [modes, setModes] = useState<AgentMode[]>([]);
 	const [currentModeId, setCurrentModeId] = useState<string>("");
 
 	const [agentClient, setAgentClient] = useState<IAgentClient | null>(null);
 	const [isInitializing, setIsInitializing] = useState(false);
 	const [error, setError] = useState<Error | null>(null);
+
+	// Available agents from chatModels (new system)
+	const availableAgents = getAvailableAgentsFromChatModels(settings);
+	const activeAgentId = settings.activeChatModelId || "";
+
+	// Track subscriptions for cleanup
+	const subscriptionsRef = useRef<Subscription[]>([]);
+	// Use ref to access agentClient in cleanup without adding to deps
+	const agentClientRef = useRef<IAgentClient | null>(null);
+
+	// Keep ref in sync with state
+	useEffect(() => {
+		agentClientRef.current = agentClient;
+	}, [agentClient]);
 
 	// Helper to set mode
 	const setMode = useCallback(
@@ -28,15 +137,38 @@ export function useAgentClient(settings: MyPluginSettings) {
 	useEffect(() => {
 		let active = true;
 
+		// Helper to cleanup subscriptions and agent
+		const cleanupPrevious = () => {
+			// Cleanup subscriptions
+			for (const sub of subscriptionsRef.current) {
+				sub.unsubscribe();
+			}
+			subscriptionsRef.current = [];
+
+			// Cleanup agent using ref (avoids dependency issue)
+			const currentClient = agentClientRef.current;
+			if (currentClient) {
+				console.log("Disconnecting previous agent");
+				currentClient.disconnect().catch(console.error);
+			}
+		};
+
 		async function init() {
 			if (settings.provider === AIProviderType.ACP_LOCAL) {
+				const agentConfig = getActiveAgentConfig(settings);
+
+				if (!agentConfig) {
+					setError(new Error("No agent configured"));
+					return;
+				}
+
 				setIsInitializing(true);
 				setError(null);
 				try {
 					const adapter = new AcpAdapter();
 					// Parse args from string to array
-					const args = settings.agentArgs
-						? settings.agentArgs.split(" ").filter((a) => a.length > 0)
+					const args = agentConfig.args
+						? agentConfig.args.split(" ").filter((a) => a.length > 0)
 						: [];
 
 					const env: Record<string, string> = {};
@@ -47,11 +179,9 @@ export function useAgentClient(settings: MyPluginSettings) {
 						}
 					}
 
-					if (settings.agentNodePath) {
-						const nodeDir = settings.agentNodePath.substring(
-							0,
-							settings.agentNodePath.lastIndexOf("/"),
-						);
+					const nodePath = agentConfig.nodePath;
+					if (nodePath) {
+						const nodeDir = nodePath.substring(0, nodePath.lastIndexOf("/"));
 						// Prepend to PATH
 						const pathKey =
 							Object.keys(env).find((k) => k.toLowerCase() === "path") ||
@@ -60,26 +190,28 @@ export function useAgentClient(settings: MyPluginSettings) {
 					}
 
 					await adapter.initialize({
-						id: "local-agent",
-						displayName: "Local Agent",
-						command: settings.agentCommand,
+						id: agentConfig.id,
+						displayName: agentConfig.name,
+						command: agentConfig.command,
 						args: args,
-						workingDirectory: settings.agentWorkingDir || process.cwd(),
+						workingDirectory: agentConfig.workingDir || process.cwd(),
 						env: env,
 					});
 
 					// Listen for updates (including mode updates)
-					adapter.onSessionUpdate((update) => {
+					// Store subscription for proper cleanup
+					const subscription = adapter.onSessionUpdate((update) => {
 						if (update.type === "current_mode_update") {
 							setCurrentModeId(update.currentModeId);
 						}
 					});
+					subscriptionsRef.current.push(subscription);
 
 					if (active) {
 						setAgentClient(adapter);
 					}
-				} catch (e: any) {
-					if (active) setError(e);
+				} catch (e: unknown) {
+					if (active) setError(e instanceof Error ? e : new Error(String(e)));
 					console.error("Failed to init agent", e);
 				} finally {
 					if (active) setIsInitializing(false);
@@ -92,28 +224,26 @@ export function useAgentClient(settings: MyPluginSettings) {
 			}
 		}
 
-		// Cleanup previous
-		if (agentClient) {
-			console.log("Disconnecting previous agent");
-			agentClient.disconnect().catch(console.error);
-			setAgentClient(null);
-			setModes([]);
-			setCurrentModeId("");
-		}
+		// Cleanup before reinit
+		cleanupPrevious();
+		setAgentClient(null);
+		setModes([]);
+		setCurrentModeId("");
 
 		init();
 
 		return () => {
 			active = false;
-			if (agentClient) {
-				agentClient.disconnect().catch(console.error);
-			}
+			cleanupPrevious();
 		};
 	}, [
 		settings.provider,
-		settings.agentCommand,
-		settings.agentArgs,
+		settings.activeChatModelId,
+		// React to chatModels changes (new system)
+		JSON.stringify(settings.chatModels),
+		// Legacy settings fallback
 		settings.agentWorkingDir,
+		settings.agentNodePath,
 	]);
 
 	return {
@@ -125,5 +255,8 @@ export function useAgentClient(settings: MyPluginSettings) {
 		currentModeId,
 		setCurrentModeId,
 		setMode,
+		// Expose agent management
+		availableAgents,
+		activeAgentId,
 	};
 }

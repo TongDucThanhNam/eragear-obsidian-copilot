@@ -8,6 +8,53 @@ export enum AIProviderType {
 	ERAGEAR_CLOUD = "eragear_cloud",
 }
 
+// Provider types for the unified model/agent system
+export type ProviderType =
+	| "openai"
+	| "gemini"
+	| "deepseek"
+	| "openrouter"
+	| "anthropic"
+	| "acp";
+
+// Unified configuration for both API models and ACP agents
+export interface ChatModelConfig {
+	id: string;
+	name: string;
+	provider: ProviderType;
+	type: "api" | "agent";
+
+	// For API models
+	model?: string;
+	apiKey?: string;
+	baseUrl?: string;
+
+	// For ACP agents
+	command?: string;
+	args?: string;
+	workingDir?: string;
+	nodePath?: string;
+
+	enabled: boolean;
+	isBuiltIn?: boolean;
+	useCORS?: boolean;
+	capabilities?: {
+		streaming?: boolean;
+		vision?: boolean;
+		functionCalling?: boolean;
+	};
+}
+
+// Agent configuration for ACP (legacy, kept for backwards compatibility)
+export interface AgentConfig {
+	id: string;
+	name: string;
+	command: string;
+	args: string;
+	workingDir: string;
+	nodePath: string;
+}
+
 export interface MyPluginSettings {
 	// AI Settings
 	provider: AIProviderType;
@@ -18,12 +65,19 @@ export interface MyPluginSettings {
 	deepseekApiKey: string; // New
 	deepseekModel: string;
 
-	// ACP Settings
-	// ACP Settings
+	// ACP Settings - Legacy (kept for backwards compatibility)
 	agentCommand: string;
 	agentArgs: string;
 	agentWorkingDir: string;
 	agentNodePath: string;
+
+	// ACP Settings - Multi-agent support
+	agents: AgentConfig[];
+	activeAgentId: string;
+
+	// Unified Chat Models & Agents
+	chatModels: ChatModelConfig[];
+	activeChatModelId: string;
 
 	// Relay Settings
 	relayUrl: string;
@@ -42,6 +96,117 @@ export interface MyPluginSettings {
 	cloudflareApiEndpoint: string;
 }
 
+// Default agent configurations
+export const DEFAULT_AGENTS: AgentConfig[] = [
+	{
+		id: "gemini",
+		name: "Gemini CLI",
+		command: "gemini",
+		args: "--experimental-acp",
+		workingDir: "",
+		nodePath: "",
+	},
+];
+
+// Built-in chat models and agents
+export const BUILTIN_CHAT_MODELS: ChatModelConfig[] = [
+	// OpenAI Models
+	{
+		id: "openai-gpt-4o",
+		name: "GPT-4o",
+		provider: "openai",
+		type: "api",
+		model: "gpt-4o",
+		enabled: true,
+		isBuiltIn: true,
+		capabilities: { streaming: true, vision: true, functionCalling: true },
+	},
+	{
+		id: "openai-gpt-4o-mini",
+		name: "GPT-4o Mini",
+		provider: "openai",
+		type: "api",
+		model: "gpt-4o-mini",
+		enabled: true,
+		isBuiltIn: true,
+		capabilities: { streaming: true, vision: true, functionCalling: true },
+	},
+	// Gemini Models
+	{
+		id: "gemini-2.0-flash",
+		name: "Gemini 2.0 Flash",
+		provider: "gemini",
+		type: "api",
+		model: "gemini-2.0-flash-exp",
+		enabled: true,
+		isBuiltIn: true,
+		capabilities: { streaming: true, vision: true, functionCalling: true },
+	},
+	{
+		id: "gemini-1.5-pro",
+		name: "Gemini 1.5 Pro",
+		provider: "gemini",
+		type: "api",
+		model: "gemini-1.5-pro",
+		enabled: true,
+		isBuiltIn: true,
+		capabilities: { streaming: true, vision: true, functionCalling: true },
+	},
+	// DeepSeek Models
+	{
+		id: "deepseek-chat",
+		name: "DeepSeek V3",
+		provider: "deepseek",
+		type: "api",
+		model: "deepseek-chat",
+		enabled: true,
+		isBuiltIn: true,
+		capabilities: { streaming: true, functionCalling: true },
+	},
+	{
+		id: "deepseek-reasoner",
+		name: "DeepSeek R1",
+		provider: "deepseek",
+		type: "api",
+		model: "deepseek-reasoner",
+		enabled: true,
+		isBuiltIn: true,
+		capabilities: { streaming: true },
+	},
+
+	{
+		id: "acp-gemini-cli",
+		name: "Gemini CLI",
+		provider: "acp",
+		type: "agent",
+		command: "gemini",
+		args: "--experimental-acp",
+		enabled: true,
+		isBuiltIn: true,
+	},
+	// ACP Agents
+	{
+		id: "acp-claude-code",
+		name: "Claude Code",
+		provider: "acp",
+		type: "agent",
+		command: "acp-claude-code",
+		args: "",
+		enabled: true,
+		isBuiltIn: true,
+	},
+	{
+		id: "acp-opencode",
+		name: "OpenCode",
+		provider: "acp",
+		type: "agent",
+		command: "opencode",
+		args: "acp",
+		enabled: true,
+		isBuiltIn: true,
+	},
+];
+
 export const DEFAULT_SETTINGS: MyPluginSettings = {
 	provider: AIProviderType.BYOK_OPENAI,
 	openaiApiKey: "",
@@ -55,6 +220,12 @@ export const DEFAULT_SETTINGS: MyPluginSettings = {
 	agentArgs: "agent.py",
 	agentWorkingDir: "",
 	agentNodePath: "",
+
+	agents: DEFAULT_AGENTS,
+	activeAgentId: "gemini",
+
+	chatModels: [...BUILTIN_CHAT_MODELS],
+	activeChatModelId: "openai-gpt-4o",
 
 	relayUrl: "wss://relay.eragear.app",
 

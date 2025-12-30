@@ -12,7 +12,7 @@ export class AIService {
 	}
 
 	async streamChat(messages: any[], modelId?: string) {
-		let model;
+		let model: any;
 
 		switch (this.settings.provider) {
 			case AIProviderType.BYOK_OPENAI: {

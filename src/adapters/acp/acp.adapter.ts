@@ -1,338 +1,961 @@
-import { spawn, type ChildProcess } from "child_process";
+/**
+ * AcpAdapter - Adapter for Agent Client Protocol (ACP) SDK
+ *
+ * This adapter implements IAgentClient to communicate with ACP-compliant agents
+ * via stdio (stdin/stdout). It handles:
+ * - Process lifecycle management (spawn, kill, cleanup)
+ * - Bidirectional streaming communication
+ * - Session management and state tracking
+ * - Event subscription with proper cleanup
+ *
+ * @see ../docs/acp/acp-overview.md
+ */
+
 import * as acp from "@agentclientprotocol/sdk";
-import type {
-	IAgentClient,
-	InitializeResult,
-	NewSessionResult,
-} from "../../domain/ports/agent-client.port";
+import { type ChildProcess, spawn } from "child_process";
 import type { AgentConfig } from "../../domain/models/agent-config";
-import type { AgentError } from "../../domain/models/agent-error";
+import { AgentError } from "../../domain/models/agent-error";
 import type {
 	SessionUpdate,
-	SlashCommand,
+	ToolCallLocation,
 } from "../../domain/models/session-update";
+import {
+	ConnectionState,
+	type IAgentClient,
+	type InitializeResult,
+	type NewSessionResult,
+	type Subscription,
+} from "../../domain/ports/agent-client.port";
 import { AcpTypeConverter } from "./acp-type-converter";
 
+// ============================================================================
+// Internal Types - For type-safe parsing of ACP notifications
+// ============================================================================
+
+/**
+ * Typed structure for ACP session update notifications.
+ * This avoids `as any` casts throughout the code.
+ */
+interface AcpSessionUpdatePayload {
+	sessionUpdate: string;
+	content?: { type: string; text?: string };
+	toolCallId?: string;
+	title?: string;
+	status?: string;
+	kind?: string;
+	locations?: ToolCallLocation[];
+	entries?: Array<{
+		id?: string;
+		title?: string;
+		description?: string;
+		status?: string;
+	}>;
+	modeId?: string;
+	availableCommands?: Array<{
+		name: string;
+		description?: string;
+		input?: { hint?: string };
+	}>;
+	// Permission request fields
+	requestId?: string;
+	options?: Array<{ id: string; label: string; isDefault?: boolean }>;
+	description?: string;
+	// Session end fields
+	reason?: string;
+	message?: string;
+	// Error fields
+	code?: string | number;
+	recoverable?: boolean;
+	// Output fields
+	outputType?: string;
+	text?: string;
+}
+
+// ============================================================================
+// AcpAdapter Implementation
+// ============================================================================
+
 export class AcpAdapter implements IAgentClient {
+	// ========================================================================
+	// Private State
+	// ========================================================================
+
+	/** The spawned agent process */
 	private agentProcess: ChildProcess | null = null;
+
+	/** ACP SDK connection instance */
 	private connection: acp.ClientSideConnection | null = null;
+
+	/** Current agent configuration */
 	private currentConfig: AgentConfig | null = null;
-	private sessionUpdateCallbacks: ((update: SessionUpdate) => void)[] = [];
-	private errorCallback: ((error: AgentError) => void) | null = null;
-	private isInitializedFlag = false;
+
+	/** Current connection state - tracks lifecycle */
+	private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
+
+	/** Currently connected agent's ID */
 	private currentAgentId: string | null = null;
 
-	// @ts-ignore - 'Client' implementation requires this but we proxy it
-	async requestPermission(params: any): Promise<any> {
-		// Minimum implementation for SDK interface
+	// ========================================================================
+	// Subscription Management
+	// Using Map for O(1) add/remove operations
+	// ========================================================================
+
+	/** Counter for generating unique subscription IDs */
+	private subscriptionIdCounter = 0;
+
+	/** Map of session update subscribers: subscriptionId -> callback */
+	private sessionUpdateSubscribers = new Map<
+		string,
+		(update: SessionUpdate) => void
+	>();
+
+	/** Map of error subscribers: subscriptionId -> callback */
+	private errorSubscribers = new Map<string, (error: AgentError) => void>();
+
+	// ========================================================================
+	// Resource Cleanup Tracking
+	// Store cleanup functions to prevent memory leaks
+	// ========================================================================
+
+	/** Array of cleanup functions for event listeners */
+	private cleanupFunctions: Array<() => void> = [];
+
+	// ========================================================================
+	// ACP Client Interface Implementation
+	// Required by SDK: ClientSideConnection expects a Client-like object
+	// ========================================================================
+
+	/**
+	 * Handle permission requests from the agent.
+	 * Called by ACP SDK when agent needs user permission.
+	 *
+	 * TODO: Implement proper permission UI flow
+	 * Currently denies all requests as a safe default.
+	 */
+	async requestPermission(_params: unknown): Promise<{ decision: string }> {
+		console.warn(
+			"[AcpAdapter] Permission requested but not implemented, denying",
+		);
 		return { decision: "deny" };
 	}
 
+	// ========================================================================
+	// IAgentClient: Lifecycle Methods
+	// ========================================================================
+
+	/**
+	 * Initialize connection to an ACP agent.
+	 *
+	 * This method:
+	 * 1. Spawns the agent process
+	 * 2. Sets up stdio streams with proper backpressure handling
+	 * 3. Performs ACP handshake (protocol negotiation)
+	 * 4. Returns agent capabilities
+	 *
+	 * @param config - Agent configuration (command, args, working directory)
+	 * @returns Protocol version and available auth methods
+	 * @throws AgentError if spawn or handshake fails
+	 */
 	async initialize(config: AgentConfig): Promise<InitializeResult> {
-		// ... (existing implementation details are fine, but ensure this block is preserved if I replace widely.
-		// Actually, I should use replace_file_content carefully.)
-		return this.initializeImplementation(config);
-	}
+		console.log("[AcpAdapter] Starting initialization", {
+			command: config.command,
+			id: config.id,
+		});
 
-	// Helper to avoid massive replacement in tool call
-	private async initializeImplementation(
-		config: AgentConfig,
-	): Promise<InitializeResult> {
-		console.log("[AcpAdapter] Starting initialization", config);
-
+		// Clean up any existing connection first
 		if (this.agentProcess) {
-			this.agentProcess.kill();
-			this.agentProcess = null;
+			console.log("[AcpAdapter] Cleaning up existing process before reinit");
+			await this.disconnect();
 		}
 
+		// Update state to initializing
+		this.connectionState = ConnectionState.INITIALIZING;
 		this.currentConfig = config;
+
 		const args = config.args || [];
 
 		try {
-			// Spawn process
+			// ================================================================
+			// Step 1: Spawn the agent process
+			// ================================================================
 			this.agentProcess = spawn(config.command, args, {
 				stdio: ["pipe", "pipe", "pipe"],
 				cwd: config.workingDirectory,
 				env: { ...process.env, ...config.env },
-				shell: true, // Useful for some environments
+				shell: true, // Required for some environments (e.g., npx commands)
 			});
 
 			if (!this.agentProcess.pid) {
-				throw new Error("Failed to spawn agent process");
+				throw new AgentError(
+					"Failed to spawn agent process - no PID",
+					"SPAWN_FAILED",
+				);
 			}
 
-			// Setup Connection
-			const stdin = this.agentProcess.stdin;
-			const stdout = this.agentProcess.stdout;
-			const stderr = this.agentProcess.stderr;
+			console.log(
+				"[AcpAdapter] Process spawned with PID:",
+				this.agentProcess.pid,
+			);
+
+			// ================================================================
+			// Step 2: Validate stdio streams exist
+			// IMPORTANT: Check BEFORE attaching listeners
+			// ================================================================
+			const { stdin, stdout, stderr } = this.agentProcess;
+
+			if (!stdin || !stdout) {
+				throw new AgentError(
+					"Failed to open stdin/stdout for agent",
+					"STDIO_FAILED",
+				);
+			}
+
+			// ================================================================
+			// Step 3: Setup stderr logging (non-critical, for debugging)
+			// ================================================================
 			if (stderr) {
-				stderr.on("data", (data) => {
-					console.error(`[AcpAdapter] Agent stderr: ${data}`);
+				const stderrListener = (data: Buffer) => {
+					console.error(`[AcpAdapter] Agent stderr: ${data.toString()}`);
+				};
+				stderr.on("data", stderrListener);
+				// Track for cleanup
+				this.cleanupFunctions.push(() => {
+					stderr.removeListener("data", stderrListener);
 				});
 			}
 
-			// Handle spawn errors
-			this.agentProcess.on("error", (err) => {
+			// ================================================================
+			// Step 4: Setup process error and exit handlers
+			// ================================================================
+			const errorListener = (err: Error) => {
 				console.error("[AcpAdapter] Process error:", err);
-				const error = new Error(
-					`Failed to start agent: ${err.message}`,
-				) as AgentError;
-				if (this.errorCallback) this.errorCallback(error);
+				this.connectionState = ConnectionState.ERROR;
+				this.notifyError(
+					new AgentError(
+						`Agent process error: ${err.message}`,
+						"PROCESS_ERROR",
+					),
+				);
+			};
+			this.agentProcess.on("error", errorListener);
+			this.cleanupFunctions.push(() => {
+				this.agentProcess?.removeListener("error", errorListener);
 			});
 
-			this.agentProcess.on("exit", (code, signal) => {
+			const exitListener = (code: number | null, signal: string | null) => {
 				console.log(
-					`[AcpAdapter] Agent exited with code ${code} signal ${signal}`,
+					`[AcpAdapter] Agent exited with code=${code} signal=${signal}`,
 				);
-				if (code !== 0 && code !== null) {
-					const error = new Error(
-						`Agent exited unexpectedly with code ${code}`,
-					) as AgentError;
-					if (this.errorCallback) this.errorCallback(error);
+
+				// Only notify error for unexpected exits (not during intentional disconnect)
+				if (
+					this.connectionState !== ConnectionState.CLOSING &&
+					code !== 0 &&
+					code !== null
+				) {
+					this.connectionState = ConnectionState.ERROR;
+					this.notifyError(
+						new AgentError(
+							`Agent exited unexpectedly with code ${code}`,
+							"UNEXPECTED_EXIT",
+						),
+					);
 				}
-				// Cleanup
+
+				// Cleanup references
 				this.agentProcess = null;
 				this.connection = null;
+			};
+			this.agentProcess.on("exit", exitListener);
+			this.cleanupFunctions.push(() => {
+				this.agentProcess?.removeListener("exit", exitListener);
 			});
 
-			if (!stdin || !stdout)
-				throw new Error("Failed to open stdin/stdout for agent");
-
-			// Handle stdin errors to prevent EPIPE
-			stdin.on("error", (err) => {
+			// ================================================================
+			// Step 5: Setup stdin error handler (prevents EPIPE crashes)
+			// ================================================================
+			const stdinErrorListener = (err: Error) => {
 				console.error("[AcpAdapter] stdin error:", err);
+				// Don't crash, just log - connection may still work
+			};
+			stdin.on("error", stdinErrorListener);
+			this.cleanupFunctions.push(() => {
+				stdin.removeListener("error", stdinErrorListener);
 			});
 
+			// ================================================================
+			// Step 6: Create streams with proper backpressure handling
+			// ================================================================
 			const input = new WritableStream<Uint8Array>({
 				write(chunk) {
-					stdin.write(chunk);
+					// Return a promise that resolves when write completes
+					// This properly handles backpressure
+					return new Promise<void>((resolve, reject) => {
+						const canContinue = stdin.write(chunk, (err) => {
+							if (err) {
+								reject(err);
+							} else if (canContinue) {
+								resolve();
+							}
+							// If !canContinue, wait for drain event
+						});
+
+						if (!canContinue) {
+							stdin.once("drain", () => resolve());
+						}
+					});
 				},
 				close() {
 					stdin.end();
+				},
+				abort(reason) {
+					console.error("[AcpAdapter] Input stream aborted:", reason);
+					stdin.destroy();
 				},
 			});
 
 			const output = new ReadableStream<Uint8Array>({
 				start(controller) {
-					stdout.on("data", (chunk) => controller.enqueue(chunk));
-					stdout.on("end", () => controller.close());
+					const dataListener = (chunk: Buffer) => {
+						controller.enqueue(new Uint8Array(chunk));
+					};
+					const endListener = () => {
+						controller.close();
+					};
+					const errorListener = (err: Error) => {
+						controller.error(err);
+					};
+
+					stdout.on("data", dataListener);
+					stdout.on("end", endListener);
+					stdout.on("error", errorListener);
+
+					// Note: We don't need to track these for cleanup because
+					// the stream will be garbage collected when connection closes
+				},
+				cancel() {
+					stdout.destroy();
 				},
 			});
 
+			// ================================================================
+			// Step 7: Create ACP connection
+			// ================================================================
 			const stream = acp.ndJsonStream(input, output);
-			// SDK v0.12.0 constructor structure: (toClient: (agent: Agent) => Client, stream: Stream)
-			// 'this' must confirm to 'Client' interface (which includes requestPermission etc)
-			this.connection = new acp.ClientSideConnection(() => this as any, stream);
 
-			// Handshake
+			// SDK constructor: (toClient: (agent) => Client, stream)
+			// 'this' provides the Client interface (requestPermission, sessionUpdate, etc.)
+			this.connection = new acp.ClientSideConnection(
+				() => this as unknown as acp.Client,
+				stream,
+			);
+
+			// ================================================================
+			// Step 8: Perform ACP handshake
+			// ================================================================
 			const initResult = await this.connection.initialize({
-				protocolVersion: 1, // Use valid version number (max 65535)
+				protocolVersion: 1, // Protocol version (uint16, max 65535)
 				clientCapabilities: {
-					fs: { readTextFile: true, writeTextFile: true }, // Enable if we implement FS later
+					// Declare capabilities we support
+					fs: { readTextFile: true, writeTextFile: true },
 					terminal: true,
 				},
 			});
 
-			this.isInitializedFlag = true;
+			// Success! Update state
+			this.connectionState = ConnectionState.READY;
 			this.currentAgentId = config.id;
+
+			console.log("[AcpAdapter] Initialization complete", {
+				protocolVersion: initResult.protocolVersion,
+			});
 
 			return {
 				protocolVersion: String(initResult.protocolVersion),
-				authMethods: [], // Simplify for now or map correctly
+				authMethods: [], // TODO: Map from initResult.authMethods if available
 			};
-		} catch (e: any) {
-			console.error("[AcpAdapter] Init failed", e);
-			const error = new Error(e.message) as AgentError; // quick cast
-			if (this.errorCallback) this.errorCallback(error);
+		} catch (e) {
+			// Initialization failed - cleanup and report
+			console.error("[AcpAdapter] Initialization failed:", e);
+			this.connectionState = ConnectionState.ERROR;
+
+			// Ensure cleanup on failure
+			await this.cleanup();
+
+			const error =
+				e instanceof AgentError
+					? e
+					: new AgentError(
+							e instanceof Error ? e.message : String(e),
+							"INIT_FAILED",
+						);
+
+			this.notifyError(error);
 			throw error;
 		}
 	}
 
-	async newSession(workingDirectory: string): Promise<NewSessionResult> {
-		if (!this.connection) throw new Error("Not initialized");
+	/**
+	 * Gracefully disconnect from the agent.
+	 *
+	 * This method:
+	 * 1. Signals connection is closing (prevents error notifications)
+	 * 2. Waits for connection to close (with timeout)
+	 * 3. Terminates process if still running
+	 * 4. Cleans up all resources
+	 */
+	async disconnect(): Promise<void> {
+		console.log("[AcpAdapter] Disconnecting...");
+
+		// Signal that we're intentionally closing
+		this.connectionState = ConnectionState.CLOSING;
 
 		try {
-			const result = await this.connection.newSession({
+			// Wait for connection to close gracefully (5s timeout)
+			if (this.connection) {
+				await Promise.race([
+					this.connection.closed,
+					new Promise((resolve) => setTimeout(resolve, 5000)),
+				]);
+			}
+		} catch (e) {
+			console.error("[AcpAdapter] Error waiting for connection close:", e);
+		}
+
+		// Terminate process if still running
+		if (this.agentProcess && !this.agentProcess.killed) {
+			console.log("[AcpAdapter] Terminating agent process...");
+
+			// Try graceful shutdown first
+			this.agentProcess.kill("SIGTERM");
+
+			// Wait briefly for graceful shutdown
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+
+			// Force kill if still running
+			if (this.agentProcess && !this.agentProcess.killed) {
+				console.log("[AcpAdapter] Force killing agent process...");
+				this.agentProcess.kill("SIGKILL");
+			}
+		}
+
+		// Final cleanup
+		await this.cleanup();
+	}
+
+	// ========================================================================
+	// IAgentClient: Session Management
+	// ========================================================================
+
+	/**
+	 * Create a new conversation session with the agent.
+	 *
+	 * @param workingDirectory - The working directory for the session
+	 * @returns Session ID and available modes
+	 * @throws If not initialized or session creation fails
+	 */
+	async newSession(workingDirectory: string): Promise<NewSessionResult> {
+		const connection = this.ensureReady();
+
+		try {
+			const result = await connection.newSession({
 				cwd: workingDirectory,
-				mcpServers: [], // No MCP servers for now
+				mcpServers: [], // TODO: Support MCP servers in future
 			});
 
 			const modes = result.modes?.availableModes || [];
 
 			return {
 				sessionId: result.sessionId,
-				availableModes: modes.map((m: any) => ({
+				availableModes: modes.map((m) => ({
 					id: m.id,
 					name: m.name,
-					description: m.description,
+					description: m.description || "",
 					isCurrent: m.id === result.modes?.currentModeId,
 				})),
 			};
-		} catch (e: any) {
-			console.error("[AcpAdapter] Failed to create new session", e);
-			throw e;
+		} catch (e) {
+			console.error("[AcpAdapter] Failed to create new session:", e);
+			throw e instanceof AgentError
+				? e
+				: new AgentError(
+						e instanceof Error ? e.message : "Session creation failed",
+						"SESSION_FAILED",
+					);
 		}
 	}
 
+	/**
+	 * Authenticate with the agent using a specific method.
+	 *
+	 * TODO: Implement proper authentication flow.
+	 * Currently returns true as a placeholder.
+	 */
 	async authenticate(methodId: string): Promise<boolean> {
-		// Implement later
+		console.warn(
+			"[AcpAdapter] authenticate() not fully implemented, methodId:",
+			methodId,
+		);
+		// TODO: Call this.connection.authenticate() when implementing
 		return true;
 	}
 
+	// ========================================================================
+	// IAgentClient: Messaging
+	// ========================================================================
+
+	/**
+	 * Send a prompt/message to the agent within a session.
+	 *
+	 * Note: In ACP terminology, this is a "prompt" not a "message".
+	 * The interface uses "sendMessage" for broader compatibility.
+	 *
+	 * @param sessionId - The session to send the prompt to
+	 * @param message - The text content of the prompt
+	 */
 	async sendMessage(sessionId: string, message: string): Promise<void> {
-		if (!this.connection) throw new Error("Not initialized");
+		const connection = this.ensureReady();
 
 		try {
-			await this.connection.prompt({
+			await connection.prompt({
 				sessionId: sessionId,
 				prompt: [{ type: "text", text: message }],
 			});
 		} catch (e) {
-			console.error("Prompt error", JSON.stringify(e, null, 2));
-			throw e;
+			console.error("[AcpAdapter] Prompt error:", e);
+			throw e instanceof AgentError
+				? e
+				: new AgentError(
+						e instanceof Error ? e.message : "Prompt failed",
+						"PROMPT_FAILED",
+					);
 		}
 	}
 
+	/**
+	 * Cancel any ongoing operation in the session.
+	 *
+	 * This sends a cancellation notification to the agent.
+	 * The agent should stop processing and respond with StopReason::Cancelled.
+	 */
 	async cancel(sessionId: string): Promise<void> {
-		// Implement cancel logic if SDK supports it (e.g. abort controller on prompt?)
-	}
+		const connection = this.ensureReady();
 
-	async disconnect(): Promise<void> {
-		if (this.agentProcess) {
-			this.agentProcess.kill();
-			this.agentProcess = null;
+		try {
+			await connection.cancel({ sessionId });
+			console.log("[AcpAdapter] Cancel sent for session:", sessionId);
+		} catch (e) {
+			console.error("[AcpAdapter] Cancel error:", e);
+			// Don't throw - cancellation is best-effort
 		}
-		this.connection = null;
-		this.isInitializedFlag = false;
-		this.sessionUpdateCallbacks = []; // Clear callbacks
 	}
 
-	onSessionUpdate(callback: (update: SessionUpdate) => void): void {
-		this.sessionUpdateCallbacks.push(callback);
-	}
-
-	onError(callback: (error: AgentError) => void): void {
-		this.errorCallback = callback;
-	}
-
+	/**
+	 * Respond to a permission request from the agent.
+	 *
+	 * TODO: Implement proper permission response flow.
+	 */
 	async respondToPermission(
 		requestId: string,
 		optionId: string,
 	): Promise<void> {
-		// TODO: Implement permission response
+		console.warn(
+			"[AcpAdapter] respondToPermission() not implemented",
+			requestId,
+			optionId,
+		);
+		// TODO: Use extMethod or appropriate SDK method to respond
 	}
 
-	isInitialized(): boolean {
-		return this.isInitializedFlag;
-	}
+	// ========================================================================
+	// IAgentClient: Session Configuration
+	// ========================================================================
 
-	getCurrentAgentId(): string | null {
-		return this.currentAgentId;
-	}
-
+	/**
+	 * Set the operational mode for a session.
+	 *
+	 * Modes affect agent behavior (e.g., "ask", "code", "architect").
+	 */
 	async setSessionMode(sessionId: string, modeId: string): Promise<void> {
-		if (!this.connection) throw new Error("Not initialized");
+		const connection = this.ensureReady();
+
 		try {
-			// According to user docs: Client sends `session/set_mode` as request
-			await (this.connection as any).request(
-				"session/set_mode", // SDK might not have typed method, use generic request
-				{
-					sessionId,
-					modeId,
-				},
-			);
-		} catch (e: any) {
-			console.error("[AcpAdapter] Failed to set session mode", e);
+			await connection.setSessionMode({ sessionId, modeId });
+			console.log("[AcpAdapter] Session mode set:", modeId);
+		} catch (e) {
+			console.error("[AcpAdapter] Failed to set session mode:", e);
 			throw e;
 		}
 	}
 
+	/**
+	 * Set the AI model for a session.
+	 *
+	 * Note: This uses an unstable SDK method.
+	 */
 	async setSessionModel(sessionId: string, modelId: string): Promise<void> {
-		// TODO
+		const connection = this.ensureReady();
+
+		try {
+			// Use unstable method from SDK
+			await connection.unstable_setSessionModel({ sessionId, modelId });
+			console.log("[AcpAdapter] Session model set:", modelId);
+		} catch (e) {
+			console.error("[AcpAdapter] Failed to set session model:", e);
+			throw e;
+		}
 	}
 
-	// --- internal ACP callbacks ---
+	// ========================================================================
+	// IAgentClient: Event Subscriptions
+	// ========================================================================
 
-	// This method is called by the SDK when a notification arrives
-	// We need to match the signature required by `acp.ClientSideConnectionCallback` (if it exists or is implied)
-	// Based on citation: `sessionUpdate(params: acp.SessionNotification): Promise<void>`
+	/**
+	 * Subscribe to session updates.
+	 *
+	 * IMPORTANT: Always call unsubscribe() when done to prevent memory leaks.
+	 *
+	 * @param callback - Function to call when updates arrive
+	 * @returns Subscription object with unsubscribe method
+	 */
+	onSessionUpdate(callback: (update: SessionUpdate) => void): Subscription {
+		const id = this.generateSubscriptionId("session");
+		this.sessionUpdateSubscribers.set(id, callback);
 
+		return {
+			id,
+			unsubscribe: () => {
+				this.sessionUpdateSubscribers.delete(id);
+			},
+		};
+	}
+
+	/**
+	 * Subscribe to connection errors.
+	 *
+	 * @param callback - Function to call when errors occur
+	 * @returns Subscription object with unsubscribe method
+	 */
+	onError(callback: (error: AgentError) => void): Subscription {
+		const id = this.generateSubscriptionId("error");
+		this.errorSubscribers.set(id, callback);
+
+		return {
+			id,
+			unsubscribe: () => {
+				this.errorSubscribers.delete(id);
+			},
+		};
+	}
+
+	// ========================================================================
+	// IAgentClient: State Queries
+	// ========================================================================
+
+	/**
+	 * Check if connection is ready for use.
+	 */
+	isInitialized(): boolean {
+		return this.connectionState === ConnectionState.READY;
+	}
+
+	/**
+	 * Get the current connection state.
+	 */
+	getConnectionState(): ConnectionState {
+		return this.connectionState;
+	}
+
+	/**
+	 * Get the ID of the currently connected agent.
+	 */
+	getCurrentAgentId(): string | null {
+		return this.currentAgentId;
+	}
+
+	// ========================================================================
+	// ACP SDK Callback: Session Update Handler
+	// Called by SDK when agent sends session/update notifications
+	// ========================================================================
+
+	/**
+	 * Handle session update notifications from the agent.
+	 *
+	 * This is called by the ACP SDK when the agent sends updates.
+	 * We parse the update and notify all subscribers.
+	 */
 	async sessionUpdate(params: acp.SessionNotification): Promise<void> {
-		const update = params.update as any; // Cast to any to access new fields
-		console.log("[AcpAdapter] update", update);
+		const update = params.update as AcpSessionUpdatePayload;
+		console.log("[AcpAdapter] Session update received:", update.sessionUpdate);
 
-		if (this.sessionUpdateCallbacks.length === 0) return;
+		// Skip if no subscribers
+		if (this.sessionUpdateSubscribers.size === 0) {
+			return;
+		}
 
-		let parsedUpdate: SessionUpdate | null = null;
+		const parsedUpdate = this.parseSessionUpdate(update);
 
+		if (parsedUpdate) {
+			this.notifySessionUpdate(parsedUpdate);
+		}
+	}
+
+	// ========================================================================
+	// Private Helper Methods
+	// ========================================================================
+
+	/**
+	 * Parse ACP session update payload into our domain SessionUpdate type.
+	 *
+	 * @param update - Raw ACP update payload
+	 * @returns Parsed SessionUpdate or null if unrecognized
+	 */
+	private parseSessionUpdate(
+		update: AcpSessionUpdatePayload,
+	): SessionUpdate | null {
 		switch (update.sessionUpdate) {
+			// ================================================================
+			// Text Content Updates
+			// ================================================================
 			case "agent_message_chunk":
-				if (update.content.type === "text") {
-					parsedUpdate = {
+				if (update.content?.type === "text" && update.content.text) {
+					return {
 						type: "agent_message_chunk",
 						text: update.content.text,
 					};
 				}
 				break;
+
 			case "agent_thought_chunk":
-				if (update.content.type === "text") {
-					parsedUpdate = {
+				if (update.content?.type === "text" && update.content.text) {
+					return {
 						type: "agent_thought_chunk",
 						text: update.content.text,
 					};
 				}
 				break;
+
+			// ================================================================
+			// Tool Call Updates
+			// ================================================================
 			case "tool_call":
-			case "tool_call_update":
-				parsedUpdate = {
-					type: update.sessionUpdate,
-					toolCallId: update.toolCallId,
-					title: update.title ?? undefined,
-					status: (update.status as any) || "pending",
-					kind: update.kind ?? undefined,
-					content: AcpTypeConverter.toToolCallContent(update.content),
-					locations: update.locations ?? undefined,
+				return {
+					type: "tool_call",
+					toolCallId: update.toolCallId || "unknown",
+					title: update.title,
+					status:
+						(update.status as "pending" | "running" | "complete" | "failed") ||
+						"pending",
+					kind: update.kind,
+					content: AcpTypeConverter.toToolCallContent(
+						update.content as unknown as acp.ToolCallContent[],
+					),
+					locations: update.locations,
 				};
-				break;
+
+			case "tool_call_update":
+				return {
+					type: "tool_call_update",
+					toolCallId: update.toolCallId || "unknown",
+					title: update.title,
+					status: update.status as
+						| "pending"
+						| "running"
+						| "complete"
+						| "failed",
+					kind: update.kind,
+					content: AcpTypeConverter.toToolCallContent(
+						update.content as unknown as acp.ToolCallContent[],
+					),
+					locations: update.locations,
+				};
+
+			// ================================================================
+			// Plan Updates
+			// ================================================================
 			case "plan":
-				parsedUpdate = {
+				return {
 					type: "plan",
-					entries: (update.entries || []).map((e: any) => ({
-						id: e.id || "step-" + Math.random().toString(36).substr(2, 9),
+					entries: (update.entries || []).map((e) => ({
+						id: e.id || `step-${Math.random().toString(36).substr(2, 9)}`,
 						title: e.title || "Step",
 						description: e.description || "",
-						status:
-							e.status === "in_progress" ? "running" : e.status || "pending",
+						status: this.mapPlanStatus(e.status),
 					})),
 				};
-				break;
+
+			// ================================================================
+			// Mode Updates
+			// ================================================================
 			case "current_mode_update":
-				parsedUpdate = {
+				return {
 					type: "current_mode_update",
-					currentModeId: update.modeId,
+					currentModeId: update.modeId || "default",
 				};
-				break;
+
+			// ================================================================
+			// Command Updates
+			// ================================================================
 			case "available_commands_update":
-				parsedUpdate = {
+				return {
 					type: "available_commands_update",
-					commands: (update.availableCommands || []).map((cmd: any) => ({
+					commands: (update.availableCommands || []).map((cmd) => ({
 						name: cmd.name,
-						description: cmd.description,
+						description: cmd.description || "",
 						hint: cmd.input?.hint ?? null,
 					})),
 				};
-				break;
-			// Add other cases
+
+			// ================================================================
+			// Permission Requests
+			// ================================================================
+			case "permission_requested":
+				return {
+					type: "permission_requested",
+					requestId: update.requestId || "unknown",
+					title: update.title || "Permission Required",
+					description: update.description,
+					options: (update.options || []).map((opt) => ({
+						id: opt.id,
+						label: opt.label,
+						isDefault: opt.isDefault,
+					})),
+				};
+
+			// ================================================================
+			// Session End
+			// ================================================================
+			case "session_end":
+				return {
+					type: "session_end",
+					reason:
+						(update.reason as "completed" | "cancelled" | "error") ||
+						"completed",
+					message: update.message,
+				};
+
+			// ================================================================
+			// Output Updates
+			// ================================================================
+			case "output":
+				return {
+					type: "output",
+					outputType:
+						(update.outputType as "info" | "warning" | "error" | "debug") ||
+						"info",
+					text: update.text || "",
+				};
+
+			default:
+				console.warn(
+					"[AcpAdapter] Unhandled session update type:",
+					update.sessionUpdate,
+				);
+				return null;
 		}
 
-		if (parsedUpdate) {
-			for (const cb of this.sessionUpdateCallbacks) {
-				cb(parsedUpdate);
+		return null;
+	}
+
+	/**
+	 * Map ACP plan status to our domain status.
+	 */
+	private mapPlanStatus(
+		status: string | undefined,
+	): "pending" | "running" | "complete" | "failed" | "blocked" {
+		switch (status) {
+			case "in_progress":
+				return "running";
+			case "completed":
+				return "complete";
+			case "failed":
+				return "failed";
+			case "blocked":
+				return "blocked";
+			default:
+				return "pending";
+		}
+	}
+
+	/**
+	 * Generate a unique subscription ID.
+	 */
+	private generateSubscriptionId(prefix: string): string {
+		return `${prefix}-${++this.subscriptionIdCounter}`;
+	}
+
+	/**
+	 * Notify all session update subscribers.
+	 */
+	private notifySessionUpdate(update: SessionUpdate): void {
+		for (const callback of this.sessionUpdateSubscribers.values()) {
+			try {
+				callback(update);
+			} catch (e) {
+				console.error("[AcpAdapter] Error in session update callback:", e);
 			}
 		}
 	}
 
-	// Other callbacks required by SDK?
-	// The citation showed `this.connection = new acp.ClientSideConnection(() => this, stream);`
-	// This implies `this` (AcpAdapter) implements the callback interface.
+	/**
+	 * Notify all error subscribers.
+	 */
+	private notifyError(error: AgentError): void {
+		for (const callback of this.errorSubscribers.values()) {
+			try {
+				callback(error);
+			} catch (e) {
+				console.error("[AcpAdapter] Error in error callback:", e);
+			}
+		}
+	}
+
+	/**
+	 * Ensure connection is ready before operations.
+	 * @returns The active connection
+	 * @throws AgentError if not ready
+	 */
+	private ensureReady(): acp.ClientSideConnection {
+		if (this.connectionState !== ConnectionState.READY || !this.connection) {
+			throw new AgentError(
+				`Connection not ready. State: ${this.connectionState}`,
+				"NOT_READY",
+			);
+		}
+		return this.connection;
+	}
+
+	/**
+	 * Cleanup all resources.
+	 *
+	 * This is called on disconnect or initialization failure.
+	 */
+	private async cleanup(): Promise<void> {
+		console.log("[AcpAdapter] Cleaning up resources...");
+
+		// Run all cleanup functions (remove listeners)
+		for (const cleanup of this.cleanupFunctions) {
+			try {
+				cleanup();
+			} catch (e) {
+				console.error("[AcpAdapter] Cleanup function error:", e);
+			}
+		}
+		this.cleanupFunctions = [];
+
+		// Clear subscriptions
+		this.sessionUpdateSubscribers.clear();
+		this.errorSubscribers.clear();
+
+		// Clear references
+		this.agentProcess = null;
+		this.connection = null;
+		this.currentConfig = null;
+		this.currentAgentId = null;
+
+		// Update state
+		this.connectionState = ConnectionState.DISCONNECTED;
+
+		console.log("[AcpAdapter] Cleanup complete");
+	}
 }

@@ -1,3 +1,7 @@
+---
+applyTo: '**'
+---
+
 # Architecture Overview - EraGear Obsidian Copilot
 
 This document provides a comprehensive overview of the plugin's architecture, data flow, and component interactions.
