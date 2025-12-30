@@ -14,7 +14,9 @@ export interface AgentThoughtChunk {
 }
 
 export interface ToolCallContent {
-	type: "diff" | "terminal" | "text";
+	type: "diff" | "terminal" | "text" | "call";
+	name?: string;
+	arguments?: any;
 	path?: string;
 	newText?: string;
 	oldText?: string;
@@ -24,6 +26,7 @@ export interface ToolCallContent {
 
 export interface ToolCallLocation {
 	uri: string;
+	line?: number;
 	range?: {
 		start: { line: number; character: number };
 		end: { line: number; character: number };
@@ -34,20 +37,26 @@ export interface ToolCall {
 	type: "tool_call";
 	toolCallId: string;
 	title?: string;
+	name?: string;
 	status: "pending" | "running" | "complete" | "failed";
 	kind?: string;
 	content?: ToolCallContent[];
 	locations?: ToolCallLocation[];
+	rawInput?: any;
+	rawOutput?: any;
 }
 
 export interface ToolCallUpdate {
 	type: "tool_call_update";
 	toolCallId: string;
 	title?: string;
+	name?: string;
 	status?: "pending" | "running" | "complete" | "failed";
 	kind?: string;
 	content?: ToolCallContent[];
 	locations?: ToolCallLocation[];
+	rawInput?: any;
+	rawOutput?: any;
 }
 
 export interface PlanEntry {
@@ -157,4 +166,18 @@ export interface SessionModelState {
 	availableModels: SessionModel[];
 	/** ID of the currently active model */
 	currentModelId: string;
+}
+
+// ============================================================================
+// Stop Reasons - Why a prompt turn ended
+// ============================================================================
+export type StopReason =
+	| "end_turn"
+	| "max_tokens"
+	| "max_turn_requests"
+	| "refusal"
+	| "cancelled";
+
+export interface PromptResponse {
+	stopReason: StopReason;
 }

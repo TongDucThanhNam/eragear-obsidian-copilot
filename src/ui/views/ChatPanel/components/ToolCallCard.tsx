@@ -50,15 +50,26 @@ const ToolKindIcon: React.FC<{ kind?: string }> = ({ kind }) => {
 	switch (kind) {
 		case "read":
 			return <span title="Read">📄</span>;
-		case "write":
 		case "edit":
-			return <span title="Write">✏️</span>;
+		case "write":
+			return <span title="Edit">✏️</span>;
+		case "delete":
+			return <span title="Delete">🗑️</span>;
+		case "move":
+			return <span title="Move">📦</span>;
+		case "search":
+			return <span title="Search">🔍</span>;
+		case "execute":
 		case "bash":
 		case "terminal":
-			return <span title="Terminal">💻</span>;
+			return <span title="Execute">💻</span>;
+		case "think":
+			return <span title="Think">💭</span>;
+		case "fetch":
+			return <span title="Fetch">📡</span>;
 		case "browser":
 		case "web":
-			return <span title="Browser">🌐</span>;
+			return <span title="Web">🌐</span>;
 		default:
 			return <span title="Tool">🔧</span>;
 	}
@@ -158,10 +169,98 @@ const ToolCallContentRenderer: React.FC<{ content: ToolCallContent[] }> = ({
 						/>
 					);
 				}
+				if (item.type === "call" && item.name) {
+					return (
+						<div key={`call-${idx}`} style={{ marginTop: "4px" }}>
+							<div
+								style={{
+									fontSize: "0.7rem",
+									color: "var(--text-muted)",
+									marginBottom: "2px",
+									fontWeight: 600,
+									textTransform: "uppercase",
+								}}
+							>
+								Parameters
+							</div>
+							<pre
+								style={{
+									margin: 0,
+									padding: "8px",
+									backgroundColor: "var(--background-primary)",
+									borderRadius: "4px",
+									overflow: "auto",
+									maxHeight: "200px",
+									whiteSpace: "pre-wrap",
+									wordBreak: "break-word",
+									fontSize: "0.75rem",
+								}}
+							>
+								{item.arguments
+									? JSON.stringify(item.arguments, null, 2)
+									: "{}"}
+							</pre>
+						</div>
+					);
+				}
 				return null;
 			})}
 		</div>
 	);
+};
+
+const getToolCardTitle = (toolCall: ToolCall): string => {
+	const { title, name, kind, toolCallId, content, rawInput } = toolCall;
+
+	// 1. Prefer explicit title
+	if (title) return title;
+
+	// 2. Check rawInput for name (typical in MCP/ACP)
+	if (rawInput && typeof rawInput === "object") {
+		if (rawInput.name) return rawInput.name;
+		if (rawInput.method) return rawInput.method;
+	}
+
+	// 3. Prefer explicit name
+	if (name) return name;
+
+	// 4. Try to derive from kind
+	if (kind) {
+		const kindMap: Record<string, string> = {
+			read: "Read File",
+			write: "Write File",
+			edit: "Edit File",
+			delete: "Delete File",
+			move: "Move/Rename",
+			search: "Search",
+			execute: "Execute",
+			bash: "Terminal",
+			terminal: "Terminal",
+			think: "Reasoning",
+			fetch: "Fetch Data",
+			browser: "Browser",
+			web: "Web Search",
+		};
+		const normalizedKind = kind.toLowerCase();
+		if (kindMap[normalizedKind]) {
+			return kindMap[normalizedKind];
+		}
+		return `Tool (${kind})`;
+	}
+
+	// 3. Try to derive from content type
+	if (content && content.length > 0) {
+		// prioritized checks
+		const callPart = content.find((c) => c.type === "call");
+		if (callPart && callPart.name) return callPart.name;
+
+		if (content.some((c) => c.type === "terminal")) return "Execute Command";
+		if (content.some((c) => c.type === "diff")) return "Edit File";
+		if (content.some((c) => c.type === "text")) return "Tool Output";
+	}
+
+	// 4. Fallback to ID
+	return `Tool: ${toolCallId}`;
 };
 
 export interface ToolCallCardProps {
@@ -241,7 +340,7 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
 						whiteSpace: "nowrap",
 					}}
 				>
-					{title || `Tool: ${toolCallId}`}
+					{getToolCardTitle(toolCall)}
 				</span>
 				{locations && locations.length > 0 && (
 					<span
@@ -263,8 +362,42 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
 			</div>
 
 			{/* Content (expandable) */}
-			{isExpanded && content && content.length > 0 && (
-				<ToolCallContentRenderer content={content} />
+			{isExpanded && (
+				<div className="tool-call-card-body">
+					{toolCall.rawInput && (
+						<div className="tool-call-section" style={{ marginTop: "4px" }}>
+							<div
+								style={{
+									fontSize: "0.7rem",
+									color: "var(--text-muted)",
+									marginBottom: "2px",
+									fontWeight: 600,
+									textTransform: "uppercase",
+								}}
+							>
+								Parameters
+							</div>
+							<pre
+								style={{
+									margin: 0,
+									padding: "8px",
+									backgroundColor: "var(--background-primary)",
+									borderRadius: "4px",
+									overflow: "auto",
+									maxHeight: "200px",
+									whiteSpace: "pre-wrap",
+									wordBreak: "break-word",
+									fontSize: "0.75rem",
+								}}
+							>
+								{JSON.stringify(toolCall.rawInput, null, 2)}
+							</pre>
+						</div>
+					)}
+					{content && content.length > 0 && (
+						<ToolCallContentRenderer content={content} />
+					)}
+				</div>
 			)}
 		</div>
 	);

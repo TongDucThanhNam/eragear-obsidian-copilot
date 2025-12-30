@@ -1,0 +1,57 @@
+[data-slot="badge"] {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.25rem;
+	height: 1.25rem;
+	padding: 0.125rem 0.5rem;
+	border-radius: 0;
+	border: 1px solid transparent;
+	font-size: 0.75rem;
+	font-weight: 500;
+	white-space: nowrap;
+	width: fit-content;
+	transition: all 0.2s ease;
+	outline: none;
+	overflow: hidden;
+}
+
+[data-slot="badge"][data-variant="default"] {
+	background-color: var(--bg-primary);
+	color: var(--text-primary-foreground);
+}
+
+[data-slot="badge"][data-variant="secondary"] {
+	background-color: var(--bg-secondary);
+	color: var(--text-secondary-foreground);
+}
+
+[data-slot="badge"][data-variant="destructive"] {
+	background-color: rgba(var(--destructive), 0.1);
+	color: var(--text-destructive);
+	border-color: var(--border-destructive);
+}
+
+[data-slot="badge"][data-variant="outline"] {
+	background-color: transparent;
+	color: var(--text-foreground);
+	border-color: var(--border-border);
+}
+
+[data-slot="badge"][data-variant="ghost"] {
+	background-color: transparent;
+	color: var(--text-foreground);
+}
+
+[data-slot="badge"][data-variant="link"] {
+	background-color: transparent;
+	color: var(--text-primary);
+	text-decoration: underline;
+}
+
+[data-slot="badge"] svg {
+	width: 0.75rem;
+	height: 0.75rem;
+	pointer-events: none;
+	flex-shrink: 0;
+}

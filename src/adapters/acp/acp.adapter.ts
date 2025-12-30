@@ -19,8 +19,10 @@ import { VaultManager } from "../../core/vault-manager";
 import type { AgentConfig } from "../../domain/models/agent-config";
 import { AgentError } from "../../domain/models/agent-error";
 import type {
+	PromptResponse,
 	SessionModelState,
 	SessionUpdate,
+	StopReason,
 	ToolCallLocation,
 } from "../../domain/models/session-update";
 import {
@@ -45,6 +47,7 @@ interface AcpSessionUpdatePayload {
 	content?: { type: string; text?: string };
 	toolCallId?: string;
 	title?: string;
+	name?: string;
 	status?: string;
 	kind?: string;
 	locations?: ToolCallLocation[];
@@ -74,6 +77,8 @@ interface AcpSessionUpdatePayload {
 	// Output fields
 	outputType?: string;
 	text?: string;
+	rawInput?: any;
+	rawOutput?: any;
 }
 
 // ============================================================================
@@ -301,16 +306,16 @@ export class AcpAdapter implements IAgentClient {
 			// ================================================================
 			// Step 3: Setup stderr logging (non-critical, for debugging)
 			// ================================================================
-			if (stderr) {
-				const stderrListener = (data: Buffer) => {
-					console.error(`[AcpAdapter] Agent stderr: ${data.toString()}`);
-				};
-				stderr.on("data", stderrListener);
-				// Track for cleanup
-				this.cleanupFunctions.push(() => {
-					stderr.removeListener("data", stderrListener);
-				});
-			}
+			// if (stderr) {
+			// 	const stderrListener = (data: Buffer) => {
+			// 		console.error(`[AcpAdapter] Agent stderr: ${data.toString()}`);
+			// 	};
+			// 	stderr.on("data", stderrListener);
+			// 	// Track for cleanup
+			// 	this.cleanupFunctions.push(() => {
+			// 		stderr.removeListener("data", stderrListener);
+			// 	});
+			// }
 
 			// ================================================================
 			// Step 4: Setup process error and exit handlers
@@ -625,15 +630,26 @@ export class AcpAdapter implements IAgentClient {
 	 *
 	 * @param sessionId - The session to send the prompt to
 	 * @param message - The text content of the prompt
+	 * @returns Stop reason for the turn
 	 */
-	async sendMessage(sessionId: string, message: string): Promise<void> {
+	async sendMessage(
+		sessionId: string,
+		message: string,
+	): Promise<PromptResponse> {
 		const connection = this.ensureReady();
+		// console.log("[AcpAdapter] sendMessage:", sessionId, message);
 
 		try {
-			await connection.prompt({
+			const result = await connection.prompt({
 				sessionId: sessionId,
 				prompt: [{ type: "text", text: message }],
 			});
+
+			// console.log("[AcpAdapter] connection.prompt result:", result);
+
+			return {
+				stopReason: (result.stopReason as StopReason) || "end_turn",
+			};
 		} catch (e) {
 			console.error("[AcpAdapter] Prompt error:", e);
 			throw e instanceof AgentError
@@ -655,6 +671,23 @@ export class AcpAdapter implements IAgentClient {
 		const connection = this.ensureReady();
 
 		try {
+			// Preemptively cancel all pending permissions in this adapter
+			for (const [requestId, pending] of this.pendingPermissions) {
+				pending.resolve({ outcome: "cancelled" });
+				console.log(
+					"[AcpAdapter] Preemptively cancelled pending permission due to general session cancel:",
+					requestId,
+				);
+			}
+			this.pendingPermissions.clear();
+
+			// Notify UI that turn is being cancelled (optional, helps responsiveness)
+			this.notifySessionUpdate({
+				type: "session_end",
+				reason: "cancelled",
+				message: "Cancellation requested by user",
+			});
+
 			await connection.cancel({ sessionId });
 			console.log("[AcpAdapter] Cancel sent for session:", sessionId);
 		} catch (e) {
@@ -899,6 +932,7 @@ export class AcpAdapter implements IAgentClient {
 				console.log("[AcpAdapter] Processing tool_call:", {
 					toolCallId: update.toolCallId,
 					title: update.title,
+					name: update.name,
 					status: update.status,
 					contentRaw: update.content,
 				});
@@ -906,6 +940,7 @@ export class AcpAdapter implements IAgentClient {
 					type: "tool_call",
 					toolCallId: update.toolCallId || "unknown",
 					title: update.title,
+					name: update.name,
 					status:
 						(update.status as "pending" | "running" | "complete" | "failed") ||
 						"pending",
@@ -914,6 +949,8 @@ export class AcpAdapter implements IAgentClient {
 						update.content as unknown as acp.ToolCallContent[],
 					),
 					locations: update.locations,
+					rawInput: update.rawInput,
+					rawOutput: update.rawOutput,
 				};
 
 			case "tool_call_update":
@@ -921,6 +958,7 @@ export class AcpAdapter implements IAgentClient {
 					type: "tool_call_update",
 					toolCallId: update.toolCallId || "unknown",
 					title: update.title,
+					name: update.name, // Usually mostly ID update, but might carry name
 					status: update.status as
 						| "pending"
 						| "running"
@@ -931,6 +969,8 @@ export class AcpAdapter implements IAgentClient {
 						update.content as unknown as acp.ToolCallContent[],
 					),
 					locations: update.locations,
+					rawInput: update.rawInput,
+					rawOutput: update.rawOutput,
 				};
 
 			// ================================================================

@@ -4,6 +4,7 @@ import type { Message } from "../types";
 import { IconCopy, IconPen, IconRotate, IconTrash } from "./Icons";
 import { OutputMessage } from "./OutputMessage";
 import { ToolCallCard } from "./ToolCallCard";
+import { ThinkingBlock } from "./ThinkingBlock";
 
 interface MessageBubbleProps {
 	message: Message;
@@ -23,7 +24,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
 	// Extract text content for copy/insert
 	const textContent = message.parts
-		.map((p) => (p.type === "text" ? p.text : ""))
+		.map((p) => {
+			if (p.type === "text") return p.text;
+			if (p.type === "thought") return `Reasoning:\n${p.text}\n`;
+			return "";
+		})
 		.join("\n");
 
 	// Check if this is a tool-call only message
@@ -66,13 +71,14 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 		<div
 			className={`eragear-message-group ${isUser ? "user" : isSystem ? "system" : "assistant"}`}
 		>
-			{!isUser && !isSystem && <div className="eragear-avatar">🤖</div>}
-
 			<div style={{ width: "100%", overflow: "hidden" }}>
-				<div className="eragear-bubble">
+				<div className="">
 					{message.parts.map((part, index) => {
 						if (part.type === "text") {
 							return <Markdown key={index}>{part.text}</Markdown>;
+						}
+						if (part.type === "thought") {
+							return <ThinkingBlock key={index} content={part.text} />;
 						}
 						if (part.type === "tool-call") {
 							return <ToolCallCard key={index} toolCall={part.toolCall} />;
@@ -89,6 +95,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 					})}
 				</div>
 
+				{/* Messages Actions */}
 				{!isUser && !isSystem && (
 					<div className="eragear-msg-actions">
 						<button
@@ -128,8 +135,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 					</div>
 				)}
 			</div>
-
-			{isUser && <div className="eragear-avatar">👤</div>}
 		</div>
 	);
 };

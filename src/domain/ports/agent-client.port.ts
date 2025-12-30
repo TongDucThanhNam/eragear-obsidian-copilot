@@ -1,6 +1,7 @@
 import type { AgentConfig } from "../models/agent-config";
 import type { AgentError } from "../models/agent-error";
 import type {
+	PromptResponse,
 	SessionModelState,
 	SessionUpdate,
 } from "../models/session-update";
@@ -73,7 +74,7 @@ export interface IAgentClient {
 	// ========================================================================
 
 	/** Send a prompt to the agent within an existing session */
-	sendMessage(sessionId: string, message: string): Promise<void>;
+	sendMessage(sessionId: string, message: string): Promise<PromptResponse>;
 
 	/** Cancel any ongoing operation in the session */
 	cancel(sessionId: string): Promise<void>;

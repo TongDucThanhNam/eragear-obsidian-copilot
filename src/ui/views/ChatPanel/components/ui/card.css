@@ -1,0 +1,103 @@
+[data-slot="card"] {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	border-radius: 0;
+	border: 1px rgba(#000);
+	background-color: var(--bg-card);
+	color: var(--text-card-foreground);
+	padding: 1rem;
+	overflow: hidden;
+	font-size: 0.75rem;
+	line-height: 1.5;
+}
+
+[data-slot="card"][data-size="sm"] {
+	gap: 0.5rem;
+	padding: 0.75rem;
+}
+
+[data-slot="card"] > img:first-child {
+	border-radius: 0;
+	margin-top: -1rem;
+	margin-left: -1rem;
+	margin-right: -1rem;
+}
+
+[data-slot="card"][data-size="sm"] > img:first-child {
+	margin-top: -0.75rem;
+	margin-left: -0.75rem;
+	margin-right: -0.75rem;
+}
+
+[data-slot="card-header"] {
+	display: grid;
+	gap: 0.25rem;
+	border-radius: 0;
+	padding: 1rem;
+	auto-rows: min-content;
+	align-items: start;
+	grid-template-columns: 1fr;
+}
+
+[data-slot="card"][data-size="sm"] [data-slot="card-header"] {
+	padding: 0.75rem;
+}
+
+[data-slot="card-header"]:has([data-slot="card-action"]) {
+	grid-template-columns: 1fr auto;
+}
+
+[data-slot="card-header"]:has([data-slot="card-description"]) {
+	grid-template-rows: auto auto;
+}
+
+[data-slot="card-header"] .border-b {
+	padding-bottom: 1rem;
+}
+
+[data-slot="card"][data-size="sm"] [data-slot="card-header"] .border-b {
+	padding-bottom: 0.75rem;
+}
+
+[data-slot="card-title"] {
+	font-size: 0.875rem;
+	font-weight: 500;
+}
+
+[data-slot="card"][data-size="sm"] [data-slot="card-title"] {
+	font-size: 0.875rem;
+}
+
+[data-slot="card-description"] {
+	font-size: 0.75rem;
+	line-height: 1.5;
+	color: var(--text-muted-foreground);
+}
+
+[data-slot="card-action"] {
+	grid-column: 2;
+	grid-row: 1 / span 2;
+	justify-self: end;
+	align-self: start;
+}
+
+[data-slot="card-content"] {
+	padding: 1rem;
+}
+
+[data-slot="card"][data-size="sm"] [data-slot="card-content"] {
+	padding: 0.75rem;
+}
+
+[data-slot="card-footer"] {
+	display: flex;
+	align-items: center;
+	border-radius: 0;
+	border-top: 1px solid var(--border-border);
+	padding: 1rem;
+}
+
+[data-slot="card"][data-size="sm"] [data-slot="card-footer"] {
+	padding: 0.75rem;
+}

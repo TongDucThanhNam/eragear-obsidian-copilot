@@ -1,0 +1,156 @@
+/* Button base styles */
+.button {
+	font-size: 12px;
+	font-weight: 500;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	white-space: nowrap;
+	transition: all 0.2s ease;
+	border: 1px solid transparent;
+	outline: none;
+	cursor: pointer;
+	user-select: none;
+	padding: 0 10px;
+	height: 32px;
+	gap: 6px;
+	border-radius: 0;
+	background-clip: padding-box;
+}
+
+.button svg:not([class*="size-"]) {
+	width: 16px;
+	height: 16px;
+	pointer-events: none;
+}
+
+.button:disabled {
+	pointer-events: none;
+	opacity: 0.5;
+}
+
+.button:focus-visible {
+	border-color: var(--ring-color, #000);
+	box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
+	outline: none;
+}
+
+/* Variants */
+.button.default {
+	background-color: var(--primary, #000);
+	color: var(--primary-foreground, #fff);
+}
+
+.button.default:hover:not(:disabled) {
+	background-color: rgba(0, 0, 0, 0.8);
+}
+
+.button.outline {
+	border-color: var(--border, #ddd);
+	background-color: var(--background, #fff);
+	color: var(--foreground, #000);
+}
+
+.button.outline:hover:not(:disabled) {
+	background-color: var(--muted, #f5f5f5);
+	color: var(--foreground, #000);
+}
+
+.button.secondary {
+	background-color: var(--secondary, #f0f0f0);
+	color: var(--secondary-foreground, #000);
+}
+
+.button.secondary:hover:not(:disabled) {
+	background-color: rgba(240, 240, 240, 0.8);
+}
+
+.button.ghost:hover:not(:disabled) {
+	background-color: var(--muted, #f5f5f5);
+	color: var(--foreground, #000);
+}
+
+.button.destructive {
+	background-color: rgba(239, 68, 68, 0.1);
+	color: var(--destructive, #ef4444);
+	border-color: rgba(239, 68, 68, 0.4);
+}
+
+.button.destructive:hover:not(:disabled) {
+	background-color: rgba(239, 68, 68, 0.2);
+}
+
+.button.link {
+	color: var(--primary, #000);
+	text-decoration: underline;
+	text-decoration-offset: 4px;
+	background: none;
+	border: none;
+}
+
+.button.link:hover:not(:disabled) {
+	text-decoration: underline;
+}
+
+/* Sizes */
+.button.size-xs {
+	height: 24px;
+	font-size: 12px;
+	padding: 0 8px;
+	gap: 4px;
+}
+
+.button.size-xs svg:not([class*="size-"]) {
+	width: 12px;
+	height: 12px;
+}
+
+.button.size-sm {
+	height: 28px;
+	font-size: 12px;
+	padding: 0 10px;
+	gap: 4px;
+}
+
+.button.size-sm svg:not([class*="size-"]) {
+	width: 14px;
+	height: 14px;
+}
+
+.button.size-lg {
+	height: 36px;
+	font-size: 14px;
+	padding: 0 10px;
+	gap: 6px;
+}
+
+.button.size-icon {
+	width: 32px;
+	height: 32px;
+	padding: 0;
+}
+
+.button.size-icon-xs {
+	width: 24px;
+	height: 24px;
+	border-radius: 0;
+	padding: 0;
+}
+
+.button.size-icon-xs svg:not([class*="size-"]) {
+	width: 12px;
+	height: 12px;
+}
+
+.button.size-icon-sm {
+	width: 28px;
+	height: 28px;
+	border-radius: 0;
+	padding: 0;
+}
+
+.button.size-icon-lg {
+	width: 36px;
+	height: 36px;
+	padding: 0;
+}

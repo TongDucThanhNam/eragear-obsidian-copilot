@@ -1,6 +1,6 @@
 import type { App } from "obsidian";
 import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type {
 	PlanEntry,
 	SessionModelState,
@@ -8,60 +8,19 @@ import type {
 import { useMentions } from "../../../hooks/useMentions";
 import { useSlashCommands } from "../../../hooks/useSlashCommands";
 import { AgentPlan } from "./AgentPlan";
-import {
-	IconChevronDown,
-	IconCornerDownLeft,
-	IconMic,
-	IconPlus,
-	IconSearch,
-	IconSend,
-	IconSquare,
-} from "./Icons";
+import { IconCornerDownLeft, IconPlus } from "./Icons";
 import { type SuggestionItem, SuggestionPopover } from "./SuggestionPopover";
-
-// Speech Recognition Type Definition
-interface SpeechRecognition extends EventTarget {
-	continuous: boolean;
-	interimResults: boolean;
-	lang: string;
-	start(): void;
-	stop(): void;
-	onstart: ((this: SpeechRecognition, ev: Event) => void) | null;
-	onend: ((this: SpeechRecognition, ev: Event) => void) | null;
-	onresult:
-		| ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => void)
-		| null;
-	onerror:
-		| ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => void)
-		| null;
-}
-
-interface SpeechRecognitionEvent extends Event {
-	results: SpeechRecognitionResultList;
-	resultIndex: number;
-}
-
-interface SpeechRecognitionResultList {
-	readonly length: number;
-	item(index: number): SpeechRecognitionResult;
-	[index: number]: SpeechRecognitionResult;
-}
-
-interface SpeechRecognitionResult {
-	readonly length: number;
-	item(index: number): SpeechRecognitionAlternative;
-	[index: number]: SpeechRecognitionAlternative;
-	isFinal: boolean;
-}
-
-interface SpeechRecognitionAlternative {
-	transcript: string;
-	confidence: number;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-	error: string;
-}
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectLabel,
+	SelectTrigger,
+	SelectValue,
+} from "./ui/select";
+import { Button } from "./ui/button";
+import { Card } from "./ui/card";
 
 interface ChatModelOption {
 	id: string;
@@ -277,7 +236,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 				/>
 			)}
 
-			<div className={`eragear-chat-input-wrapper`}>
+			<Card className={`eragear-chat-input-wrapper`}>
 				<textarea
 					ref={textareaRef}
 					className="eragear-chat-input-textarea"
@@ -291,14 +250,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 				<div className="eragear-chat-input-footer">
 					<div className="eragear-chat-input-left">
 						{onTriggerContext && (
-							<button
+							<Button
 								type="button"
-								className="eragear-btn-icon eragear-btn-ghost"
+								size="icon"
+								variant="ghost"
 								onClick={onTriggerContext}
 								title="Add Context (+)"
 							>
 								<IconPlus />
-							</button>
+							</Button>
 						)}
 					</div>
 
@@ -312,91 +272,106 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 								className="eragear-model-selector-wrapper"
 								title="Agent Model"
 							>
-								<select
-									className="eragear-model-selector"
+								<Select
 									value={agentModels.currentModelId}
-									onChange={(e) => onAgentModelChange(e.target.value)}
+									onValueChange={(val) => val && onAgentModelChange(val)}
 								>
-									{agentModels.availableModels.map((model) => (
-										<option key={model.modelId} value={model.modelId}>
-											{model.name}
-										</option>
-									))}
-								</select>
-								<IconChevronDown />
+									<SelectTrigger className="w-full">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{agentModels.availableModels.map((model) => (
+											<SelectItem key={model.modelId} value={model.modelId}>
+												{model.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
 						) : (
 							// API Model Selector - Default when no agent models
-							<select
-								className="eragear-model-selector"
+							<Select
 								value={activeModelId}
-								onChange={(e) => onModelChange(e.target.value)}
+								onValueChange={(val) => val && onModelChange(val)}
+								disabled={availableModels.length === 0}
 							>
-								{availableModels.length > 0 ? (
-									<>
-										{/* Group: API Models */}
-										{availableModels.filter((m) => m.type === "model").length >
-											0 && (
-											<optgroup label="API Models">
-												{availableModels
-													.filter((m) => m.type === "model")
-													.map((m) => (
-														<option key={m.id} value={m.id}>
-															{m.name}
-														</option>
-													))}
-											</optgroup>
-										)}
-										{/* Group: Local Agents */}
-										{availableModels.filter((m) => m.type === "agent").length >
-											0 && (
-											<optgroup label="Local Agents">
-												{availableModels
-													.filter((m) => m.type === "agent")
-													.map((m) => (
-														<option key={m.id} value={m.id}>
-															{m.name}
-														</option>
-													))}
-											</optgroup>
-										)}
-									</>
-								) : (
-									<option value="" disabled>
-										No models configured
-									</option>
-								)}
-							</select>
+								<SelectTrigger className="w-[180px]">
+									<SelectValue>Select Model</SelectValue>
+								</SelectTrigger>
+								<SelectContent>
+									{availableModels.length > 0 ? (
+										<>
+											{/* Group: API Models */}
+											{availableModels.filter((m) => m.type === "model")
+												.length > 0 && (
+												<SelectGroup>
+													<SelectLabel>API Models</SelectLabel>
+													{availableModels
+														.filter((m) => m.type === "model")
+														.map((m) => (
+															<SelectItem key={m.id} value={m.id}>
+																{m.name}
+															</SelectItem>
+														))}
+												</SelectGroup>
+											)}
+											{/* Group: Local Agents */}
+											{availableModels.filter((m) => m.type === "agent")
+												.length > 0 && (
+												<SelectGroup>
+													<SelectLabel>Local Agents</SelectLabel>
+													{availableModels
+														.filter((m) => m.type === "agent")
+														.map((m) => (
+															<SelectItem key={m.id} value={m.id}>
+																{m.name}
+															</SelectItem>
+														))}
+												</SelectGroup>
+											)}
+										</>
+									) : (
+										<SelectItem value="" disabled>
+											No models configured
+										</SelectItem>
+									)}
+								</SelectContent>
+							</Select>
 						)}
 
 						{/* Agent Mode Selector - Only shown when agent has modes */}
 						{agentModes.length > 0 && onModeChange && (
-							<select
-								className="eragear-mode-selector"
+							<Select
 								value={currentModeId}
-								onChange={(e) => onModeChange(e.target.value)}
-								title="Agent Mode"
+								onValueChange={(val) => val && onModeChange(val)}
 							>
-								{agentModes.map((mode) => (
-									<option key={mode.id} value={mode.id}>
-										{mode.name}
-									</option>
-								))}
-							</select>
+								<SelectTrigger className="w-[140px]" title="Agent Mode">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{agentModes.map((mode) => (
+										<SelectItem key={mode.id} value={mode.id}>
+											{mode.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						)}
 
-						<button
+						<Button
 							type="button"
 							className={`eragear-btn-icon`}
 							onClick={handleSend}
 							disabled={!input.trim()}
 							title="Send"
+							size="icon"
+							variant="default"
 						>
 							<IconCornerDownLeft />
-						</button>
+						</Button>
 					</div>
 				</div>
-			</div>
+			</Card>
 		</div>
 	);
 };

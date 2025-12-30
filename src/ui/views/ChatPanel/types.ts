@@ -8,7 +8,8 @@ export type ExtendedMessagePart =
 	| { type: "text"; text: string }
 	| { type: "tool-call"; toolCall: ToolCall }
 	| { type: "tool-calls"; toolCalls: ToolCall[] }
-	| { type: "output"; output: OutputUpdate };
+	| { type: "output"; output: OutputUpdate }
+	| { type: "thought"; text: string };
 
 // Extended message type that supports tool calls
 export interface ExtendedMessage {

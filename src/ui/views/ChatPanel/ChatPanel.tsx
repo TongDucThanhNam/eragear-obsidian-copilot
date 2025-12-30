@@ -1,3 +1,4 @@
+import { PlusIcon } from "@phosphor-icons/react";
 import { type App, MarkdownView, type TFile } from "obsidian";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -27,6 +28,17 @@ import {
 	IconFolder,
 	IconPlus,
 } from "./components/Icons";
+
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "./components/ui/dropdown-menu";
+import { Badge } from "./components/ui/badge";
 import type { Message } from "./types";
 
 // Chat mode type
@@ -59,18 +71,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 
 	const [activeMode, setActiveMode] = useState<PanelMode>("chat");
 
-	const [messages, setMessages] = useState<Message[]>([
-		{
-			id: "welcome-msg",
-			role: "assistant",
-			parts: [
-				{
-					type: "text",
-					text: "Hello! I'm Eragear Copilot.\n\nTry:\n• `@` to add context from notes\n• `/edit` for inline editing",
-				},
-			],
-		},
-	]);
+	const [messages, setMessages] = useState<Message[]>([]);
 	const [input, setInput] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [showCommands, setShowCommands] = useState(false);
@@ -257,25 +258,33 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 					return prev;
 				});
 			} else if (update.type === "agent_thought_chunk") {
-				// Stream thoughts to UI - append to last assistant message with thinking prefix
-				console.log("Thought:", update.text);
+				// Stream thoughts to UI - append to last assistant message as thought part
 				setMessages((prev) => {
 					const lastMsg = prev[prev.length - 1];
 					if (lastMsg && lastMsg.role === "assistant") {
 						const newParts = [...lastMsg.parts];
 						const lastPart = newParts[newParts.length - 1];
-						if (lastPart && lastPart.type === "text") {
-							// Append thought text (it will be replaced when actual message comes)
+						if (lastPart && lastPart.type === "thought") {
+							// Append thought text
 							newParts[newParts.length - 1] = {
 								...lastPart,
 								text: lastPart.text + update.text,
 							};
 						} else {
-							newParts.push({ type: "text", text: update.text || "" });
+							// New thought part
+							newParts.push({ type: "thought", text: update.text || "" });
 						}
 						return [...prev.slice(0, -1), { ...lastMsg, parts: newParts }];
 					}
-					return prev;
+					// If no active assistant message, create one
+					return [
+						...prev,
+						{
+							id: generateMessageId(),
+							role: "assistant",
+							parts: [{ type: "thought", text: update.text || "" }],
+						},
+					];
 				});
 			} else if (update.type === "available_commands_update") {
 				console.log(
@@ -1197,36 +1206,18 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 								{activeMode === "chat" ? "Chat" : "Playground"}
 							</span>
 							{settings && (
-								<span
-									className="eragear-model-badge"
-									style={{
-										fontSize: "0.75rem",
-										padding: "2px 6px",
-										borderRadius: "4px",
-										backgroundColor:
-											settings.provider === AIProviderType.ACP_LOCAL
-												? agentError
-													? "var(--color-red)"
-													: isInitializing
-														? "var(--color-yellow)"
-														: agentClient
-															? "var(--color-green)"
-															: "var(--text-muted)"
-												: "var(--interactive-accent)",
-										color: "black",
-										opacity: 1,
-									}}
-									title={
+								<Badge
+									variant={
 										settings.provider === AIProviderType.ACP_LOCAL
 											? agentError
-												? `Error: ${agentError.message}`
+												? "destructive"
 												: isInitializing
-													? "Initializing agent..."
+													? "default"
 													: agentClient
-														? "Agent connected"
-														: "Agent not connected"
-											: undefined
-									}
+														? "secondary"
+														: "default"
+													: "default"
+										}
 								>
 									{settings.provider === AIProviderType.ACP_LOCAL
 										? agentError
@@ -1237,7 +1228,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 													? "Connected"
 													: "Disconnected"
 										: `Model: ${selectedModel || "Loading..."}`}
-								</span>
+								</Badge>
 							)}
 
 							{/* Mode Selector for ACP - Shows current agent name and mode */}
@@ -1252,131 +1243,43 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 									• {chatContext.agentName}
 								</span>
 							)}
-
-							{/* {settings.provider === AIProviderType.ACP_LOCAL &&
-							modes.length > 0 && (
-								<select
-									value={currentModeId}
-									onChange={(e) => {
-										const newMode = e.target.value;
-										if (agentSessionId) {
-											setMode(newMode, agentSessionId);
-										}
-										setCurrentModeId(newMode);
-									}}
-									style={{
-										background: "var(--background-secondary)",
-										border: "1px solid var(--background-modifier-border)",
-										borderRadius: "4px",
-										color: "var(--text-normal)",
-										fontSize: "0.75rem",
-										cursor: "pointer",
-										padding: "2px 6px",
-										marginLeft: "8px",
-									}}
-								>
-									{modes.map((m: { id: string; name: string }) => (
-										<option key={m.id} value={m.id}>
-											{m.name}
-										</option>
-									))}
-								</select>
-							)} */}
 						</div>
 
 						{/* New Chat Button with Dropdown */}
-						<div style={{ position: "relative" }}>
-							<button
-								ref={newChatButtonRef}
-								type="button"
-								className="eragear-add-btn"
-								onClick={handleNewChat}
-								title="New Chat"
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "4px",
-								}}
+						<DropdownMenu highlightItemOnHover={true}>
+							<DropdownMenuTrigger title="New Chat">
+								<PlusIcon />
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								side="bottom"
+								sideOffset={5}
+								collisionPadding={8}
+								className="new-chat-dropdown"
 							>
-								<IconPlus />
-								<IconChevronDown />
-							</button>
-
-							{/* Dropdown Menu - Fixed positioning to prevent clipping */}
-							{showNewChatMenu && (
-								<div
-									ref={dropdownRef}
-									className="eragear-dropdown-menu"
-									style={{
-										position: "fixed",
-										top: `${dropdownPos.top}px`,
-										right: `${dropdownPos.right}px`,
-										background: "var(--background-primary)",
-										border: "1px solid var(--background-modifier-border)",
-										borderRadius: "8px",
-										boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-										minWidth: "220px",
-										zIndex: 100,
-										overflow: "hidden",
-									}}
-								>
-									{/* API Models Section */}
-									<div
-										style={{
-											padding: "8px 12px",
-											borderBottom:
-												"1px solid var(--background-modifier-border)",
-										}}
-									>
-										<button
-											type="button"
-											onClick={handleNewAPIChat}
-											className="eragear-dropdown-item"
+								<DropdownMenuItem onClick={handleNewAPIChat}>
+									New Chat (API Models)
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								<DropdownMenuGroup>
+									<DropdownMenuLabel>External Agents</DropdownMenuLabel>
+									{getAvailableAgents().map((agent) => (
+										<DropdownMenuItem
+											key={agent.id}
+											onClick={() => handleNewAgentChat(agent)}
 										>
-											<span>📝</span>
-											<span>New Chat (API Models)</span>
-										</button>
-									</div>
-
-									{/* ACP Agents Section */}
-									<div style={{ padding: "4px 0" }}>
-										<div
-											style={{
-												padding: "4px 12px",
-												fontSize: "0.7rem",
-												color: "var(--text-muted)",
-												textTransform: "uppercase",
-												letterSpacing: "0.5px",
-											}}
-										>
-											External Agents
-										</div>
-										{getAvailableAgents().map((agent) => (
-											<button
-												type="button"
-												key={agent.id}
-												onClick={() => handleNewAgentChat(agent)}
-												className="eragear-dropdown-item"
-											>
-												<span>🤖</span>
-												<span>{agent.name}</span>
-											</button>
-										))}
-										{getAvailableAgents().length === 0 && (
-											<div
-												style={{
-													padding: "8px 12px",
-													color: "var(--text-muted)",
-													fontSize: "0.8rem",
-												}}
-											>
-												No agents configured
-											</div>
-										)}
-									</div>
-								</div>
-							)}
-						</div>
+											<span>🤖</span>
+											<span>{agent.name}</span>
+										</DropdownMenuItem>
+									))}
+									{getAvailableAgents().length === 0 && (
+										<DropdownMenuItem disabled>
+											No agents configured
+										</DropdownMenuItem>
+									)}
+								</DropdownMenuGroup>
+							</DropdownMenuContent>
+						</DropdownMenu>
 					</div>
 
 					<MessageList

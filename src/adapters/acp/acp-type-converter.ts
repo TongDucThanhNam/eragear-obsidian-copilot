@@ -7,6 +7,8 @@ import type { ToolCallContent } from "../../domain/models/session-update";
  */
 type ExtendedAcpToolCallContent = acp.ToolCallContent & {
 	text?: string;
+	name?: string;
+	arguments?: any;
 	content?: {
 		type?: string;
 		text?: string;
@@ -71,6 +73,17 @@ export function toToolCallContent(
 					});
 				}
 			}
+		} else if (
+			(item.type as string) === "call" ||
+			(item.type as string) === "tool" ||
+			(item.type as string) === "tool_call"
+		) {
+			// Handle generic tool call
+			converted.push({
+				type: "call",
+				name: extItem.name || (item as any).name,
+				arguments: extItem.arguments || (item as any).arguments,
+			});
 		} else {
 			// Fallback: if it has text property, treat as text
 			if (extItem.text) {

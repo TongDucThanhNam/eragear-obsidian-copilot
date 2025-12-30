@@ -1,4 +1,5 @@
 import type React from "react";
+import { Dialog } from "@base-ui/react/dialog";
 import type { PermissionRequest } from "../../../../domain/models/session-update";
 
 export interface PermissionDialogProps {
@@ -15,107 +16,69 @@ export const PermissionDialog: React.FC<PermissionDialogProps> = ({
 	const { title, description, options } = request;
 
 	return (
-		<div
-			className="permission-dialog-overlay"
-			style={{
-				position: "fixed",
-				top: 0,
-				left: 0,
-				right: 0,
-				bottom: 0,
-				backgroundColor: "rgba(0, 0, 0, 0.5)",
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				zIndex: 1000,
-			}}
-		>
-			<div
-				className="permission-dialog"
-				style={{
-					backgroundColor: "var(--background-primary)",
-					borderRadius: "8px",
-					padding: "20px",
-					maxWidth: "400px",
-					width: "90%",
-					boxShadow: "0 4px 20px rgba(0, 0, 0, 0.3)",
-					border: "1px solid var(--background-modifier-border)",
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: "10px",
-						marginBottom: "12px",
-					}}
-				>
-					<span style={{ fontSize: "1.5rem" }}>🔐</span>
-					<h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>
-						{title}
-					</h3>
-				</div>
-				{description && (
-					<p
-						style={{
-							margin: "0 0 16px 0",
-							fontSize: "0.9rem",
-							color: "var(--text-muted)",
-						}}
-					>
-						{description}
-					</p>
-				)}
-				<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-					{options.map((option) => {
-						const isAllow = option.id.includes("allow");
-						const isDeny =
-							option.id.includes("deny") || option.id.includes("reject");
-						return (
-							<button
-								key={option.id}
-								type="button"
-								onClick={() => onRespond(option.id)}
+		<Dialog.Root open={true} onOpenChange={(open) => !open && onDismiss?.()}>
+			<Dialog.Portal>
+				<Dialog.Backdrop className="permission-dialog-backdrop" />
+				<Dialog.Viewport className="permission-dialog-viewport">
+					<Dialog.Popup className="permission-dialog-popup">
+						<Dialog.Title className="permission-dialog-title">
+							<span style={{ fontSize: "1.4rem" }}>🔐</span>
+							{title}
+						</Dialog.Title>
+
+						{description && (
+							<Dialog.Description className="permission-dialog-description">
+								{description}
+							</Dialog.Description>
+						)}
+
+						<div className="permission-options">
+							{options.map((option) => {
+								const isAllow =
+									option.id.toLowerCase().includes("allow") ||
+									option.id.toLowerCase().includes("yes") ||
+									option.id.toLowerCase().includes("approve");
+								const isDeny =
+									option.id.toLowerCase().includes("deny") ||
+									option.id.toLowerCase().includes("reject") ||
+									option.id.toLowerCase().includes("no") ||
+									option.id.toLowerCase().includes("cancel");
+
+								return (
+									<button
+										key={option.id}
+										type="button"
+										onClick={() => onRespond(option.id)}
+										className={`test-btn ${isAllow ? "test-btn-primary" : "test-btn-secondary"} ${isDeny ? "test-btn-danger" : ""}`}
+										style={{
+											width: "100%",
+											justifyContent: "center",
+											fontWeight: option.isDefault ? 700 : 500,
+										}}
+									>
+										{option.label}
+									</button>
+								);
+							})}
+						</div>
+
+						{onDismiss && (
+							<Dialog.Close
+								className="test-btn test-btn-small"
 								style={{
-									padding: "10px 16px",
-									borderRadius: "6px",
-									border: "1px solid var(--background-modifier-border)",
-									backgroundColor: isAllow
-										? "var(--interactive-accent)"
-										: isDeny
-											? "var(--background-secondary)"
-											: "var(--background-secondary)",
-									color: isAllow ? "white" : "var(--text-normal)",
-									fontSize: "0.9rem",
-									fontWeight: option.isDefault ? 600 : 400,
-									cursor: "pointer",
+									border: "none",
+									background: "none",
+									color: "var(--text-muted)",
+									marginTop: "4px",
 								}}
 							>
-								{option.label}
-							</button>
-						);
-					})}
-				</div>
-				{onDismiss && (
-					<button
-						type="button"
-						onClick={onDismiss}
-						style={{
-							marginTop: "12px",
-							padding: "8px",
-							width: "100%",
-							background: "none",
-							border: "none",
-							color: "var(--text-muted)",
-							cursor: "pointer",
-							fontSize: "0.85rem",
-						}}
-					>
-						Cancel
-					</button>
-				)}
-			</div>
-		</div>
+								Cancel
+							</Dialog.Close>
+						)}
+					</Dialog.Popup>
+				</Dialog.Viewport>
+			</Dialog.Portal>
+		</Dialog.Root>
 	);
 };
 
