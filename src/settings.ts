@@ -195,11 +195,11 @@ export const BUILTIN_CHAT_MODELS: ChatModelConfig[] = [
 		isBuiltIn: true,
 	},
 	{
-		id: "acp-claude-code",
+		id: "claude-code-acp",
 		name: "Claude Code",
 		provider: "acp",
 		type: "agent",
-		command: "acp-claude-code",
+		command: "claude-code-acp",
 		args: "",
 		enabled: true,
 		isBuiltIn: true,
@@ -211,7 +211,7 @@ export const BUILTIN_CHAT_MODELS: ChatModelConfig[] = [
 		type: "agent",
 		command: "opencode",
 		args: "acp",
-		enabled: true,
+		enabled: false, // Disabled - opencode command not installed
 		isBuiltIn: true,
 	},
 ];
@@ -219,9 +219,9 @@ export const BUILTIN_CHAT_MODELS: ChatModelConfig[] = [
 export const DEFAULT_SETTINGS: MyPluginSettings = {
 	provider: AIProviderType.BYOK_OPENAI,
 	openaiApiKey: "",
-	openaiModel: "gpt-4o",
+	openaiModel: "gpt-5-nano",
 	geminiApiKey: "",
-	geminiModel: "gemini-1.5-flash",
+	geminiModel: "gemini-2.5-flash-lite",
 	deepseekApiKey: "",
 	deepseekModel: "deepseek-chat",
 
@@ -241,7 +241,7 @@ export const DEFAULT_SETTINGS: MyPluginSettings = {
 	eragearApiKey: "",
 
 	mySetting: "default",
-	apiEndpoint: "https://eragear.app",
+	apiEndpoint: "https://api.eragear.app",
 	enableDebugMode: false,
 	maxGraphHops: 3,
 	searchMaxResults: 50,

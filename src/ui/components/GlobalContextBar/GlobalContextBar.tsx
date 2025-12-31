@@ -53,6 +53,7 @@ export const GlobalContextBar: React.FC<GlobalContextBarProps> = ({
 					className="context-btn context-btn-primary"
 					onClick={handleUseActiveFile}
 					title="Use the currently active file in Obsidian"
+					aria-label="Use active file as context"
 				>
 					📌 Use Active
 				</button>
@@ -63,6 +64,7 @@ export const GlobalContextBar: React.FC<GlobalContextBarProps> = ({
 						className="context-btn context-btn-secondary"
 						onClick={handleClearSelection}
 						title="Clear the selected file"
+						aria-label="Clear selected file"
 					>
 						✕ Clear
 					</button>
@@ -73,6 +75,8 @@ export const GlobalContextBar: React.FC<GlobalContextBarProps> = ({
 					className="context-btn context-btn-secondary"
 					onClick={() => setShowFilePicker(!showFilePicker)}
 					title="Browse vault files"
+					aria-label="Browse and pick a file"
+					aria-expanded={showFilePicker}
 				>
 					🔍 Pick
 				</button>
@@ -85,6 +89,7 @@ export const GlobalContextBar: React.FC<GlobalContextBarProps> = ({
 						type="text"
 						className="context-file-input"
 						placeholder="Type to search files..."
+						aria-label="Search files in vault"
 						onKeyDown={(e) => {
 							if (e.key === "Escape") setShowFilePicker(false);
 						}}
@@ -106,6 +111,7 @@ export const GlobalContextBar: React.FC<GlobalContextBarProps> = ({
 										setShowFilePicker(false);
 									}}
 									tabIndex={0}
+									aria-label={`Select file: ${file.path}`}
 									onKeyDown={(e) => {
 										if (e.key === "Enter") {
 											onFileSelect(file);

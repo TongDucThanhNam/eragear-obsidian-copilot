@@ -15,6 +15,34 @@ if you want to view the source, please visit the github repository of this plugi
 const prod = process.argv[2] === "production";
 
 /**
+ * Drop Zod Locales Plugin
+ *
+ * Zod v4 includes ~40 locale files (~150KB) that we don't need.
+ * This plugin replaces all non-English locales with empty modules.
+ */
+const dropZodLocalesPlugin = {
+	name: "drop-zod-locales",
+	setup(build) {
+		// Match zod v4 locale files by absolute path
+		build.onLoad(
+			{ filter: /zod\/v4\/locales\/[a-z].*\.js$/ },
+			(args) => {
+				// Keep en.js and index.js
+				const filename = path.basename(args.path);
+				if (filename === "en.js" || filename === "index.js") {
+					return null; // Let esbuild handle normally
+				}
+				// Return empty module - locales export a default function
+				return {
+					contents: "export default function() { return {}; }",
+					loader: "js",
+				};
+			}
+		);
+	},
+};
+
+/**
  * Web Worker Plugin
  *
  * This plugin bundles Web Workers (.worker.ts files) into separate bundles
@@ -107,10 +135,12 @@ const context = await esbuild.context({
 	treeShaking: true,
 	outfile: "main.js",
 	minify: prod,
+	metafile: true,
 	loader: {
 		".css": "text",
 	},
 	plugins: [
+		dropZodLocalesPlugin,
 		webWorkerPlugin,
 		{
 			name: "css-plugin",
@@ -133,7 +163,12 @@ const context = await esbuild.context({
 });
 
 if (prod) {
-	await context.rebuild();
+	const result = await context.rebuild();
+	// Write metafile for bundle analysis
+	if (result.metafile) {
+		const fs = await import("fs");
+		fs.writeFileSync("meta.json", JSON.stringify(result.metafile));
+	}
 	process.exit(0);
 } else {
 	await context.watch();

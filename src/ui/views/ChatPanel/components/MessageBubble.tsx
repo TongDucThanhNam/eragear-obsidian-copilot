@@ -1,6 +1,7 @@
 import type React from "react";
-import Markdown from "react-markdown";
+import type { App } from "obsidian";
 import type { Message } from "../types";
+import { MarkdownTextRenderer } from "./MarkdownTextRenderer";
 import { IconCopy, IconPen, IconRotate, IconTrash } from "./Icons";
 import { OutputMessage } from "./OutputMessage";
 import { ToolCallCard } from "./ToolCallCard";
@@ -8,6 +9,7 @@ import { ThinkingBlock } from "./ThinkingBlock";
 
 interface MessageBubbleProps {
 	message: Message;
+	app: App;
 	onDelete: () => void;
 	onRegenerate?: () => void;
 	onInsert: (content: string) => void;
@@ -15,6 +17,7 @@ interface MessageBubbleProps {
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
 	message,
+	app,
 	onDelete,
 	onRegenerate,
 	onInsert,
@@ -75,10 +78,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 				<div className="">
 					{message.parts.map((part, index) => {
 						if (part.type === "text") {
-							return <Markdown key={index}>{part.text}</Markdown>;
+							return <MarkdownTextRenderer key={index} text={part.text} app={app} />;
 						}
 						if (part.type === "thought") {
-							return <ThinkingBlock key={index} content={part.text} />;
+							return <ThinkingBlock key={index} content={part.text} app={app} />;
 						}
 						if (part.type === "tool-call") {
 							return <ToolCallCard key={index} toolCall={part.toolCall} />;

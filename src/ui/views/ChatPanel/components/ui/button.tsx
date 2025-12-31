@@ -39,6 +39,7 @@ const buttonVariants = (config?: {
 interface ButtonProps extends React.ComponentProps<typeof ButtonPrimitive> {
 	variant?: ButtonVariant;
 	size?: ButtonSize;
+	className?: string;
 }
 
 function Button({

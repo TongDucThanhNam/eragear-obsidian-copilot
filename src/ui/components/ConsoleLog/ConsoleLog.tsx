@@ -46,6 +46,8 @@ export const ConsoleLog: React.FC<ConsoleLogProps> = ({
 					onClick={() => setIsCollapsed(!isCollapsed)}
 					data-panel-open={!isCollapsed}
 					title={isCollapsed ? "Expand" : "Collapse"}
+					aria-label={isCollapsed ? "Expand console" : "Collapse console"}
+					aria-expanded={!isCollapsed}
 				>
 					<span className="Icon">
 						<svg
@@ -80,6 +82,7 @@ export const ConsoleLog: React.FC<ConsoleLogProps> = ({
 							className="console-btn console-btn-clear"
 							onClick={onClear}
 							title="Clear all logs"
+							aria-label="Clear all logs"
 						>
 							Clear
 						</button>
@@ -114,6 +117,8 @@ export const ConsoleLog: React.FC<ConsoleLogProps> = ({
 												)
 											}
 											data-panel-open={expandedId === output.id}
+											aria-label={`${expandedId === output.id ? "Collapse" : "Expand"} ${output.title}`}
+											aria-expanded={expandedId === output.id}
 										>
 											<span className="Icon">
 												<svg
@@ -143,6 +148,7 @@ export const ConsoleLog: React.FC<ConsoleLogProps> = ({
 												className="log-copy-btn"
 												onClick={() => copyToClipboard(output.content)}
 												title="Copy to clipboard"
+												aria-label={`Copy ${output.title} to clipboard`}
 											>
 												<svg
 													viewBox="0 0 24 24"

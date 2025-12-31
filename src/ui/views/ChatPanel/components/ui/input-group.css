@@ -1,0 +1,143 @@
+/* ============================================================================
+   Input Group Component Styles
+   ============================================================================ */
+
+[data-slot="input-group"] {
+	position: relative;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	width: 100%;
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	overflow: hidden;
+	transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+[data-slot="input-group"][data-orientation="vertical"] {
+	flex-direction: column;
+	align-items: stretch;
+}
+
+/* Focus ring removed for cleaner look */
+
+/* ============================================================================
+   Input Group Addon
+   ============================================================================ */
+
+[data-slot="input-group-addon"] {
+	display: flex;
+	align-items: center;
+	padding: var(--size-4-1) var(--size-4-2);
+	gap: var(--size-4-1);
+}
+
+[data-slot="input-group-addon"][data-align="inline-start"] {
+	order: -1;
+	border-right: 1px solid var(--background-modifier-border);
+}
+
+[data-slot="input-group-addon"][data-align="inline-end"] {
+	border-left: 1px solid var(--background-modifier-border);
+}
+
+[data-slot="input-group-addon"][data-align="block-start"] {
+	order: -2;
+	border-bottom: 1px solid var(--background-modifier-border);
+	padding: var(--size-4-2) var(--size-4-3);
+}
+
+[data-slot="input-group-addon"][data-align="block-end"] {
+	order: 2;
+	border-top: none;
+	padding: var(--size-4-2) var(--size-4-3);
+}
+
+/* ============================================================================
+   Input Group Textarea
+   ============================================================================ */
+
+[data-slot="input-group-textarea"] {
+	flex: 1 1 auto;
+	width: 100%;
+	min-height: 64px;
+	max-height: 192px;
+	padding: var(--size-4-3);
+	background: transparent;
+	border: none;
+	outline: none;
+	font-family: inherit;
+	font-size: var(--font-ui-small);
+	line-height: 1.5;
+	color: var(--text-normal);
+	resize: none;
+	overflow-y: auto;
+}
+
+[data-slot="input-group-textarea"]::placeholder {
+	color: var(--text-muted);
+}
+
+[data-slot="input-group-textarea"]:focus {
+	outline: none;
+	box-shadow: none;
+	border: none;
+	background: transparent;
+}
+
+[data-slot="input-group-textarea"]:hover {
+	background: transparent;
+	border: none;
+	box-shadow: none;
+}
+
+/* Field sizing content for modern browsers */
+@supports (field-sizing: content) {
+	[data-slot="input-group-textarea"] {
+		field-sizing: content;
+	}
+}
+
+/* ============================================================================
+   Input Group Input
+   ============================================================================ */
+
+[data-slot="input-group-input"] {
+	flex: 1 1 auto;
+	width: 100%;
+	height: 36px;
+	padding: var(--size-4-2) var(--size-4-3);
+	background: transparent;
+	border: none;
+	outline: none;
+	font-family: inherit;
+	font-size: var(--font-ui-small);
+	line-height: 1.5;
+	color: var(--text-normal);
+}
+
+[data-slot="input-group-input"]::placeholder {
+	color: var(--text-muted);
+}
+
+[data-slot="input-group-input"]:focus {
+	outline: none;
+	box-shadow: none;
+	border: none;
+	background: transparent;
+}
+
+[data-slot="input-group-input"]:hover {
+	background: transparent;
+	border: none;
+	box-shadow: none;
+}
+
+/* ============================================================================
+   Input Group Button
+   ============================================================================ */
+
+[data-slot="input-group-button"] {
+	flex-shrink: 0;
+}

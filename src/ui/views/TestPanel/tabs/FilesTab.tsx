@@ -64,6 +64,7 @@ export const FilesTab: React.FC<FilesTabProps> = ({ app, onAddOutput }) => {
 						className="test-btn test-btn-secondary"
 						onClick={handleListFilesInVault}
 						disabled={isLoading}
+						aria-label="List all files in vault root"
 					>
 						List Vault
 					</button>
@@ -85,12 +86,14 @@ export const FilesTab: React.FC<FilesTabProps> = ({ app, onAddOutput }) => {
 								setFilesState((prev) => ({ ...prev, dirPath: e.target.value }))
 							}
 							disabled={isLoading}
+							aria-label="Directory path to list"
 						/>
 						<button
 							type="button"
 							className="test-btn test-btn-secondary"
 							onClick={handleListFilesInDir}
 							disabled={!filesState.dirPath.trim() || isLoading}
+							aria-label="List files in specified directory"
 						>
 							List
 						</button>

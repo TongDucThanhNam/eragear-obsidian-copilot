@@ -1,9 +1,11 @@
 import type React from "react";
 import { useRef } from "react";
+import type { App } from "obsidian";
 import type { Message } from "../types";
 import { MessageBubble } from "./MessageBubble";
 
 interface MessageListProps {
+	app: App;
 	messages: Message[];
 	isLoading: boolean;
 	onDelete: (id: string) => void;
@@ -12,6 +14,7 @@ interface MessageListProps {
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
+	app,
 	messages,
 	isLoading,
 	onDelete,
@@ -33,6 +36,7 @@ export const MessageList: React.FC<MessageListProps> = ({
 				<MessageBubble
 					key={message.id}
 					message={message}
+					app={app}
 					onDelete={() => onDelete(message.id)}
 					onRegenerate={
 						index === messages.length - 1 && message.role === "assistant"

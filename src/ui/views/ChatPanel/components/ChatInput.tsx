@@ -8,19 +8,19 @@ import type {
 import { useMentions } from "../../../hooks/useMentions";
 import { useSlashCommands } from "../../../hooks/useSlashCommands";
 import { AgentPlan } from "./AgentPlan";
-import { IconCornerDownLeft, IconPlus } from "./Icons";
+import { IconCornerDownLeft, IconPlus, IconSquare } from "./Icons";
 import { type SuggestionItem, SuggestionPopover } from "./SuggestionPopover";
 import {
-	Select,
-	SelectContent,
-	SelectGroup,
-	SelectItem,
-	SelectLabel,
-	SelectTrigger,
-	SelectValue,
-} from "./ui/select";
-import { Button } from "./ui/button";
-import { Card } from "./ui/card";
+	PromptInput,
+	PromptInputTextarea,
+	PromptInputFooter,
+	PromptInputTools,
+	PromptInputButton,
+	PromptInputSubmit,
+	type PromptInputMessage,
+} from "./PromptInput";
+import { ModelSelector } from "./ChatInput/ModelSelector";
+import { AgentModeSelector } from "./ChatInput/AgentModeSelector";
 
 interface ChatModelOption {
 	id: string;
@@ -57,6 +57,9 @@ interface ChatInputProps {
 	// Agent plan props
 	planEntries?: PlanEntry[];
 	onDismissPlan?: () => void;
+	// Streaming/Stop props
+	isSending?: boolean;
+	onStopGeneration?: () => Promise<void>;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -80,6 +83,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 	// Agent plan props
 	planEntries = [],
 	onDismissPlan,
+	// Streaming/Stop props
+	isSending = false,
+	onStopGeneration,
 }) => {
 	// biome-ignore lint/style/noNonNullAssertion: Ref is always attached
 	const textareaRef = useRef<HTMLTextAreaElement>(null!);
@@ -102,7 +108,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 		adjustHeight();
 	}, [adjustHeight]);
 
-	const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+	const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
 		const newValue = e.target.value;
 		const cursorPosition = e.target.selectionStart;
 		onInputChange(newValue);
@@ -111,22 +117,32 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 		slashCommands.updateSuggestions(newValue, cursorPosition);
 	};
 
-	const handleSend = () => {
+	const handleSendOrStop = useCallback(async () => {
+		if (isSending) {
+			await onStopGeneration?.();
+			return;
+		}
+
 		if (input.trim()) {
 			onSend(input);
 			onInputChange("");
 			mentions.close();
 			slashCommands.close();
-			// Reset height handled by useEffect
 		}
-	};
+	}, [isSending, input, onSend, onInputChange, onStopGeneration, mentions, slashCommands]);
+
+	const handleSubmit = useCallback(
+		(_message: PromptInputMessage) => {
+			void handleSendOrStop();
+		},
+		[handleSendOrStop]
+	);
 
 	const selectMention = (item: SuggestionItem) => {
 		const triggerIdx = mentions.triggerIndex;
 		if (triggerIdx === null) return;
 
 		const before = input.slice(0, triggerIdx);
-		// User format: @[[Note Name]]
 		const insertion = `@[[${item.label}]] `;
 
 		const afterAt = input.slice(triggerIdx + 1);
@@ -198,10 +214,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 			}
 		}
 
-		if (e.key === "Enter" && !e.shiftKey) {
-			e.preventDefault();
-			handleSend();
-		}
+		// Enter to send is handled by PromptInput form submit
 	};
 
 	// Reset height when input is cleared externally (e.g. sent)
@@ -211,6 +224,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 		}
 	}, [input, adjustHeight]);
 
+	// Determine chat status for submit button
+	const chatStatus = isSending ? "streaming" : "idle";
+
 	return (
 		<div className="eragear-input-section" style={{ position: "relative" }}>
 			{/* Agent Plan Display */}
@@ -218,160 +234,92 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 				<AgentPlan entries={planEntries} onDismiss={onDismissPlan} />
 			)}
 
-			{/* Popovers */}
+			{/* Mention Popover */}
 			{mentions.isOpen && (
 				<SuggestionPopover
 					suggestions={mentions.suggestions}
 					selectedIndex={mentions.selectedIndex}
 					onSelect={selectMention}
-					position={{ bottom: "100%", left: 0, marginBottom: "8px" }}
+					anchorEl={textareaRef.current}
 				/>
 			)}
+
+			{/* Slash Commands Popover */}
 			{slashCommands.isOpen && (
 				<SuggestionPopover
 					suggestions={slashCommands.suggestions}
 					selectedIndex={slashCommands.selectedIndex}
 					onSelect={handleSelectSlashCommand}
-					position={{ bottom: "100%", left: 0, marginBottom: "8px" }}
+					anchorEl={textareaRef.current}
 				/>
 			)}
 
-			<Card className={`eragear-chat-input-wrapper`}>
-				<textarea
+			<PromptInput
+				onSubmit={handleSubmit}
+				className=""
+			>
+				{/* Textarea */}
+				<PromptInputTextarea
 					ref={textareaRef}
-					className="eragear-chat-input-textarea"
-					placeholder={"Ask anything... (@ to mention, / for commands)"}
 					value={input}
-					onChange={handleInput}
+					onChange={handleTextareaChange}
 					onKeyDown={handleKeyDown}
-					rows={1}
+					placeholder="Ask anything... (@ to mention, / for commands)"
 				/>
 
-				<div className="eragear-chat-input-footer">
-					<div className="eragear-chat-input-left">
+				{/* Footer */}
+				<PromptInputFooter>
+					{/* Left Tools */}
+					<PromptInputTools>
 						{onTriggerContext && (
-							<Button
-								type="button"
-								size="icon"
-								variant="ghost"
+							<PromptInputButton
 								onClick={onTriggerContext}
-								title="Add Context (+)"
+								aria-label="Add Context (+)"
 							>
 								<IconPlus />
-							</Button>
+							</PromptInputButton>
 						)}
-					</div>
+					</PromptInputTools>
 
-					<div className="eragear-chat-input-right">
-						{/* Model Selector - Shows either Agent models OR API models, not both */}
-						{agentModels &&
-						agentModels.availableModels.length > 0 &&
-						onAgentModelChange ? (
-							// Agent Model Selector - When agent provides models
-							<div
-								className="eragear-model-selector-wrapper"
-								title="Agent Model"
+					{/* Right Tools */}
+					<PromptInputTools>
+						{/* Model Selector - Shows either Agent models OR API models */}
+					<ModelSelector
+						activeModelId={activeModelId}
+						onModelChange={onModelChange}
+						availableModels={availableModels}
+						agentModels={agentModels}
+						onAgentModelChange={onAgentModelChange}
+						isSending={isSending}
+					/>
+						{/* Agent Mode Selector */}
+					<AgentModeSelector
+						agentModes={agentModes}
+						currentModeId={currentModeId}
+						onModeChange={onModeChange!}
+						isSending={isSending}
+					/>
+						{/* Submit/Stop Button */}
+						{isSending ? (
+							<PromptInputButton
+								onClick={() => void handleSendOrStop()}
+								aria-label="Stop generation"
+								className="eragear-send-button sending"
 							>
-								<Select
-									value={agentModels.currentModelId}
-									onValueChange={(val) => val && onAgentModelChange(val)}
-								>
-									<SelectTrigger className="w-full">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										{agentModels.availableModels.map((model) => (
-											<SelectItem key={model.modelId} value={model.modelId}>
-												{model.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
+								<IconSquare />
+							</PromptInputButton>
 						) : (
-							// API Model Selector - Default when no agent models
-							<Select
-								value={activeModelId}
-								onValueChange={(val) => val && onModelChange(val)}
-								disabled={availableModels.length === 0}
+							<PromptInputSubmit
+								status={chatStatus}
+								disabled={!input.trim()}
+								aria-label="Send message"
 							>
-								<SelectTrigger className="w-[180px]">
-									<SelectValue>Select Model</SelectValue>
-								</SelectTrigger>
-								<SelectContent>
-									{availableModels.length > 0 ? (
-										<>
-											{/* Group: API Models */}
-											{availableModels.filter((m) => m.type === "model")
-												.length > 0 && (
-												<SelectGroup>
-													<SelectLabel>API Models</SelectLabel>
-													{availableModels
-														.filter((m) => m.type === "model")
-														.map((m) => (
-															<SelectItem key={m.id} value={m.id}>
-																{m.name}
-															</SelectItem>
-														))}
-												</SelectGroup>
-											)}
-											{/* Group: Local Agents */}
-											{availableModels.filter((m) => m.type === "agent")
-												.length > 0 && (
-												<SelectGroup>
-													<SelectLabel>Local Agents</SelectLabel>
-													{availableModels
-														.filter((m) => m.type === "agent")
-														.map((m) => (
-															<SelectItem key={m.id} value={m.id}>
-																{m.name}
-															</SelectItem>
-														))}
-												</SelectGroup>
-											)}
-										</>
-									) : (
-										<SelectItem value="" disabled>
-											No models configured
-										</SelectItem>
-									)}
-								</SelectContent>
-							</Select>
+								<IconCornerDownLeft />
+							</PromptInputSubmit>
 						)}
-
-						{/* Agent Mode Selector - Only shown when agent has modes */}
-						{agentModes.length > 0 && onModeChange && (
-							<Select
-								value={currentModeId}
-								onValueChange={(val) => val && onModeChange(val)}
-							>
-								<SelectTrigger className="w-[140px]" title="Agent Mode">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									{agentModes.map((mode) => (
-										<SelectItem key={mode.id} value={mode.id}>
-											{mode.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						)}
-
-						<Button
-							type="button"
-							className={`eragear-btn-icon`}
-							onClick={handleSend}
-							disabled={!input.trim()}
-							title="Send"
-							size="icon"
-							variant="default"
-						>
-							<IconCornerDownLeft />
-						</Button>
-					</div>
-				</div>
-			</Card>
+					</PromptInputTools>
+				</PromptInputFooter>
+			</PromptInput>
 		</div>
 	);
 };

@@ -73,7 +73,11 @@ export const PairingView: React.FC<PairingViewProps> = ({ app, relayUrl }) => {
 			</p>
 
 			{!isConnected ? (
-				<button className="mod-cta" onClick={handleConnect}>
+				<button 
+					className="mod-cta" 
+					onClick={handleConnect}
+					aria-label="Start remote pairing session"
+				>
 					Start Remote Session
 				</button>
 			) : (
@@ -107,7 +111,11 @@ export const PairingView: React.FC<PairingViewProps> = ({ app, relayUrl }) => {
 						Session: {sessionInfo?.sessionId.slice(0, 8)}...
 					</div>
 
-					<button className="mod-warning" onClick={handleDisconnect}>
+					<button 
+						className="mod-warning" 
+						onClick={handleDisconnect}
+						aria-label="Stop remote pairing session"
+					>
 						Stop Session
 					</button>
 				</div>

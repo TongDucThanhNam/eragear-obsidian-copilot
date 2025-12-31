@@ -126,6 +126,7 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 						className="test-btn test-btn-secondary"
 						onClick={handleGetRelatedFiles}
 						disabled={isLoading}
+						aria-label="Get related files via backlinks and outlinks"
 					>
 						Get Links
 					</button>
@@ -156,12 +157,14 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 								}))
 							}
 							disabled={isLoading}
+							aria-label="Smart context depth (0-10)"
 						/>
 						<button
 							type="button"
 							className="test-btn test-btn-primary"
 							onClick={handleGetSmartContext}
 							disabled={isLoading}
+							aria-label="Analyze smart context"
 						>
 							{isLoading ? "⏳" : "🧠"} Analyze
 						</button>
@@ -179,6 +182,7 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 						className="test-btn test-btn-secondary"
 						onClick={handleGetGraphNeighborhood}
 						disabled={isLoading}
+						aria-label="Get graph neighborhood"
 					>
 						Get Neighborhood
 					</button>
@@ -195,6 +199,7 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 						className="test-btn test-btn-secondary"
 						onClick={handleGetLinkDensity}
 						disabled={isLoading}
+						aria-label="Analyze link density"
 					>
 						Analyze Density
 					</button>
@@ -220,6 +225,7 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 							}))
 						}
 						disabled={isLoading}
+						aria-label="File path for section reading"
 					/>
 					<input
 						type="text"
@@ -230,6 +236,7 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 							setLabsState((prev) => ({ ...prev, subpath: e.target.value }))
 						}
 						disabled={isLoading}
+						aria-label="Subpath (heading or block ID)"
 					/>
 					<button
 						type="button"
@@ -240,6 +247,7 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 							(!labsState.readSectionPath.trim() && !selectedFile) ||
 							!labsState.subpath.trim()
 						}
+						aria-label="Read specific section"
 					>
 						Read Section
 					</button>
@@ -262,6 +270,7 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 							}))
 						}
 						disabled={isLoading}
+						aria-label="Canvas file path"
 					/>
 					<button
 						type="button"
@@ -270,6 +279,7 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 						disabled={
 							isLoading || (!labsState.readCanvasPath.trim() && !selectedFile)
 						}
+						aria-label="Read canvas file"
 					>
 						Read Canvas
 					</button>

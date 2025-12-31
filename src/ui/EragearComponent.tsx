@@ -1,4 +1,9 @@
-import { Tabs } from "@base-ui/react/tabs";
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "./views/ChatPanel/components/ui/tabs";
 import type { App } from "obsidian";
 import type React from "react";
 import type EragearPlugin from "../main";
@@ -19,24 +24,23 @@ export const EragearComponent: React.FC<EragearComponentProps> = ({
 	return (
 		<AppContextProvider>
 			<div className="eragear-main">
-				<Tabs.Root defaultValue="chat" className="eragear-main-tabs">
-					<Tabs.List className="eragear-tabs-list">
-						<Tabs.Tab value="chat" className="eragear-tab">
+				<Tabs defaultValue="chat" className="eragear-main-tabs">
+					<TabsList className="">
+						<TabsTrigger value="chat" className="">
 							💬 Chat
-						</Tabs.Tab>
-						<Tabs.Tab value="playground" className="eragear-tab">
+						</TabsTrigger>
+						<TabsTrigger value="playground" className="">
 							🛠️ Playground
-						</Tabs.Tab>
-						<Tabs.Indicator className="eragear-tabs-indicator" />
-					</Tabs.List>
+						</TabsTrigger>
+					</TabsList>
 
-					<Tabs.Panel value="chat" className="eragear-tab-panel">
+					<TabsContent value="chat" className="">
 						<ChatPanel app={app} plugin={plugin} />
-					</Tabs.Panel>
-					<Tabs.Panel value="playground" className="eragear-tab-panel">
+					</TabsContent>
+					<TabsContent value="playground" className="eragear-tab-panel">
 						<TestPanel app={app} />
-					</Tabs.Panel>
-				</Tabs.Root>
+					</TabsContent>
+				</Tabs>
 			</div>
 		</AppContextProvider>
 	);

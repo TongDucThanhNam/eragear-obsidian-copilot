@@ -48,8 +48,6 @@ export default class EragearPlugin extends Plugin {
 	private statusBar: HTMLElement | null = null;
 
 	async onload() {
-		console.log("[Eragear] Loading plugin...");
-
 		try {
 			// 1. Load settings
 			await this.loadSettings();
@@ -71,18 +69,13 @@ export default class EragearPlugin extends Plugin {
 
 			// 6. Update status bar
 			this.updateStatusBar("ready");
-
-			console.log("[Eragear] Plugin loaded successfully");
 		} catch (error) {
-			console.error("[Eragear] Failed to load plugin:", error);
 			this.updateStatusBar("error");
 			new Notice("Eragear: Failed to initialize plugin");
 		}
 	}
 
 	onunload() {
-		console.log("[Eragear] Unloading plugin...");
-
 		try {
 			// Terminate worker gracefully
 			const workerClient = getWorkerClient();
@@ -93,7 +86,7 @@ export default class EragearPlugin extends Plugin {
 
 			this.updateStatusBar("unloaded");
 		} catch (error) {
-			console.error("[Eragear] Error during cleanup:", error);
+			// Silent cleanup failure
 		}
 	}
 

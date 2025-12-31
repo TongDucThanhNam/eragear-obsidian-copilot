@@ -14,6 +14,7 @@
  * and should be decoupled from business logic (Core) and UI.
  */
 
+import { requestUrl } from "obsidian";
 import type {
 	CloudflareConfig,
 	ContextPayload,
@@ -59,41 +60,38 @@ export class CloudflareService {
 
 			this.onLog(`[CF] Sending chat request: ${requestId}`);
 
-			const response = await fetch(`${this.config.apiEndpoint}/chat`, {
+			const response = await requestUrl({
+				url: `${this.config.apiEndpoint}/chat`,
 				method: "POST",
 				headers,
 				body,
-				signal: controller.signal,
+				throw: false,
 			});
 
-			if (!response.ok) {
-				const errorText = await response.text();
+			if (response.status >= 400) {
 				throw new Error(
-					`Cloudflare API error ${response.status}: ${errorText}`,
+					`Cloudflare API error ${response.status}: ${response.text}`,
 				);
 			}
 
 			// Handle streaming response
-			if (!response.body) {
+			if (!response.text) {
 				throw new Error("No response body");
 			}
 
-			const reader = response.body.getReader();
 			const decoder = new TextDecoder();
+			const lines = response.text.split("\n");
 			let buffer = "";
 
-			while (true) {
-				const { done, value } = await reader.read();
-				if (done) break;
-
-				buffer += decoder.decode(value, { stream: true });
+			for (const rawLine of lines) {
+				buffer += rawLine + "\n";
 
 				// Process complete lines (SSE format: "data: {...}\n\n")
-				const lines = buffer.split("\n");
-				buffer = lines[lines.length - 1] ?? ""; // Keep incomplete line
+				const lineArray = buffer.split("\n");
+				buffer = lineArray[lineArray.length - 1] ?? ""; // Keep incomplete line
 
-				for (let i = 0; i < lines.length - 1; i++) {
-					const line = (lines[i] ?? "").trim();
+				for (let i = 0; i < lineArray.length - 1; i++) {
+					const line = (lineArray[i] ?? "").trim();
 					if (line.startsWith("data: ")) {
 						try {
 							const jsonStr = line.substring(6);
@@ -111,7 +109,7 @@ export class CloudflareService {
 								return;
 							}
 						} catch (e) {
-							console.error("[CF] Failed to parse SSE chunk:", e);
+							// Failed to parse SSE chunk, continue
 						}
 					}
 				}
@@ -137,20 +135,21 @@ export class CloudflareService {
 		try {
 			const headers = this.buildHeaders();
 
-			const response = await fetch(`${this.config.apiEndpoint}${endpoint}`, {
+			const response = await requestUrl({
+				url: `${this.config.apiEndpoint}${endpoint}`,
 				method,
 				headers,
 				body: body ? JSON.stringify(body) : undefined,
+				throw: false,
 			});
 
-			if (!response.ok) {
-				const errorText = await response.text();
+			if (response.status >= 400) {
 				throw new Error(
-					`Cloudflare API error ${response.status}: ${errorText}`,
+					`Cloudflare API error ${response.status}: ${response.text}`,
 				);
 			}
 
-			const data = await response.json();
+			const data = JSON.parse(response.text);
 			return data as T;
 		} catch (error) {
 			const err = error instanceof Error ? error : new Error(String(error));
@@ -186,7 +185,7 @@ export class CloudflareService {
 	/**
 	 * Build secure headers for Cloudflare authentication
 	 */
-	private buildHeaders(): HeadersInit {
+	private buildHeaders(): Record<string, string> {
 		return {
 			"Content-Type": "application/json",
 			"CF-Access-Client-Id": this.config.accessClientId,

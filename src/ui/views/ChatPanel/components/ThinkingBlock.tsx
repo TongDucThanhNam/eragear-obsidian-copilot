@@ -1,22 +1,24 @@
 import React, { useState } from "react";
-import Markdown from "react-markdown";
+import type { App } from "obsidian";
+import { MarkdownTextRenderer } from "./MarkdownTextRenderer";
 import { IconChevronDown } from "./Icons";
 
 interface ThinkingBlockProps {
 	content: string;
+	app: App;
 }
 
-export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ content }) => {
+export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ content, app }) => {
 	const [isOpen, setIsOpen] = useState(false);
 
 	return (
 		<div className="reasoning-block">
 			<button
-				className="reasoning-trigger"
+				className=""
 				onClick={() => setIsOpen(!isOpen)}
 				type="button"
 			>
-				<span className="reasoning-label text-primary">Show reasoning</span>
+				<span className="">Show reasoning</span>
 				<div
 					className={`reasoning-icon transform transition-transform ${isOpen ? "rotate-180" : ""}`}
 				>
@@ -29,7 +31,7 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ content }) => {
 			>
 				<div className="reasoning-inner ml-2 border-l-2 border-l-slate-200 px-2 pb-1 dark:border-l-slate-700">
 					<div className="text-muted-foreground prose prose-sm dark:prose-invert">
-						<Markdown>{content}</Markdown>
+						<MarkdownTextRenderer text={content} app={app} />
 					</div>
 				</div>
 			</div>

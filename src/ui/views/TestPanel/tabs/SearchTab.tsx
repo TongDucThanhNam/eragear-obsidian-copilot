@@ -85,12 +85,14 @@ export const SearchTab: React.FC<SearchTabProps> = ({ app, onAddOutput }) => {
 						}
 						onKeyPress={(e) => e.key === "Enter" && handleQuickSearch()}
 						disabled={isLoading}
+						aria-label="Quick search query"
 					/>
 					<button
 						type="button"
 						className="test-btn test-btn-primary"
 						onClick={handleQuickSearch}
 						disabled={!searchState.quickSearchQuery.trim() || isLoading}
+						aria-label="Execute quick search"
 					>
 						{isLoading ? "⏳" : "🔍"} Search
 					</button>
@@ -116,12 +118,14 @@ export const SearchTab: React.FC<SearchTabProps> = ({ app, onAddOutput }) => {
 								}))
 							}
 							disabled={isLoading}
+							aria-label="Enhanced search query"
 						/>
 						<button
 							type="button"
 							className="test-btn test-btn-secondary"
 							onClick={handleEnhancedSearch}
 							disabled={!searchState.enhancedSearchQuery.trim() || isLoading}
+							aria-label="Execute enhanced search"
 						>
 							Test
 						</button>
@@ -146,12 +150,14 @@ export const SearchTab: React.FC<SearchTabProps> = ({ app, onAddOutput }) => {
 								}))
 							}
 							disabled={isLoading}
+							aria-label="Fuzzy search query"
 						/>
 						<button
 							type="button"
 							className="test-btn test-btn-secondary"
 							onClick={handleFuzzySearch}
 							disabled={!searchState.fuzzyQuery.trim() || isLoading}
+							aria-label="Execute fuzzy search"
 						>
 							Test
 						</button>

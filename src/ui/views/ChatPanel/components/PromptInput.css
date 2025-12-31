@@ -1,0 +1,264 @@
+/* ============================================================================
+   PromptInput Component Styles
+   ============================================================================ */
+
+.prompt-input {
+	width: 100%;
+}
+
+.prompt-input-group {
+	overflow: hidden;
+}
+
+/* ============================================================================
+   Prompt Input Body
+   ============================================================================ */
+
+.prompt-input-body {
+	display: contents;
+}
+
+/* ============================================================================
+   Prompt Input Textarea
+   ============================================================================ */
+
+.prompt-input-textarea {
+	min-height: 64px;
+	max-height: 192px;
+    border-bottom: none;
+}
+
+/* ============================================================================
+   Prompt Input Header & Footer
+   ============================================================================ */
+
+.prompt-input-header {
+	order: -1;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-4-1);
+}
+
+.prompt-input-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-1);
+}
+
+/* ============================================================================
+   Prompt Input Tools
+   ============================================================================ */
+
+.prompt-input-tools {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-1);
+}
+
+/* ============================================================================
+   Prompt Input Attachments
+   ============================================================================ */
+
+.prompt-input-attachments {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-4-3);
+	width: 100%;
+}
+
+.prompt-input-attachment {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-1);
+	height: 32px;
+	padding: 0 var(--size-4-2);
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-smaller);
+	font-weight: 500;
+	cursor: pointer;
+	transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.prompt-input-attachment:hover {
+	background-color: var(--background-modifier-hover);
+	border-color: var(--background-modifier-border-hover);
+}
+
+.prompt-input-attachment-icon {
+	position: relative;
+	width: 20px;
+	height: 20px;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.prompt-input-attachment-preview {
+	width: 20px;
+	height: 20px;
+	object-fit: cover;
+	border-radius: var(--radius-xs);
+}
+
+.prompt-input-attachment-remove {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--background-modifier-hover);
+	border: none;
+	border-radius: var(--radius-xs);
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 0.15s ease;
+}
+
+.prompt-input-attachment:hover .prompt-input-attachment-remove {
+	opacity: 1;
+}
+
+.prompt-input-attachment-label {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* ============================================================================
+   Prompt Input Attachment Hover Card
+   ============================================================================ */
+
+.prompt-input-attachment-hover {
+	width: auto;
+	padding: var(--size-4-2);
+}
+
+.prompt-input-attachment-hover-preview {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	max-height: 384px;
+	max-width: 384px;
+	overflow: hidden;
+	border-radius: var(--radius-m);
+	border: 1px solid var(--background-modifier-border);
+	margin-bottom: var(--size-4-2);
+}
+
+.prompt-input-attachment-hover-preview img {
+	max-height: 100%;
+	max-width: 100%;
+	object-fit: contain;
+}
+
+.prompt-input-attachment-hover-info {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-1);
+}
+
+.prompt-input-attachment-hover-info h4 {
+	margin: 0;
+	font-size: var(--font-ui-small);
+	font-weight: 600;
+	line-height: 1.2;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.prompt-input-attachment-hover-info p {
+	margin: 0;
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+/* ============================================================================
+   Prompt Input Submit
+   ============================================================================ */
+
+.prompt-input-submit {
+	flex-shrink: 0;
+}
+
+.prompt-input-submit-loading {
+	width: 14px;
+	height: 14px;
+	border: 2px solid currentColor;
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: prompt-input-spin 0.8s linear infinite;
+}
+
+@keyframes prompt-input-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* ============================================================================
+   Prompt Input Speech Button
+   ============================================================================ */
+
+.prompt-input-speech {
+	position: relative;
+	transition: all 0.2s ease;
+}
+
+.prompt-input-speech.listening {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	animation: prompt-input-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes prompt-input-pulse {
+	0%, 100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.6;
+	}
+}
+
+/* ============================================================================
+   Prompt Input Select
+   ============================================================================ */
+
+.prompt-input-select-trigger {
+	border: none;
+	background: transparent;
+	font-weight: 500;
+	color: var(--text-muted);
+	box-shadow: none;
+	transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.prompt-input-select-trigger:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.prompt-input-select-trigger[aria-expanded="true"] {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+/* ============================================================================
+   Hidden Input
+   ============================================================================ */
+
+.hidden {
+	display: none;
+}

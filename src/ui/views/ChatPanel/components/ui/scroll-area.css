@@ -1,0 +1,52 @@
+/* Scroll Area Styles */
+[data-slot="scroll-area"] {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+[data-slot="scroll-area-viewport"] {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  border-radius: inherit;
+  outline: none;
+  transition: color 0.2s ease, box-shadow 0.2s ease;
+  overflow: auto;
+}
+
+[data-slot="scroll-area-viewport"]:focus-visible {
+  outline: 1px solid var(--ring);
+  box-shadow: 0 0 0 3px var(--ring-offset);
+}
+
+[data-slot="scroll-area-scrollbar"] {
+  display: flex;
+  touch-action: none;
+  user-select: none;
+  padding: 1px;
+  transition: colors 0.2s ease;
+}
+
+[data-slot="scroll-area-scrollbar"][data-orientation="vertical"] {
+  height: 100%;
+  width: 10px;
+  border-left: 1px solid transparent;
+}
+
+[data-slot="scroll-area-scrollbar"][data-orientation="horizontal"] {
+  height: 10px;
+  flex-direction: column;
+  border-top: 1px solid transparent;
+}
+
+[data-slot="scroll-area-thumb"] {
+  position: relative;
+  flex: 1;
+  border-radius: 0;
+  background-color: var(--border);
+}

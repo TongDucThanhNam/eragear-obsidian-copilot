@@ -8,7 +8,6 @@ If your plugin does not need CSS, delete this file.
 
 */
 
-@custom-variant dark (&:is(.dark *));
 
 @theme inline {
 --font-sans: var(--font-sans);
@@ -123,15 +122,6 @@ If your plugin does not need CSS, delete this file.
 --sidebar-ring: oklch(0.556 0 0);
 }
 
-@layer base {
-* {
-  @apply border-border outline-ring/50;
-}
-body {
-  @apply bg-background text-foreground;
-}
-}
-
 
 */
 .test-panel-modern-wrapper {
@@ -240,6 +230,10 @@ body {
 	border-color: var(--interactive-accent);
 	transform: translateY(-1px);
 	box-shadow: 0 2px 6px #0000001a;
+}
+.context-btn:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
 }
 .context-btn-primary {
 	background-color: var(--interactive-accent);
@@ -674,6 +668,11 @@ body {
 	border-color: var(--background-modifier-border-hover);
 }
 
+.console-btn:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 1px;
+}
+
 .console-btn-clear:hover {
 	color: var(--text-error);
 	border-color: var(--text-error);
@@ -799,6 +798,13 @@ body {
 	background-color: var(--background-modifier-border);
 	color: var(--text-normal);
 }
+
+.log-copy-btn:focus-visible {
+	opacity: 1;
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 1px;
+}
+
 .console-log-item .Panel {
 	background-color: var(--background-secondary-alt);
 }
@@ -872,6 +878,10 @@ body {
 	border-color: var(--interactive-accent);
 	transform: translateY(-1px);
 	box-shadow: 0 4px 12px #0000001a;
+}
+.test-btn:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
 }
 .test-btn:active:not(:disabled) {
 	transform: translateY(0);
@@ -1095,13 +1105,20 @@ body {
 }
 
 .eragear-messages {
-	flex: 1;
-	overflow-y: auto;
-	padding: 1.5rem;
 	display: flex;
 	flex-direction: column;
 	gap: 1.25rem;
 	scroll-behavior: smooth;
+	padding: 1.5rem;
+	width: 100%;
+}
+
+/* Messages wrapper - scrollable container */
+.eragear-messages-wrapper {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
 }
 
 /* User Message Bubble */
@@ -1299,6 +1316,43 @@ body {
 	cursor: default;
 	background-color: var(--background-modifier-border);
 	box-shadow: none;
+}
+
+/* Send/Stop button - used in ChatInput */
+.eragear-send-button {
+	height: 32px;
+	width: 32px;
+	min-width: unset;
+	padding: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	border-radius: 6px;
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.eragear-send-button:hover:not(:disabled) {
+	background-color: var(--interactive-accent-hover);
+}
+
+.eragear-send-button:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+	background-color: var(--background-modifier-border);
+}
+
+/* Sending/Stop state - red background to indicate stop action */
+.eragear-send-button.sending {
+	background-color: var(--text-error);
+}
+
+.eragear-send-button.sending:hover {
+	background-color: var(--text-error);
+	opacity: 0.9;
 }
 
 .eragear-send-icon {
@@ -1501,6 +1555,8 @@ body {
 	height: 100%;
 	background-color: var(--eragear-bg-body);
 	font-family: var(--font-ui);
+	gap: 0;
+	overflow: hidden;
 }
 
 /* Header Toolbar */
@@ -1573,22 +1629,26 @@ body {
 	background-color: var(--background-modifier-hover);
 }
 
-/* Chat Area */
+/* Chat Area - Contains header and scrollable message list */
 .eragear-chat-area {
 	flex: 1;
-	overflow-y: auto;
-	padding: 0 16px 20px 16px;
+	min-height: 0;
+	max-height: 100%;
 	display: flex;
 	flex-direction: column;
-	gap: 20px;
+	gap: 0;
+	overflow: hidden;
+	padding: 0;
 }
 
 .eragear-chat-header {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	margin-bottom: 4px;
-	margin-top: 8px;
+	padding: 12px 16px;
+	margin: 0;
+	flex-shrink: 0;
+	border-bottom: 1px solid var(--eragear-border-color);
 }
 
 .eragear-chat-title {
@@ -1675,6 +1735,54 @@ body {
 	background: transparent;
 	border: none;
 	cursor: default;
+}
+
+/* Input Container - Fixed at bottom with sticky layout */
+.eragear-input-container {
+	flex-shrink: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 12px 16px;
+	background-color: var(--eragear-bg-body);
+	border-top: 1px solid var(--eragear-border-color);
+	max-height: fit-content;
+	overflow: visible;
+}
+
+/* Message List Container - Scrollable area inside chat-area */
+.eragear-chat-area .scrollArea {
+	flex: 1;
+	min-height: 0;
+	max-height: 100%;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.eragear-chat-scroll {
+	flex: 1;
+	min-height: 0;
+	max-height: 100%;
+	display: flex !important;
+	flex-direction: column !important;
+	overflow: hidden !important;
+}
+
+.eragear-chat-scroll .scrollArea {
+	flex: 1;
+	min-height: 0;
+	max-height: 100%;
+}
+
+.eragear-chat-area .scrollAreaViewport {
+	flex: 1;
+	min-height: 0;
+	max-height: 100%;
+	min-width: 0;
+	width: 100%;
+	overflow-y: auto;
+	overflow-x: hidden;
 }
 
 /* Message Bubble */

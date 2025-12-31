@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "eragear-copilot",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "AI-powered assistant for knowledge management with advanced context understanding and task automation.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
@@ -16,7 +16,6 @@
 		"@eslint/js": "9.30.1",
 		"@types/node": "^16.11.6",
 		"esbuild": "0.25.5",
-		"esbuild-css-modules-plugin": "^3.1.5",
 		"eslint-plugin-obsidianmd": "0.1.9",
 		"globals": "14.0.0",
 		"jiti": "2.6.1",
@@ -35,13 +34,13 @@
 		"@types/react-dom": "^19.2.3",
 		"@zed-industries/claude-code-acp": "^0.12.6",
 		"ai": "^6.0.3",
+		"cmdk": "^1.1.1",
 		"graphology": "^0.26.0",
 		"graphology-metrics": "^2.4.0",
 		"minisearch": "^7.2.0",
 		"obsidian": "latest",
 		"qrcode.react": "^4.2.0",
 		"react": "^19.2.3",
-		"react-dom": "^19.2.3",
-		"react-markdown": "^10.1.0"
+		"react-dom": "^19.2.3"
 	}
 }

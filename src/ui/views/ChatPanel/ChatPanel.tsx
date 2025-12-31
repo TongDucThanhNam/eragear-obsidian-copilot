@@ -1,8 +1,9 @@
 import { PlusIcon } from "@phosphor-icons/react";
 import { type App, MarkdownView, type TFile } from "obsidian";
 import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AcpAdapter } from "../../../adapters/acp/acp.adapter";
+import { NoteMentionService } from "../../../core/mention-service";
 import type {
 	OutputUpdate,
 	PermissionRequest,
@@ -15,6 +16,11 @@ import { AIProviderType, type ChatModelConfig } from "../../../settings";
 import { AcpContextProvider } from "../../context/AcpContext";
 import { EditorController } from "../../editor/editor-controller";
 import { useAgentClient } from "../../hooks/useAgentClient";
+import {
+	hasMentions,
+	cleanMentionSyntax,
+} from "../../../shared/mention-utils";
+import { prepareMessage } from "../../../shared/message-service";
 import {
 	ChatInput,
 	ContextBadges,
@@ -110,6 +116,19 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 
 	const editorCtrl = useRef(new EditorController(app));
 
+	// NoteMentionService for file indexing and search
+	const noteMentionService = useMemo(
+		() => new NoteMentionService(app),
+		[app],
+	);
+
+	// Cleanup NoteMentionService on unmount
+	useEffect(() => {
+		return () => {
+			noteMentionService.destroy();
+		};
+	}, [noteMentionService]);
+
 	// Agent Client Hook
 	const {
 		agentClient,
@@ -138,6 +157,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	// Permission request state
 	const [permissionRequest, setPermissionRequest] =
 		useState<PermissionRequest | null>(null);
+	// Last user message - for restoring after cancel
+	const [lastUserMessage, setLastUserMessage] = useState<string | null>(null);
 
 	// Handler to switch API model (only for API models, not agents)
 	const handleModelChange = async (modelId: string) => {
@@ -244,9 +265,17 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 						const newParts = [...lastMsg.parts];
 						const lastPart = newParts[newParts.length - 1];
 						if (lastPart && lastPart.type === "text") {
+							// Check for accumulated text (fix for agents sending full history)
+							const currentText = lastPart.text;
+							const newChunk = update.text || "";
+							const isAccumulated =
+								currentText &&
+								newChunk.length > currentText.length &&
+								newChunk.startsWith(currentText);
+
 							newParts[newParts.length - 1] = {
 								...lastPart,
-								text: lastPart.text + update.text,
+								text: isAccumulated ? newChunk : currentText + newChunk,
 							};
 						} else {
 							newParts.push({ type: "text", text: update.text || "" });
@@ -265,10 +294,18 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 						const newParts = [...lastMsg.parts];
 						const lastPart = newParts[newParts.length - 1];
 						if (lastPart && lastPart.type === "thought") {
+							// Check for accumulated text (fix for agents sending full history)
+							const currentText = lastPart.text;
+							const newChunk = update.text || "";
+							const isAccumulated =
+								currentText &&
+								newChunk.length > currentText.length &&
+								newChunk.startsWith(currentText);
+
 							// Append thought text
 							newParts[newParts.length - 1] = {
 								...lastPart,
-								text: lastPart.text + update.text,
+								text: isAccumulated ? newChunk : currentText + newChunk,
 							};
 						} else {
 							// New thought part
@@ -399,6 +436,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 				setAgentOutputs([]);
 				setPermissionRequest(null);
 				setIsLoading(false);
+				setLastUserMessage(null); // Clear saved message on successful completion
 			} else if (update.type === "output") {
 				// Handle agent output - add as message in chat
 				console.log(`[ChatPanel] Agent ${update.outputType}:`, update.text);
@@ -723,10 +761,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 		if (isNewMessage) {
 			setShowCommands(false);
 			setShouldFocusInput(true);
+			// Save the user message before clearing (for restore on cancel)
+			setLastUserMessage(input.trim());
 			setInput("");
 
-			// 1. Add User Message
-			const displayContent = userContent;
+			// 1. Add User Message - show clean version to user (with [[links]] instead of @[[links]])
+			const displayContent = hasMentions(userContent)
+				? cleanMentionSyntax(userContent)
+				: userContent;
 
 			const userMsg: Message = {
 				id: generateMessageId(),
@@ -735,19 +777,59 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 			};
 			setMessages((prev) => [...prev, userMsg]);
 
-			// --- CONTEXT LOADING ---
+			// --- CONTEXT LOADING (Hybrid: selectedFiles + @mentions) ---
 			let contextBlock = "";
+
+			// 1a. Handle manually selected files from context picker
 			if (selectedFiles.length > 0) {
 				const contextPromises = selectedFiles.map(async (file) => {
 					const content = await app.vault.read(file);
-					return `=== Context from ${file.basename} ===\n${content}\n`;
+					return `<obsidian_mentioned_note ref="${file.path}">\n${content}\n</obsidian_mentioned_note>`;
 				});
 				const contexts = await Promise.all(contextPromises);
-				contextBlock = contexts.join("\n");
+				contextBlock = contexts.join("\n\n");
 
 				// Clear selection after consuming
 				setSelectedFiles([]);
 			}
+
+			// 1b. Prepare message with @[[note]] mentions
+			// This extracts mentioned notes and builds context blocks
+			const activeView = app.workspace.getActiveViewOfType(MarkdownView);
+			const activeFile = activeView?.file;
+
+			const preparedMessage = await prepareMessage(
+				{
+					message: userContent,
+					vaultBasePath: settings?.agentWorkingDir || "",
+					includeActiveNote: isAutoMentionEnabled,
+					activeNote: activeFile,
+				},
+				app,
+				noteMentionService,
+			);
+
+			// Log any errors reading mentioned files
+			if (preparedMessage.errors.length > 0) {
+				console.warn(
+					"[ChatPanel] Some mentioned files could not be read:",
+					preparedMessage.errors,
+				);
+			}
+
+			// Combine context from selected files and mentions
+			const finalMessage =
+				contextBlock.length > 0
+					? contextBlock + "\n\n" + preparedMessage.agentMessage
+					: preparedMessage.agentMessage;
+
+			console.log("[ChatPanel] Final message to send:", {
+				userContent,
+				hasContext: contextBlock.length > 0,
+				includedFiles: preparedMessage.includedFiles.map((f) => f.path),
+				errors: preparedMessage.errors,
+				finalMessagePreview: finalMessage.substring(0, 1000),
+			});
 
 			// Handle Slash Commands (only for new messages)
 			if (userContent.startsWith("/edit")) {
@@ -863,10 +945,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 						},
 					]);
 
-					// Send message
-					await agentClient.sendMessage(sid, userContent);
+					// Send message with context (mentions resolved)
+					await agentClient.sendMessage(sid, finalMessage);
 
 					// Response handling is via useEffect event listener
+					// Clear last user message on successful completion
+					setLastUserMessage(null);
 				} catch (e: any) {
 					console.error(e);
 					const errorMsg: Message = {
@@ -888,12 +972,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 				const history = [...messages, userMsg];
 				const lastMsgIndex = history.length - 1;
 
+				// Build message history with context injected into the last user message
 				const coreMessages = history.map((m, idx) => {
 					let text = m.parts
 						.map((p) => (p.type === "text" ? p.text : ""))
 						.join("");
-					if (idx === lastMsgIndex && contextBlock) {
-						text = `${contextBlock}\n\n${text}`;
+					// For the last message, use the finalMessage with resolved mentions
+					if (idx === lastMsgIndex) {
+						text = finalMessage;
 					}
 					return { role: m.role, content: text };
 				});
@@ -936,6 +1022,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 				setMessages((prev) => [...prev, errorMsg]);
 			} finally {
 				setIsLoading(false);
+				setLastUserMessage(null);
 			}
 			return;
 		}
@@ -992,6 +1079,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 				console.error(e);
 			} finally {
 				setIsLoading(false);
+				setLastUserMessage(null);
 			}
 		}
 	};
@@ -1115,6 +1203,35 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 		}
 	};
 
+	/**
+	 * Handle stop generation request.
+	 * Cancels the current agent operation and restores the last user message.
+	 */
+	const handleStopGeneration = useCallback(async () => {
+		console.log("[ChatPanel] Cancelling current operation...");
+		
+		// Save last user message before cancel (to restore it)
+		const savedMessage = lastUserMessage;
+		
+		if (agentClient && agentSessionId) {
+			try {
+				await agentClient.cancel(agentSessionId);
+				console.log("[ChatPanel] Cancel request sent");
+			} catch (e) {
+				console.warn("[ChatPanel] Failed to cancel operation:", e);
+			}
+		}
+		
+		// Reset loading state
+		setIsLoading(false);
+		
+		// Restore the last user message to input field
+		if (savedMessage) {
+			setInput(savedMessage);
+			setLastUserMessage(null);
+		}
+	}, [agentClient, agentSessionId, lastUserMessage]);
+
 	// Get only API models (not agents) for the model selector
 	const getAvailableModels = () => {
 		if (!settings) return [];
@@ -1192,7 +1309,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	return (
 		<AcpContextProvider acpAdapter={agentClient as AcpAdapter | null}>
 			<div className="eragear-container">
-				{/* Chat History */}
+				{/* Chat Area - Header + Scrollable Messages */}
 				<div className="eragear-chat-area">
 					<div className="eragear-chat-header">
 						<div
@@ -1247,7 +1364,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 
 						{/* New Chat Button with Dropdown */}
 						<DropdownMenu highlightItemOnHover={true}>
-							<DropdownMenuTrigger title="New Chat">
+							<DropdownMenuTrigger title="New Chat" aria-label="Create new chat">
 								<PlusIcon />
 							</DropdownMenuTrigger>
 							<DropdownMenuContent
@@ -1282,17 +1399,20 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 						</DropdownMenu>
 					</div>
 
-					<MessageList
-						messages={messages}
-						isLoading={isLoading}
-						onDelete={handleDelete}
-						onRegenerate={handleRegenerate}
-						onInsert={handleInsert}
-					/>
+					{/* Scrollable Messages Area */}
+					<div className="eragear-messages-wrapper">
+						<MessageList
+							app={app}
+							messages={messages}
+							isLoading={isLoading}
+							onDelete={handleDelete}
+							onRegenerate={handleRegenerate}
+							onInsert={handleInsert}
+						/>
+					</div>
 				</div>
 
-				{/* Suggestion Popover */}
-
+				{/* Input Container - Sticky at bottom */}
 				<div className="eragear-input-container">
 					{/* Context Badges */}
 					<ContextBadges
@@ -1318,6 +1438,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 						availableModels={availableModelsForInput}
 						slashCommandsList={activeSlashCommands}
 						onAutoMentionToggle={handleAutoMentionToggle}
+						// Streaming/Stop props
+						isSending={isLoading}
+						onStopGeneration={handleStopGeneration}
 						// Agent mode props - only show when in agent mode with active session
 						agentModes={
 							chatContext.mode === "agent" && agentSessionId ? modes : []

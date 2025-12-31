@@ -74,6 +74,7 @@ export const InfoTab: React.FC<InfoTabProps> = ({
 					className="test-btn test-btn-primary"
 					onClick={handleGetMetadata}
 					disabled={isLoading}
+					aria-label="Get metadata for active file"
 				>
 					{isLoading ? "⏳" : "📊"} Get Metadata
 				</button>
@@ -96,6 +97,7 @@ export const InfoTab: React.FC<InfoTabProps> = ({
 						}))
 					}
 					disabled={isLoading}
+					aria-label="File path for frontmatter update"
 				/>
 				<button
 					type="button"
@@ -105,6 +107,7 @@ export const InfoTab: React.FC<InfoTabProps> = ({
 						isLoading ||
 						(!infoState.updateFrontmatterPath.trim() && !selectedFile)
 					}
+					aria-label="Update frontmatter (writes to file)"
 				>
 					⚠️ Update Frontmatter (Writes!)
 				</button>
@@ -121,6 +124,7 @@ export const InfoTab: React.FC<InfoTabProps> = ({
 					className="test-btn test-btn-secondary"
 					onClick={handleGetActiveFile}
 					disabled={isLoading}
+					aria-label="Get currently active file"
 				>
 					Get Active File
 				</button>

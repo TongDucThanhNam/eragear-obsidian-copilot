@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from "react";
-import { type App, TFile } from "obsidian";
+import { useState, useCallback } from "react";
+import { type App, prepareFuzzySearch } from "obsidian";
 import type { SuggestionItem } from "../views/ChatPanel/components/SuggestionPopover";
+import { detectMention } from "../../shared/mention-utils";
 
 interface UseMentionsProps {
 	app: App;
@@ -15,80 +16,112 @@ export interface UseMentionsReturn {
 	updateSuggestions: (input: string, cursorIndex: number) => void;
 	close: () => void;
 	triggerIndex: number | null; // Position where @ started
+	/** Current query text (for debugging/display) */
+	currentQuery: string;
 }
 
+/**
+ * Hook for handling @ mention autocomplete in chat input.
+ * Uses Obsidian's prepareFuzzySearch for better matching.
+ *
+ * Features:
+ * - Detects @query or @[[query]] patterns
+ * - Fuzzy search on file names, paths, and aliases
+ * - Shows recent files when query is empty
+ * - Keyboard navigation support
+ */
 export const useMentions = ({ app }: UseMentionsProps): UseMentionsReturn => {
 	const [isOpen, setIsOpen] = useState(false);
 	const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const [triggerIndex, setTriggerIndex] = useState<number | null>(null);
+	const [currentQuery, setCurrentQuery] = useState("");
 
 	const close = useCallback(() => {
 		setIsOpen(false);
 		setSelectedIndex(0);
 		setTriggerIndex(null);
+		setCurrentQuery("");
 	}, []);
 
 	const updateSuggestions = useCallback(
 		(input: string, cursorIndex: number) => {
-			// Find the last @ before cursor
-			const textBeforeCursor = input.slice(0, cursorIndex);
-			const lastAtParams = textBeforeCursor.lastIndexOf("@");
+			// Use the shared utility to detect mention context
+			const mentionContext = detectMention(input, cursorIndex);
 
-			if (lastAtParams === -1) {
+			if (!mentionContext) {
 				close();
 				return;
 			}
 
-			// Check if valid reference (start of line or preceded by space)
-			// and no spaces after @ up to cursor (simple single-word or partial path matching)
-			// But for Obsidian notes [[Note Name]], we might want to allow spaces if we were doing [[.
-			// The user request says @[[tên_note]] or just @.
-			// Let's assume standard @mention behavior: @query
+			setTriggerIndex(mentionContext.start);
+			setCurrentQuery(mentionContext.query);
 
-			const charBefore =
-				lastAtParams > 0 ? textBeforeCursor[lastAtParams - 1] : "";
-			const isValidTrigger =
-				lastAtParams === 0 || charBefore === " " || charBefore === "\n";
-
-			if (!isValidTrigger) {
-				close();
-				return;
-			}
-
-			const query = textBeforeCursor.slice(lastAtParams + 1);
-			// Optional: Stop if query has newlines
-			if (query.includes("\n")) {
-				close();
-				return;
-			}
-
-			setTriggerIndex(lastAtParams);
-
-			// Filter Logic
-			const lowerQuery = query.toLowerCase();
+			const query = mentionContext.query;
 			const allFiles = app.vault.getMarkdownFiles();
 
-			// Simple fuzzy search by basename or path
-			const filtered = allFiles
-				.filter((f) => {
-					// Check basename
-					if (f.basename.toLowerCase().includes(lowerQuery)) return true;
-					// Check path (for folder contexts)
-					if (f.path.toLowerCase().includes(lowerQuery)) return true;
-					// Check aliases (if implementation allows efficiently)
-					const cache = app.metadataCache.getFileCache(f);
-					if (cache?.frontmatter?.aliases) {
-						const aliases = Array.isArray(cache.frontmatter.aliases)
-							? cache.frontmatter.aliases
-							: [cache.frontmatter.aliases];
-						return aliases.some((a: string) =>
-							a.toLowerCase().includes(lowerQuery),
-						);
+			// If query is empty, show recent files
+			if (!query.trim()) {
+				const recentFiles = allFiles
+					.slice()
+					.sort((a, b) => (b.stat?.mtime || 0) - (a.stat?.mtime || 0))
+					.slice(0, 10);
+
+				const items: SuggestionItem[] = recentFiles.map((f) => ({
+					type: "file" as const,
+					label: f.basename,
+					id: f.path,
+					desc: f.path,
+					data: f,
+				}));
+
+				setSuggestions(items);
+				setIsOpen(true);
+				setSelectedIndex(0);
+				return;
+			}
+
+			// Use Obsidian's fuzzy search for better matching
+			const fuzzySearch = prepareFuzzySearch(query.trim());
+
+			// Score each file based on multiple fields
+			const scored: Array<{ file: typeof allFiles[0]; score: number }> =
+				allFiles.map((file) => {
+					const basename = file.basename;
+					const path = file.path;
+
+					// Get aliases from frontmatter
+					const fileCache = app.metadataCache.getFileCache(file);
+					const aliases = fileCache?.frontmatter?.aliases as
+						| string[]
+						| string
+						| undefined;
+					const aliasArray: string[] = Array.isArray(aliases)
+						? aliases
+						: aliases
+							? [aliases]
+							: [];
+
+					// Search in basename, path, and aliases
+					const searchFields = [basename, path, ...aliasArray];
+					let bestScore = -Infinity;
+
+					for (const field of searchFields) {
+						const match = fuzzySearch(field);
+						if (match && match.score > bestScore) {
+							bestScore = match.score;
+						}
 					}
-					return false;
-				})
-				.slice(0, 15); // Limit results
+
+					return { file, score: bestScore };
+				});
+
+			// Filter and sort by score
+			const filtered = scored
+				.filter((item) => item.score > -Infinity)
+				.sort((a, b) => b.score - a.score)
+				.slice(0, 15)
+				.map((item) => item.file);
 
 			if (filtered.length > 0) {
 				const items: SuggestionItem[] = filtered.map((f) => ({
@@ -102,22 +135,7 @@ export const useMentions = ({ app }: UseMentionsProps): UseMentionsReturn => {
 				setIsOpen(true);
 				setSelectedIndex(0);
 			} else {
-				// If query is empty, show recent files or close?
-				// User spec: "Hiển thị dropdown gợi ý khi gõ @"
-				if (query === "") {
-					// Show recent or top files
-					const recent = allFiles.slice(0, 10).map((f) => ({
-						type: "file" as const,
-						label: f.basename,
-						id: f.path,
-						desc: f.path,
-						data: f,
-					}));
-					setSuggestions(recent);
-					setIsOpen(true);
-				} else {
-					close();
-				}
+				close();
 			}
 		},
 		[app.vault, app.metadataCache, close],
@@ -150,5 +168,6 @@ export const useMentions = ({ app }: UseMentionsProps): UseMentionsReturn => {
 		updateSuggestions,
 		close,
 		triggerIndex,
+		currentQuery,
 	};
 };

@@ -55,6 +55,7 @@ export const PermissionDialog: React.FC<PermissionDialogProps> = ({
 											justifyContent: "center",
 											fontWeight: option.isDefault ? 700 : 500,
 										}}
+										aria-label={option.label}
 									>
 										{option.label}
 									</button>
@@ -71,6 +72,7 @@ export const PermissionDialog: React.FC<PermissionDialogProps> = ({
 									color: "var(--text-muted)",
 									marginTop: "4px",
 								}}
+								aria-label="Cancel and dismiss dialog"
 							>
 								Cancel
 							</Dialog.Close>

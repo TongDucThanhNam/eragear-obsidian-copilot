@@ -1,11 +1,11 @@
 {
-	"id": "eragear-obsidian-copilot",
-	"name": "Eragear Obsidian Copilot",
+	"id": "eragear-copilot",
+	"name": "Eragear Copilot",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "AI-powered assistant for knowledge management and task automation in your vault.",
+	"author": "Tong Duc Thanh Nam",
+	"authorUrl": "https://github.com/tongducthanhnam/eragear-obsidian-copilot",
+	"fundingUrl": "https://github.com/sponsors/tongducthanhnam",
 	"isDesktopOnly": false
 }

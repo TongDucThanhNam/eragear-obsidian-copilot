@@ -321,10 +321,10 @@ const EditModal: React.FC<EditModalProps> = ({
 							marginTop: "16px",
 						}}
 					>
-						<button type="button" onClick={onCancel}>
+						<button type="button" onClick={onCancel} aria-label="Cancel editing">
 							Cancel
 						</button>
-						<button type="submit" className="mod-cta">
+						<button type="submit" className="mod-cta" aria-label={isNew ? "Add new model" : "Save changes"}>
 							{isNew ? "Add" : "Save"}
 						</button>
 					</div>
@@ -424,6 +424,7 @@ export const ChatModelsTable: React.FC<ChatModelsTableProps> = ({
 							gap: "4px",
 						}}
 						title="Refresh built-in models"
+						aria-label="Refresh built-in models"
 					>
 						<IconRefresh /> Refresh Built-ins
 					</button>
@@ -438,6 +439,7 @@ export const ChatModelsTable: React.FC<ChatModelsTableProps> = ({
 							alignItems: "center",
 							gap: "4px",
 						}}
+						aria-label="Add new model"
 					>
 						<IconPlus /> Add Model
 					</button>
@@ -554,6 +556,7 @@ export const ChatModelsTable: React.FC<ChatModelsTableProps> = ({
 											type="checkbox"
 											checked={model.enabled}
 											onChange={() => handleToggleEnabled(model.id)}
+											aria-label={`Enable model ${model.name}`}
 										/>
 									</td>
 									<td style={{ padding: "10px", textAlign: "center" }}>
@@ -561,6 +564,7 @@ export const ChatModelsTable: React.FC<ChatModelsTableProps> = ({
 											type="checkbox"
 											checked={model.useCORS || false}
 											onChange={() => handleToggleCORS(model.id)}
+											aria-label={`Use CORS for model ${model.name}`}
 										/>
 									</td>
 									<td style={{ padding: "10px", textAlign: "center" }}>
@@ -578,6 +582,7 @@ export const ChatModelsTable: React.FC<ChatModelsTableProps> = ({
 												}}
 												style={{ padding: "4px 8px" }}
 												title="Edit"
+												aria-label={`Edit model ${model.name}`}
 											>
 												<IconEdit />
 											</button>
@@ -589,6 +594,7 @@ export const ChatModelsTable: React.FC<ChatModelsTableProps> = ({
 														color: "var(--text-error)",
 													}}
 													title="Delete"
+													aria-label={`Delete model ${model.name}`}
 												>
 													<IconTrash />
 												</button>
@@ -680,6 +686,7 @@ export const ChatModelsTable: React.FC<ChatModelsTableProps> = ({
 											type="checkbox"
 											checked={agent.enabled}
 											onChange={() => handleToggleEnabled(agent.id)}
+											aria-label={`Enable agent ${agent.name}`}
 										/>
 									</td>
 									<td style={{ padding: "10px", textAlign: "center" }}>
@@ -697,6 +704,7 @@ export const ChatModelsTable: React.FC<ChatModelsTableProps> = ({
 												}}
 												style={{ padding: "4px 8px" }}
 												title="Edit"
+												aria-label={`Edit agent ${agent.name}`}
 											>
 												<IconEdit />
 											</button>
@@ -708,6 +716,7 @@ export const ChatModelsTable: React.FC<ChatModelsTableProps> = ({
 														color: "var(--text-error)",
 													}}
 													title="Delete"
+													aria-label={`Delete agent ${agent.name}`}
 												>
 													<IconTrash />
 												</button>
