@@ -17,19 +17,18 @@ import {
 	createGraphService,
 	createVaultManager,
 	getWorkerClient,
-} from "./core";
-import type { ContextAssembler } from "./core/context-assembler";
-import type { VaultManager } from "./core/vault-manager";
-import type { CloudflareService } from "./services";
-import { createCloudflareService } from "./services";
+} from "@/core";
+import type { ContextAssembler } from "@/core/context-assembler";
+import type { VaultManager } from "@/core/vault-manager";
 import {
 	DEFAULT_SETTINGS,
 	initializeSettingsWithVaultPath,
 	type MyPluginSettings,
-} from "./settings";
-import { diffViewExtension } from "./ui/editor/diff-view-plugin";
-import { ERAGEAR_VIEW_TYPE, EragearView } from "./ui/eragear-view";
-import { CopilotSettingTab } from "./ui/settings/CopilotSettingTab";
+} from "@/settings";
+import { diffViewExtension } from "@/editor/diff-view-plugin";
+import { ERAGEAR_VIEW_TYPE, EragearView } from "@/views/eragear-view";
+import { CloudflareService, createCloudflareService } from "@/services/cloudflare-api";
+import { CopilotSettingTab } from "@/views/settings/CopilotSettingTab";
 
 /**
  * Main Plugin Class
@@ -121,7 +120,7 @@ export default class EragearPlugin extends Plugin {
 				accessClientSecret: this.settings.cloudflareAccessSecret,
 				apiEndpoint: this.settings.cloudflareApiEndpoint,
 			},
-			(message) => {
+			(message: any) => {
 				// Optional: log to plugin console instead of console.log
 				console.log("[CloudflareService]", message);
 			},
