@@ -6,7 +6,7 @@
 import type { App } from "obsidian";
 import type React from "react";
 import { useState } from "react";
-import { ActionCard, ActionCardGroup } from "@/components";
+import { ActionCard, ActionCardGroup } from "@/components/ActionCard";
 import { useFileOperations } from "@/hooks";
 import type { FilesState } from "@/types/testPanel";
 

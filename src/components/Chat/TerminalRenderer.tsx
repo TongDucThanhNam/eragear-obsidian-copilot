@@ -8,7 +8,7 @@
  * - Shows exit code when complete
  */
 
-import { AcpAdapter } from "@/adapters/acp/acp.adapter";
+import { AcpAdapter } from "@/core/acp/acp.adapter";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 

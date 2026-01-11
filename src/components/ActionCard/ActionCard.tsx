@@ -5,7 +5,7 @@
 
 import type React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
-import type { ActionCardProps } from "../../types";
+import type { ActionCardProps } from "../../types/components";
 import "./action-card.css";
 
 export const ActionCard: React.FC<ActionCardProps> = ({

@@ -3,28 +3,24 @@
 ## Mục tiêu
 Chuẩn hoá cách xây UI cho Obsidian Plugin theo mô hình “shadcn-like UI layer”:
 - Feature/UI screen **không import trực tiếp** từ `@base-ui/react/*`.
-- `@component/ui/*` wrap Base UI để tạo API ổn định (Button, Dialog, Popover, Menu…).
+- `@/components/ui/*` wrap Base UI để tạo API ổn định (Button, Dialog, Popover, Menu…).
+- Prioritize using icon from library `@phosphor-icons/react` (installed via npm). Remember to add `Icon` in the tail of icon: `Network` -> `NetworkIcon`.
 - Styling dùng **plain CSS** và **Obsidian theme variables**, không dựng theme/config riêng.
 
 ## Tài liệu tham khảo chính
-- Base UI Quick Start (unstyled, dùng plain CSS/CSS-in-JS tuỳ bạn): https://base-ui.com/react/overview/quick-start :contentReference[oaicite:4]{index=4}
-- Base UI Styling (data attributes + CSS variables): https://base-ui.com/react/handbook/styling :contentReference[oaicite:5]{index=5}
-- Base UI Composition (render prop, forwardRef + spread props): https://base-ui.com/react/handbook/composition :contentReference[oaicite:6]{index=6}
-- Base UI Popover Portal API (container, default append <body>): https://base-ui.com/react/components/popover :contentReference[oaicite:7]{index=7}
-- Obsidian Theme Migration Guide (spacing `--size-*`, cursor `--cursor`, `--cursor-link`): https://obsidian.md/blog/1-0-theme-migration-guide/ :contentReference[oaicite:8]{index=8}
-- Style Settings plugin (tuỳ chọn, expose CSS variables/class-toggle): https://github.com/mgmeyers/obsidian-style-settings :contentReference[oaicite:9]{index=9}
-
+- Base UI Quick Start (unstyled, dùng plain CSS/CSS-in-JS tuỳ bạn): https://base-ui.com/react/overview/quick-start
+- Base UI Styling (data attributes + CSS variables): https://base-ui.com/react/handbook/styling
+- Base UI Composition (render prop, forwardRef + spread props): https://base-ui.com/react/handbook/composition
+- Base UI Popover Portal API (container, default append <body>): https://base-ui.com/react/components/popover
+- Obsidian Theme Migration Guide (spacing `--size-*`, cursor `--cursor`, `--cursor-link`): https://obsidian.md/blog/1-0-theme-migration-guide
 ## Quy tắc kiến trúc (bắt buộc)
 ### 1) Module boundary
 - Feature layer:
-  - IMPORT: `@component/ui/*` và domain modules.
+  - IMPORT: `@/components/ui/*` và domain modules.
   - KHÔNG IMPORT: `@base-ui/react/*`.
-- UI layer (`@component/ui/*`):
+- UI layer (`@/components/ui/*`):
   - Được phép import `@base-ui/react/*`.
   - Chịu trách nhiệm: composition, portal container, className/data-attrs, primitives.
-
-Khuyến nghị: thêm ESLint rule `no-restricted-imports` để chặn `@base-ui/react/*` bên ngoài `@component/ui`.
-
 ### 2) Namespace class & low specificity
 - Mọi class CSS của UI layer phải prefix, ví dụ: `cui-` hoặc `${pluginId}-`.
 - Không viết selector global kiểu `button {}`/`input {}`.
@@ -41,19 +37,19 @@ Khuyến nghị: thêm ESLint rule `no-restricted-imports` để chặn `@base-u
 
 ## Obsidian-native guidelines (bắt buộc)
 ### 1) Spacing theo grid 4px
-Obsidian dùng grid 4px và khuyến nghị dùng `--size-*` cho mọi dimension/padding/margin. :contentReference[oaicite:10]{index=10}
+Obsidian dùng grid 4px và khuyến nghị dùng `--size-*` cho mọi dimension/padding/margin.
 
 ### 2) Cursor convention
-Obsidian chỉ dùng `pointer` cho link; interactive element nên dùng `--cursor`, link dùng `--cursor-link`. :contentReference[oaicite:11]{index=11}
+Obsidian chỉ dùng `pointer` cho link; interactive element nên dùng `--cursor`, link dùng `--cursor-link`.
 
 ## Base UI trong mô hình “shadcn-like”
-Base UI là unstyled, bạn tự style bằng plain CSS (hoặc cách khác). :contentReference[oaicite:12]{index=12}
+Base UI là unstyled, bạn tự style bằng plain CSS (hoặc cách khác).
 
 ### 1) Composition: dùng render prop (tương đương asChild)
-- Base UI dùng `render` prop để compose part với custom component. :contentReference[oaicite:13]{index=13}
+- Base UI dùng `render` prop để compose part với custom component.
 - Custom component đưa vào `render={<MyButton />}` bắt buộc:
   - `forwardRef`
-  - spread toàn bộ props vào DOM node underneath :contentReference[oaicite:14]{index=14}
+  - spread toàn bộ props vào DOM node underneath
 
 Quy ước nội bộ:
 - UI layer expose API kiểu shadcn: `asChild?: boolean`
@@ -62,12 +58,12 @@ Quy ước nội bộ:
 ### 2) Styling theo state: data attributes + CSS variables
 Base UI khuyến nghị style state dựa trên:
 - data attributes (ví dụ `[data-checked]`, `[data-open]`…)
-- CSS variables động (ví dụ Popover Popup expose `--available-height`, `--anchor-width`) :contentReference[oaicite:15]{index=15}
+- CSS variables động (ví dụ Popover Popup expose `--available-height`, `--anchor-width`)
 
 ## Portal strategy (bắt buộc cho Popup UI)
 ### Vấn đề
 Nhiều component có popup (Popover, Menu, Select, Tooltip, Dialog…) render qua Portal.
-Với Popover, Portal mặc định append vào `<body>`. :contentReference[oaicite:16]{index=16}
+Với Popover, Portal mặc định append vào `<body>`.
 
 Nếu bạn scope CSS theo `.my-plugin-root ...`, popup portal ra `<body>` sẽ “thoát scope”.
 
@@ -77,13 +73,14 @@ Nếu bạn scope CSS theo `.my-plugin-root ...`, popup portal ra `<body>` sẽ 
   - `portalEl` (nằm trong root)
 - Truyền `portalEl` qua React Context (PortalProvider).
 - Mọi `<*.Portal>` trong UI layer phải set `container={portalEl}`.
-Popover Portal hỗ trợ prop `container` (HTMLElement/ShadowRoot/ref/null). :contentReference[oaicite:17]{index=17}
+Popover Portal hỗ trợ prop `container` (HTMLElement/ShadowRoot/ref/null).
 
 ### Stacking context
 - Set `.my-plugin-root { isolation: isolate; }`
 - Mục tiêu: giảm z-index xung đột trong workspace nhiều panes.
 
 ## Cấu trúc thư mục đề xuất
+```
 src/
   component/
     ui/
@@ -100,6 +97,7 @@ src/
       menu.tsx
       tooltip.tsx
       select.tsx
+```
 
 ## CSS: tokens + primitives + components
 ### tokens.css (alias từ Obsidian)
@@ -137,7 +135,7 @@ src/
 
 ### Component: Popover popup sizing via Base UI CSS vars
 .cui-PopoverPopup {
-  max-height: var(--available-height); /* Base UI exposes on Popover.Popup */ :contentReference[oaicite:18]{index=18}
+  max-height: var(--available-height); /* Base UI exposes on Popover.Popup */
   background: var(--cui-bg);
   color: var(--cui-text);
   border: 1px solid var(--cui-border);
@@ -186,9 +184,9 @@ Sau đó trong CSS:
 }
 
 ## Checklist trước khi merge
-- Không import `@base-ui/react/*` ngoài `@component/ui/*`.
+- Không import `@base-ui/react/*` ngoài `@/components/ui/*`.
 - Không hard-code màu; dùng Obsidian variables hoặc alias tokens.
-- Spacing dùng `--size-*`; cursor dùng `--cursor` / `--cursor-link`. :contentReference[oaicite:22]{index=22}
-- Popup UI set portal `container` về root plugin (tránh mất CSS scope). :contentReference[oaicite:23]{index=23}
-- Styling state dùng data-attributes + CSS vars của Base UI (không cần JS). :contentReference[oaicite:24]{index=24}
-- Components compose qua `render` và custom component đảm bảo forwardRef + spread props. :contentReference[oaicite:25]{index=25}
+- Spacing dùng `--size-*`; cursor dùng `--cursor` / `--cursor-link`.
+- Popup UI set portal `container` về root plugin (tránh mất CSS scope).
+- Styling state dùng data-attributes + CSS vars của Base UI (không cần JS).
+- Components compose qua `render` và custom components đảm bảo forwardRef + spread props.

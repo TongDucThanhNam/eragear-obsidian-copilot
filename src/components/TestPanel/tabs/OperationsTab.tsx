@@ -6,7 +6,7 @@
 import type { App, TFile } from "obsidian";
 import type React from "react";
 import { useState } from "react";
-import { ActionCard, ActionCardGroup } from "@/components";
+import { ActionCard, ActionCardGroup } from "@/components/ActionCard";
 import { Button } from "@/components/ui/button";
 import {
 	InputGroup,

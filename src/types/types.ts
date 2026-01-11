@@ -1,7 +1,7 @@
 import type {
 	OutputUpdate,
 	ToolCall,
-} from "../../../domain/models/session-update";
+} from "@/domain/models/session-update";
 
 // Extended message parts to support tool calls and outputs
 export type ExtendedMessagePart =

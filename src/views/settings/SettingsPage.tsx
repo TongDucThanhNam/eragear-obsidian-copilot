@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import type EragearPlugin from "@/main";
 import { MyPluginSettings } from "@/settings";
-import { GeneralSettings } from "./sections/GeneralSettings";
-import { ModelSettings } from "./sections/ModelSettings";
-import { AdvancedSettings } from "./sections/AdvancedSettings";
-import { PairingView } from "../PairingView";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { GeneralSettings } from "../../components/Settings/sections/GeneralSettings";
+import { ModelSettings } from "../../components/Settings/sections/ModelSettings";
+import { AdvancedSettings } from "../../components/Settings/sections/AdvancedSettings";
+import { PairingView } from "./PairingView";
+import {  RobotIcon, CodeIcon, NetworkIcon, ToolboxIcon } from "@phosphor-icons/react";
 
 interface SettingsPageProps {
 	plugin: EragearPlugin;
@@ -29,65 +31,46 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ plugin }) => {
 		<div className="eragear-settings">
 			<div className="eragear-settings-header">
 				<h1>Eragear Copilot</h1>
-				<div className="eragear-settings-tabs">
-					<button
-						type="button"
-						className={`eragear-tab-nav-item ${
-							activeTab === "general" ? "is-active" : ""
-						}`}
-						onClick={() => setActiveTab("general")}
-					>
-						General
-					</button>
-					<button
-						type="button"
-						className={`eragear-tab-nav-item ${
-							activeTab === "models" ? "is-active" : ""
-						}`}
-						onClick={() => setActiveTab("models")}
-					>
-						Models
-					</button>
-					<button
-						type="button"
-						className={`eragear-tab-nav-item ${
-							activeTab === "advanced" ? "is-active" : ""
-						}`}
-						onClick={() => setActiveTab("advanced")}
-					>
-						Advanced
-					</button>
-					<button
-						type="button"
-						className={`eragear-tab-nav-item ${
-							activeTab === "remote" ? "is-active" : ""
-						}`}
-						onClick={() => setActiveTab("remote")}
-					>
-						Remote
-					</button>
-				</div>
-			</div>
+				{/* Setting Tabs */}
+				<Tabs defaultValue="general" value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)}>
+					<TabsList variant="line">
+						<TabsTrigger value="general">
+							<ToolboxIcon aria-hidden />
+							<span>General</span>
+						</TabsTrigger>
+						<TabsTrigger value="models">
+							<RobotIcon aria-hidden />
+							<span>Models</span>
+						</TabsTrigger>
+						<TabsTrigger value="advanced">
+							<CodeIcon aria-hidden />
+							<span>Advanced</span>
+						</TabsTrigger>
+						<TabsTrigger value="remote">
+							<NetworkIcon aria-hidden />
+							<span>Remote</span>
+						</TabsTrigger>
+					</TabsList>
+					<TabsContent value={"general"}>
+						<GeneralSettings
+							settings={settings}
+							updateSettings={updateSettings}
+						/>
 
-			<div className="eragear-settings-content">
-				{activeTab === "general" && (
-					<GeneralSettings
-						settings={settings}
-						updateSettings={updateSettings}
-					/>
-				)}
-				{activeTab === "models" && (
-					<ModelSettings settings={settings} updateSettings={updateSettings} />
-				)}
-				{activeTab === "advanced" && (
-					<AdvancedSettings
-						settings={settings}
-						updateSettings={updateSettings}
-					/>
-				)}
-				{activeTab === "remote" && (
-					<PairingView app={plugin.app} relayUrl={settings.relayUrl} />
-				)}
+					</TabsContent>
+					<TabsContent value={"models"}>
+						<ModelSettings settings={settings} updateSettings={updateSettings} />
+					</TabsContent>
+					<TabsContent value={"advanced"}>
+						<AdvancedSettings
+							settings={settings}
+							updateSettings={updateSettings}
+						/>
+					</TabsContent>
+					<TabsContent value={"remote"}>
+						<PairingView app={plugin.app} relayUrl={settings.relayUrl} />
+					</TabsContent>
+				</Tabs>
 			</div>
 		</div>
 	);

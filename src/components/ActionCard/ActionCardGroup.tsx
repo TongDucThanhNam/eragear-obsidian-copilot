@@ -7,7 +7,7 @@ import type React from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardAction, CardDescription
 
  } from "../ui/card";
-import type { ActionCardGroupProps } from "../../types";
+import type { ActionCardGroupProps } from "../../types/components";
 import "./action-card.css";
 
 export const ActionCardGroup: React.FC<ActionCardGroupProps> = ({

@@ -2,7 +2,7 @@ import { PlusIcon } from "@phosphor-icons/react";
 import { type App, MarkdownView, type TFile } from "obsidian";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { AcpAdapter } from "@/adapters/acp/acp.adapter";
+import type { AcpAdapter } from "@/core/acp/acp.adapter";
 import { NoteMentionService } from "@/core/mention-service";
 import "./ChatPanel.css";
 import type {
@@ -12,11 +12,11 @@ import type {
 	ToolCall,
 } from "@/domain/models/session-update";
 import type EragearPlugin from "@/main";
-import { AIService } from "@/services/ai-service";
+import { AIService } from "@/core/services/ai-service";
 import { AIProviderType, type ChatModelConfig } from "@/settings";
-import { AcpContextProvider } from "../../context/AcpContext";
+import { AcpContextProvider } from "../../../context/AcpContext";
 import { EditorController } from "@/editor/editor-controller";
-import { useAgentClient } from "../../hooks/useAgentClient";
+import { useAgentClient } from "../../../hooks/useAgentClient";
 import {
 	hasMentions,
 	cleanMentionSyntax,
@@ -38,12 +38,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import type { Message } from "./types";
+import type { Message } from "../../../types/types";
 import { SuggestionItem } from "@/components/Chat/SuggestionPopover";
 import { ChatInput } from "@/components/Chat/ChatInput/ChatInput";
 import PermissionDialog from "@/components/Chat/PermissionDialog";
 import { MessageList } from "@/components/Chat/Messages/MessageList";
-import { ContextBadges } from "@/components/ContextBadges";
 
 // Chat mode type
 type ChatMode = "api" | "agent";
@@ -1412,18 +1411,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 
 				{/* Input Container - Sticky at bottom */}
 				<div className="eragear-input-container">
-					{/* Context Badges */}
-					<ContextBadges
-						selectedFiles={selectedFiles}
-						selectedFolders={selectedFolders}
-						onRemoveFile={(path) =>
-							setSelectedFiles((prev) => prev.filter((f) => f.path !== path))
-						}
-						onRemoveFolder={(path) =>
-							setSelectedFolders((prev) => prev.filter((f) => f !== path))
-						}
-					/>
-
 					{/* Input Area */}
 					<ChatInput
 						app={app}

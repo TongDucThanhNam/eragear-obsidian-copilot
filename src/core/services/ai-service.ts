@@ -1,8 +1,8 @@
+import { AIProviderType, MyPluginSettings } from "@/settings";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { Notice } from "obsidian";
-import { AIProviderType, type MyPluginSettings } from "../settings";
 
 export class AIService {
 	private settings: MyPluginSettings;

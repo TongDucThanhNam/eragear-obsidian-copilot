@@ -10,7 +10,7 @@
 	overflow-x: auto;
 	align-items: stretch;
 }
-.tab-nav-btn {
+.tab-nav-trigger {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
@@ -22,7 +22,7 @@
 	border-radius: 0;
 	background-color: transparent;
 	color: var(--text-muted);
-	cursor: pointer;
+	cursor: var(--cursor);
 	font-size: 0.85rem;
 	font-weight: 500;
 	transition: all 0.2s ease;
@@ -30,12 +30,12 @@
 	position: relative;
 	white-space: nowrap;
 }
-.tab-nav-btn:hover {
+.tab-nav-trigger:hover {
 	background-color: var(--background-secondary);
 	color: var(--text-normal);
 	border-bottom-color: var(--background-modifier-border);
 }
-.tab-nav-btn.active {
+.tab-nav-trigger[data-selected] {
 	background-color: var(--background-secondary);
 	color: var(--interactive-accent);
 	border-bottom-color: var(--interactive-accent);

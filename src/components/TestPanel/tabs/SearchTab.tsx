@@ -6,9 +6,9 @@
 import type { App } from "obsidian";
 import type React from "react";
 import { useState } from "react";
-import { ActionCard, ActionCardGroup } from "../../../components";
-import { useSearch } from "../../../hooks";
-import { SearchState } from "@/types";
+import { ActionCard, ActionCardGroup } from "@/components/ActionCard";
+import { useSearch } from "@/hooks";
+import type { SearchState } from "@/types/testPanel";
 import "./SearchTab.css";
 import {
 	MagnifyingGlass,

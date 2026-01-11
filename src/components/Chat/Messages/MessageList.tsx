@@ -1,7 +1,7 @@
 import type React from "react";
 import { useRef } from "react";
 import type { App } from "obsidian";
-import type { Message } from "../../../types";
+import type { Message } from "../../../types/types";
 import { MessageBubble } from "./MessageBubble";
 
 interface MessageListProps {

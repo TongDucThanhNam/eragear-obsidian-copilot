@@ -1,6 +1,6 @@
 import React from "react";
-import { SettingItem } from "../../../components/Settings/SettingItem";
-import { MyPluginSettings } from "../../../settings";
+import { MyPluginSettings } from "@/settings";
+import { SettingItem } from "@/components/Settings/SettingItem";
 
 interface GeneralSettingsProps {
 	settings: MyPluginSettings;

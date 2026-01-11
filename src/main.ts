@@ -27,7 +27,7 @@ import {
 } from "@/settings";
 import { diffViewExtension } from "@/editor/diff-view-plugin";
 import { ERAGEAR_VIEW_TYPE, EragearView } from "@/views/eragear-view";
-import { CloudflareService, createCloudflareService } from "@/services/cloudflare-api";
+import { CloudflareService, createCloudflareService } from "@/core/services/cloudflare-api";
 import { CopilotSettingTab } from "@/views/settings/CopilotSettingTab";
 
 /**

@@ -19,8 +19,8 @@ import {
 	PromptInputSubmit,
 	type PromptInputMessage,
 } from "../PromptInput";
-import { ModelSelector } from "./ChatInput/ModelSelector";
-import { AgentModeSelector } from "./ChatInput/AgentModeSelector";
+import { ModelSelector } from "./ModelSelector";
+import { AgentModeSelector } from "./AgentModeSelector";
 
 interface ChatModelOption {
 	id: string;

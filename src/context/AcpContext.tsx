@@ -3,7 +3,7 @@
  */
 
 import { createContext, type ReactNode, useContext } from "react";
-import type { AcpAdapter } from "@/adapters/acp/acp.adapter";
+import type { AcpAdapter } from "@/core/acp/acp.adapter";
 
 interface AcpContextValue {
 	acpAdapter: AcpAdapter | null;

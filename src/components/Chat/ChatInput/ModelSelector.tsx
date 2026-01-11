@@ -10,7 +10,7 @@ import {
 	ComboboxLabel,
 	ComboboxEmpty,
 	ComboboxSeparator,
-} from "../ui/combobox";
+} from "../../ui/combobox";
 import { SessionModelState } from "@agentclientprotocol/sdk";
 
 interface ChatModelOption {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { App, ButtonComponent, Notice } from "obsidian";
+import { App, Notice } from "obsidian";
 import { RelayClient } from "@/core/relay/relay-client";
 
 interface PairingViewProps {

@@ -1,6 +1,6 @@
 import type React from "react";
 import type { App } from "obsidian";
-import type { Message } from "../../../types";
+import type { Message } from "../../../types/types";
 import { MarkdownTextRenderer } from "./MarkdownTextRenderer";
 import { IconCopy, IconPen, IconRotate, IconTrash } from "../../ui/Icons";
 import { OutputMessage } from "./OutputMessage";

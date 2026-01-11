@@ -6,7 +6,8 @@
 
 import type React from "react";
 import { useState, useCallback } from "react";
-import type { ConsoleLogProps, TestOutput } from "../../types";
+import type { ConsoleLogProps } from "../../types/components";
+import type { TestOutput } from "../../types/testPanel";
 import "./console-log.css";
 
 type CopiedState = string | null;

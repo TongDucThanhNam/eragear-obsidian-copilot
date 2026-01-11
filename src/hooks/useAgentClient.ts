@@ -1,6 +1,5 @@
 import type { App } from "obsidian";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AcpAdapter } from "./../adapters/acp/acp.adapter";
 import type { SessionModelState } from "./../domain/models/session-update";
 import type {
 	IAgentClient,
@@ -12,6 +11,7 @@ import type {
 	MyPluginSettings,
 } from "./../settings";
 import { AIProviderType } from "./../settings";
+import { AcpAdapter } from "@/core/acp/acp.adapter";
 
 // Mode interface for agent modes
 interface AgentMode {

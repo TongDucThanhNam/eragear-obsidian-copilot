@@ -4,7 +4,7 @@
 Chuẩn hoá cách xây UI cho Obsidian Plugin theo mô hình “shadcn-like UI layer”:
 - Feature/UI screen **không import trực tiếp** từ `@base-ui/react/*`.
 - `@/components/ui/*` wrap Base UI để tạo API ổn định (Button, Dialog, Popover, Menu…).
-- Prioritize using icon from library `@phosphor-icons/react` (installed via npm).
+- Prioritize using icon from library `@phosphor-icons/react` (installed via npm). Remember to add `Icon` in the tail of icon: `Network` -> `NetworkIcon`.
 - Styling dùng **plain CSS** và **Obsidian theme variables**, không dựng theme/config riêng.
 
 ## Tài liệu tham khảo chính

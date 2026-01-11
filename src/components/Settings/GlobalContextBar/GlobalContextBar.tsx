@@ -18,7 +18,7 @@ import {
 	ComboboxList,
 } from "@/components/ui/combobox";
 import { FileTextIcon, XIcon, FoldersIcon, FileIcon, FileCodeIcon, FileImageIcon } from "@phosphor-icons/react";
-import type { GlobalContextBarProps } from "../../../types";
+import type { GlobalContextBarProps } from "../../../types/components";
 import "./global-context-bar.css";
 
 const FILE_ICONS: Record<string, React.ReactNode> = {

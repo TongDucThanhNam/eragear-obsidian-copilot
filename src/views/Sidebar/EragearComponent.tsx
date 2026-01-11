@@ -8,8 +8,8 @@ import type { App } from "obsidian";
 import type React from "react";
 import { AppContextProvider } from "../../context/AppContext";
 import EragearPlugin from "@/main";
-import { ChatPanel } from "@/views/ChatPanel/ChatPanel";
-import { TestPanel } from "@/views/TestPanel/TestPanel";
+import { ChatPanel } from "@/views/Sidebar/ChatPanel/ChatPanel";
+import { TestPanel } from "@/views/Sidebar/TestPanel/TestPanel";
 
 interface EragearComponentProps {
 	app: App;

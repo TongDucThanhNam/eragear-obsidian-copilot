@@ -33,7 +33,7 @@ export interface TabNavigationProps {
 
 export interface Tab {
 	id: string;
-	icon: string;
+	icon: React.ReactNode;
 	label: string;
 	tooltip: string;
 }
