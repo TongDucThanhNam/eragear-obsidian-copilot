@@ -7,8 +7,6 @@ If your plugin does not need CSS, delete this file.
 
 */
 
-
-
 /* Collapsible UI System - Adapted from user request */
 .Collapsible {
 	--color-gray-900: var(--text-normal);
