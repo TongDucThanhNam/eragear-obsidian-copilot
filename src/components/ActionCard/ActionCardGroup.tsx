@@ -4,16 +4,23 @@
  */
 
 import type React from "react";
+import { Card, CardHeader, CardTitle, CardContent, CardAction, CardDescription
+
+ } from "../ui/card";
 import type { ActionCardGroupProps } from "../../types";
+import "./action-card.css";
 
 export const ActionCardGroup: React.FC<ActionCardGroupProps> = ({
 	title,
 	children,
 }) => {
 	return (
-		<div className="action-card-group">
-			<h3 className="action-card-group-title">{title}</h3>
-			<div className="action-card-group-items">{children}</div>
-		</div>
+		<Card className="">
+			<CardHeader className="">
+				<CardTitle className="">{title}</CardTitle>
+			</CardHeader>
+
+			<CardContent className="">{children}</CardContent>
+		</Card>
 	);
 };

@@ -7,8 +7,11 @@ import type { App, TFile } from "obsidian";
 import type React from "react";
 import { useState } from "react";
 import { ActionCard } from "@/components";
+import { Button } from "@/components/ui/button";
+import { InputGroup, InputGroupInput, InputGroupButton } from "@/components/ui/input-group";
 import { useFileOperations } from "@/hooks";
 import type { InfoState } from "@/types/testPanel";
+import "./info-tab.css";
 
 interface InfoTabProps {
 	app: App;
@@ -28,21 +31,21 @@ export const InfoTab: React.FC<InfoTabProps> = ({
 	const [infoState, setInfoState] = useState<InfoState>({
 		updateFrontmatterPath: "",
 	});
-	const [isLoading, setIsLoading] = useState(false);
+	const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
 	const fileOps = useFileOperations({ app, onAddOutput });
 
 	const handleGetMetadata = async () => {
-		setIsLoading(true);
+		setLoadingAction("metadata");
 		try {
 			await fileOps.getMetadata();
 		} finally {
-			setIsLoading(false);
+			setLoadingAction(null);
 		}
 	};
 
 	const handleUpdateFrontmatter = async () => {
-		setIsLoading(true);
+		setLoadingAction("frontmatter");
 		try {
 			const path = infoState.updateFrontmatterPath || selectedFile?.path;
 			if (!path?.trim()) {
@@ -51,84 +54,138 @@ export const InfoTab: React.FC<InfoTabProps> = ({
 			}
 			await fileOps.updateFrontmatter(path);
 		} finally {
-			setIsLoading(false);
+			setLoadingAction(null);
 		}
 	};
 
-	const handleGetActiveFile = async () => {
-		await fileOps.getActiveFile();
+	const handleGetActiveFile = () => {
+		setLoadingAction("activeFile");
+		try {
+			fileOps.getActiveFile();
+		} finally {
+			setLoadingAction(null);
+		}
+	};
+
+	const handleUseSelectedFile = () => {
+		if (selectedFile) {
+			setInfoState((prev) => ({
+				...prev,
+				updateFrontmatterPath: selectedFile.path,
+			}));
+		}
 	};
 
 	return (
-		<div className="test-section">
-			<h3>ℹ️ Metadata & Information</h3>
+		<div className="info-tab">
+			<div className="info-tab-header">
+				<h3 className="info-tab-title">ℹ️ Metadata & Information</h3>
+				{selectedFile && (
+					<span className="info-tab-file-badge" title={selectedFile.path}>
+						📄 {selectedFile.name}
+					</span>
+				)}
+			</div>
 
-			<ActionCard
-				title="Get Metadata"
-				description="Active file info"
-				icon="🏷️"
-				variant="safe"
-			>
-				<button
-					type="button"
-					className="test-btn test-btn-primary"
-					onClick={handleGetMetadata}
-					disabled={isLoading}
-					aria-label="Get metadata for active file"
+			<div className="info-tab-actions">
+				<ActionCard
+					title="Get Metadata"
+					description="Retrieve active file metadata"
+					icon="🏷️"
+					variant="safe"
 				>
-					{isLoading ? "⏳" : "📊"} Get Metadata
-				</button>
-			</ActionCard>
+					<div className="info-card-action">
+						<Button
+							variant="default"
+							size="sm"
+							onClick={handleGetMetadata}
+							disabled={loadingAction !== null}
+						>
+							{loadingAction === "metadata" ? (
+								<span className="loading-spinner" />
+							) : (
+								"📊"
+							)}
+							{loadingAction === "metadata" ? "Loading..." : "Get Metadata"}
+						</Button>
+					</div>
+				</ActionCard>
 
-			<ActionCard
-				title="Update Frontmatter"
-				description="Safe YAML update"
-				icon="✏️"
-			>
-				<input
-					type="text"
-					className="test-input"
-					placeholder="File path (or use context)"
-					value={infoState.updateFrontmatterPath}
-					onChange={(e) =>
-						setInfoState((prev) => ({
-							...prev,
-							updateFrontmatterPath: e.target.value,
-						}))
-					}
-					disabled={isLoading}
-					aria-label="File path for frontmatter update"
-				/>
-				<button
-					type="button"
-					className="test-btn test-btn-warning"
-					onClick={handleUpdateFrontmatter}
-					disabled={
-						isLoading ||
-						(!infoState.updateFrontmatterPath.trim() && !selectedFile)
-					}
-					aria-label="Update frontmatter (writes to file)"
+				<ActionCard
+					title="Update Frontmatter"
+					description="Modify YAML frontmatter (writes to file)"
+					icon="✏️"
 				>
-					⚠️ Update Frontmatter (Writes!)
-				</button>
-			</ActionCard>
+					<div className="info-card-action">
+						<InputGroup>
+							<InputGroupInput
+								type="text"
+								placeholder="File path or leave empty for selected file"
+								value={infoState.updateFrontmatterPath}
+								onChange={(e) =>
+									setInfoState((prev) => ({
+										...prev,
+										updateFrontmatterPath: e.target.value,
+									}))
+								}
+								disabled={loadingAction !== null}
+								aria-label="File path for frontmatter update"
+							/>
+							{selectedFile && !infoState.updateFrontmatterPath && (
+								<InputGroupButton
+									variant="ghost"
+									size="sm"
+									onClick={handleUseSelectedFile}
+									disabled={loadingAction !== null}
+									title="Use selected file"
+								>
+									📎
+								</InputGroupButton>
+							)}
+							<InputGroupButton
+								variant="destructive"
+								size="sm"
+								onClick={handleUpdateFrontmatter}
+								disabled={
+									loadingAction !== null ||
+									(!infoState.updateFrontmatterPath.trim() && !selectedFile)
+								}
+								title="Update frontmatter (writes to file)"
+							>
+								{loadingAction === "frontmatter" ? (
+									<span className="loading-spinner" />
+								) : (
+									"⚠️"
+								)}
+								{loadingAction === "frontmatter" ? "Writing..." : "Update"}
+							</InputGroupButton>
+						</InputGroup>
+					</div>
+				</ActionCard>
 
-			<ActionCard
-				title="Active File"
-				description="Current focus"
-				icon="📌"
-				variant="safe"
-			>
-				<button
-					type="button"
-					className="test-btn test-btn-secondary"
-					onClick={handleGetActiveFile}
-					disabled={isLoading}
-					aria-label="Get currently active file"
+				<ActionCard
+					title="Active File"
+					description="Get currently active file info"
+					icon="📌"
+					variant="safe"
 				>
-					Get Active File
-				</button>
-			</ActionCard>
+					<div className="info-card-action">
+						<Button
+							variant="secondary"
+							size="sm"
+							onClick={handleGetActiveFile}
+							disabled={loadingAction !== null}
+						>
+							{loadingAction === "activeFile" ? (
+								<span className="loading-spinner" />
+							) : (
+								"📌"
+							)}
+							{loadingAction === "activeFile" ? "Loading..." : "Get Active File"}
+						</Button>
+					</div>
+				</ActionCard>
+			</div>
 		</div>
 	);
 };

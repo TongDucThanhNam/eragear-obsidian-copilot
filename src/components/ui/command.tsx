@@ -1,5 +1,6 @@
 "use client"
 
+import { forwardRef } from "react"
 import type * as React from "react"
 import { Command as CommandPrimitive } from "cmdk"
 import { MagnifyingGlass as MagnifyingGlassIcon, Check as CheckIcon } from "@phosphor-icons/react"
@@ -14,11 +15,15 @@ function Command({ className, ...props }: React.ComponentProps<typeof CommandPri
   return <CommandPrimitive data-slot="command" className={classNames(className)} {...props} />
 }
 
-function CommandInput({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Input>) {
+function CommandInput({
+  className,
+  placeholder = "Type a command or search...",
+  ...props
+}: React.ComponentProps<typeof CommandPrimitive.Input>) {
   return (
     <div data-slot="command-input-wrapper">
       <InputGroup className="command-input-group">
-        <CommandPrimitive.Input data-slot="command-input" className={classNames(className)} {...props} />
+        <CommandPrimitive.Input data-slot="command-input" className={classNames(className)} placeholder={placeholder} {...props} />
         <InputGroupAddon>
           <MagnifyingGlassIcon className="size-4 shrink-0 opacity-50" />
         </InputGroupAddon>
@@ -27,9 +32,21 @@ function CommandInput({ className, ...props }: React.ComponentProps<typeof Comma
   )
 }
 
-function CommandList({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.List>) {
-  return <CommandPrimitive.List data-slot="command-list" className={classNames(className)} {...props} />
-}
+const CommandList = forwardRef<
+  React.ElementRef<typeof CommandPrimitive.List>,
+  React.ComponentProps<typeof CommandPrimitive.List>
+>(({ className, ...props }, ref) => {
+  return (
+    <CommandPrimitive.List
+      ref={ref}
+      data-slot="command-list"
+      className={classNames(className)}
+      {...props}
+    />
+  )
+})
+
+CommandList.displayName = "CommandList"
 
 function CommandEmpty({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Empty>) {
   return <CommandPrimitive.Empty data-slot="command-empty" className={classNames(className)} {...props} />

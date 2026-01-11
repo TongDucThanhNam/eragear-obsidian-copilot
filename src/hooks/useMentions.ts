@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { type App, prepareFuzzySearch } from "obsidian";
-import { detectMention } from "@/shared/mention-utils";
-import { SuggestionItem } from "@/components/SuggestionPopover";
+import { detectMention } from "@/core/shared/mention-utils";
+import { SuggestionItem } from "@/components/Chat/SuggestionPopover";
 
 interface UseMentionsProps {
 	app: App;

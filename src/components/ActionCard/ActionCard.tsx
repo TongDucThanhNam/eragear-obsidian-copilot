@@ -4,7 +4,9 @@
  */
 
 import type React from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import type { ActionCardProps } from "../../types";
+import "./action-card.css";
 
 export const ActionCard: React.FC<ActionCardProps> = ({
 	title,
@@ -14,17 +16,17 @@ export const ActionCard: React.FC<ActionCardProps> = ({
 	children,
 }) => {
 	return (
-		<div className={`action-card action-card-${variant}`}>
-			<div className="action-card-header">
+		<Card className={`action-card action-card-${variant}`}>
+			<CardHeader className="action-card-header">
 				{icon && <span className="action-card-icon">{icon}</span>}
 				<div className="action-card-title-group">
-					<h4 className="action-card-title">{title}</h4>
+					<CardTitle className="action-card-title">{title}</CardTitle>
 					{description && (
 						<p className="action-card-description">{description}</p>
 					)}
 				</div>
-			</div>
-			<div className="action-card-body">{children}</div>
-		</div>
+			</CardHeader>
+			<CardContent className="action-card-body">{children}</CardContent>
+		</Card>
 	);
 };

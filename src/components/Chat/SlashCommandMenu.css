@@ -1,0 +1,56 @@
+
+/* Slash Command Menu */
+.eragear-slash-menu {
+	position: absolute;
+	bottom: 80px;
+	left: 1.25rem;
+	right: 1.25rem;
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 0.75rem;
+	box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+	z-index: 1000;
+	overflow: hidden;
+	animation: slideUpShort 0.2s ease-out;
+}
+
+.slash-menu-header {
+	padding: 0.5rem 0.75rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--text-muted);
+	border-bottom: 1px solid var(--background-modifier-border);
+	background-color: var(--background-tertiary);
+}
+
+.slash-menu-item {
+	padding: 0.75rem 1rem;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	transition: background-color 0.15s ease;
+	border-bottom: 1px solid transparent;
+}
+
+.slash-menu-item:last-child {
+	border-bottom: none;
+}
+
+.slash-menu-item:hover,
+.slash-menu-item.selected {
+	background-color: var(--background-modifier-hover);
+}
+
+.slash-command-name {
+	font-weight: 700;
+	color: var(--interactive-accent);
+	min-width: 60px;
+}
+
+.slash-command-desc {
+	font-size: 0.9rem;
+	color: var(--text-muted);
+	flex: 1;
+}

@@ -1,130 +1,136 @@
 [data-slot="command"] {
-  background-color: var(--bg-popover);
-  color: var(--text-primary);
-  border-radius: 0;
-  display: flex;
-  width: 100%;
-  height: 100%;
-  flex-direction: column;
-  overflow: hidden;
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	border-radius: var(--radius-l);
+	border: 1px solid var(--background-modifier-border);
+	box-shadow: var(--shadow-l);
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	width: min(420px, 100%);
+	overflow: hidden;
 }
 
 [data-slot="command-input-wrapper"] {
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0;
+	border-bottom: 1px solid var(--background-modifier-border);
+	padding: var(--size-4-2);
+	background: var(--background-primary);
 }
 
 [data-slot="command-input"] {
-  width: 100%;
-  font-size: 12px;
-  outline: none;
-  background: transparent;
-  border: none;
-  padding: 8px 12px;
-  color: var(--text-primary);
+	width: 100%;
+	font-size: var(--font-ui-medium);
+	background: transparent;
+	border: none;
+	padding: 0;
+	color: var(--text-normal);
+	line-height: 1.5;
 }
 
-[data-slot="command-input"]:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+[data-slot="command-input"]::placeholder {
+	color: var(--text-faint);
+}
+
+[data-slot="command-input"]:focus-visible {
+	outline: none;
 }
 
 [data-slot="command-list"] {
-  max-height: 18rem;
-  scroll-padding: 0;
-  outline: none;
-  overflow-x: hidden;
-  overflow-y: auto;
-  scrollbar-width: none;
+	max-height: 320px;
+	overflow-y: auto;
+	padding: var(--size-4-2) 0;
+	margin: 0;
 }
 
 [data-slot="command-list"]::-webkit-scrollbar {
-  display: none;
+	width: 4px;
 }
 
-[data-slot="command-empty"] {
-  padding: 24px 0;
-  text-align: center;
-  font-size: 12px;
-  color: var(--text-muted);
+[data-slot="command-list"]::-webkit-scrollbar-thumb {
+	background-color: var(--background-modifier-border);
+	border-radius: var(--radius-m);
 }
 
 [data-slot="command-group"] {
-  color: var(--text-primary);
-  overflow: hidden;
+	padding: 0;
 }
 
 [data-slot="command-group"] [cmdk-group-heading] {
-  color: var(--text-muted);
-  padding: 6px 8px;
-  font-size: 12px;
-  font-weight: 500;
+	display: block;
+	padding: var(--size-4-4) var(--size-4-4) var(--size-4-2);
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--text-faint);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
 }
 
 [data-slot="command-separator"] {
-  background-color: var(--border);
-  margin: 0 -4px;
-  height: 1px;
+	height: 1px;
+	background-color: var(--background-modifier-border);
+	margin: var(--size-4-2) var(--size-4-4);
+	opacity: 0.5;
 }
 
 [data-slot="command-item"] {
-  position: relative;
-  display: flex;
-  cursor: default;
-  align-items: center;
-  gap: 8px;
-  border-radius: 0;
-  padding: 8px;
-  font-size: 12px;
-  outline: none;
-  user-select: none;
-  transition: background-color 0.15s ease;
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-3);
+	padding: var(--size-4-2) var(--size-4-4);
+	border-radius: var(--radius-m);
+	font-size: var(--font-ui-small);
+	color: var(--text-normal);
+	cursor: var(--cursor);
+	margin: 2px var(--size-4-2);
+	transition: all 0.1s ease-in-out;
+	border: 1px solid transparent;
 }
 
 [data-slot="command-item"] svg:not([class*="size-"]) {
-  width: 16px;
-  height: 16px;
-}
-
-[data-slot="command-item"] svg {
-  pointer-events: none;
-  flex-shrink: 0;
+	width: 18px;
+	height: 18px;
+	color: var(--text-muted);
 }
 
 [data-slot="command-item"][data-selected="true"],
 [data-slot="command-item"][aria-selected="true"] {
-  background-color: var(--bg-muted);
-  color: var(--text-primary);
+	background-color: var(--background-modifier-hover);
+	border-color: var(--background-modifier-border);
 }
 
 [data-slot="command-item"][data-disabled="true"] {
-  pointer-events: none;
-  opacity: 0.5;
-}
-
-[data-slot="command-item"] .command-check-icon {
-  margin-left: auto;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-[data-slot="command-item"][data-checked="true"] .command-check-icon {
-  opacity: 1;
-}
-
-[data-slot="command-item"]:has([data-slot="command-shortcut"]) .command-check-icon {
-  display: none;
+	pointer-events: none;
+	opacity: 0.3;
 }
 
 [data-slot="command-shortcut"] {
-  color: var(--text-muted);
-  margin-left: auto;
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  transition: color 0.15s ease;
+	margin-left: auto;
+	font-size: 10px;
+	font-weight: 600;
+	color: var(--text-faint);
+	letter-spacing: 0.05em;
+	padding: 2px 4px;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
 }
 
-[data-slot="command-item"][data-selected="true"] [data-slot="command-shortcut"],
-[data-slot="command-item"][aria-selected="true"] [data-slot="command-shortcut"] {
-  color: var(--text-secondary);
+[data-slot="command-empty"] {
+	padding: var(--size-4-12);
+	text-align: center;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+[data-slot="command-item"] .command-check-icon {
+	width: 14px;
+	height: 14px;
+	margin-left: auto;
+	color: var(--interactive-accent);
+	display: none;
+}
+
+[data-slot="command-item"][data-selected="true"] .command-check-icon {
+	display: block;
 }

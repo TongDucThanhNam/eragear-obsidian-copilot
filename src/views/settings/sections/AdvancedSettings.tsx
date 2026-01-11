@@ -1,5 +1,5 @@
 import React from "react";
-import { SettingItem } from "../../../components/SettingItem";
+import { SettingItem } from "../../../components/Settings/SettingItem";
 import { MyPluginSettings } from "../../../settings";
 
 interface AdvancedSettingsProps {

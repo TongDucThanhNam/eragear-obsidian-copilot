@@ -11,7 +11,12 @@ import { ConsoleLog, GlobalContextBar, TabNavigation } from "@/components";
 import { useTestOutput } from "@/hooks";
 import type { TabId } from "@/types";
 import { TABS } from "@/views/TestPanel/constants";
-import { FilesTab, InfoTab, LabsTab, OperationsTab, SearchTab } from "@/views/TestPanel/tabs";
+import { FilesTab } from "./tabs/FilesTab";
+import { InfoTab } from "./tabs/InfoTab";
+import { LabsTab } from "./tabs/LabsTab";
+import { OperationsTab } from "./tabs/OperationsTab";
+import { SearchTab } from "./tabs/SearchTab";
+import "./TestPanel.css";
 
 export interface TestPanelProps {
 	app: App;

@@ -1,0 +1,109 @@
+
+/* ------------------------------------- */
+/* Input Area */
+.eragear-input-area {
+	display: flex;
+	gap: 0.75rem;
+	padding: 1rem 1.25rem;
+	border-top: 1px solid var(--background-modifier-border);
+	background-color: var(--background-secondary);
+	align-items: flex-end;
+}
+
+.eragear-input {
+	flex: 1;
+	min-height: 42px;
+	max-height: 150px;
+	padding: 0.75rem;
+	border: 1.5px solid var(--background-modifier-border);
+	border-radius: 0.75rem; /* Rounded input */
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	font-family: var(--font-interface);
+	font-size: 0.95rem;
+	resize: none;
+	transition: all 0.2s ease;
+	line-height: 1.4;
+}
+
+.eragear-input:focus {
+	outline: none;
+	border-color: var(--interactive-accent);
+	box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.15);
+}
+
+.eragear-send-btn {
+	height: 42px;
+	width: 42px; /* Square button with icon preferred, or keep explicit width for text */
+	min-width: unset;
+	padding: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	border-radius: 50%; /* Circle button */
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.eragear-send-btn:hover:not(:disabled) {
+	transform: scale(1.1);
+	background-color: var(--interactive-accent-hover);
+}
+
+.eragear-send-btn:active:not(:disabled) {
+	transform: scale(0.95);
+}
+
+.eragear-send-btn:disabled {
+	opacity: 0.5;
+	cursor: default;
+	background-color: var(--background-modifier-border);
+	box-shadow: none;
+}
+
+/* Send/Stop button - used in ChatInput */
+.eragear-send-button {
+	height: 32px;
+	width: 32px;
+	min-width: unset;
+	padding: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	border-radius: 6px;
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.eragear-send-button:hover:not(:disabled) {
+	background-color: var(--interactive-accent-hover);
+}
+
+.eragear-send-button:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+	background-color: var(--background-modifier-border);
+}
+
+/* Sending/Stop state - red background to indicate stop action */
+.eragear-send-button.sending {
+	background-color: var(--text-error);
+}
+
+.eragear-send-button.sending:hover {
+	background-color: var(--text-error);
+	opacity: 0.9;
+}
+
+.eragear-send-icon {
+	width: 18px;
+	height: 18px;
+	fill: currentColor;
+}

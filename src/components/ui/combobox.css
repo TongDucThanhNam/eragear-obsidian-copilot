@@ -1,7 +1,5 @@
 [data-slot="combobox"] {
-  background-color: var(--bg-popover);
-  color: var(--text-primary);
-  border-radius: 0;
+  color: var(--text-normal);
   display: flex;
   width: 100%;
   height: 100%;
@@ -9,28 +7,76 @@
   overflow: hidden;
 }
 
-[data-slot="combobox-input-wrapper"] {
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0;
+.model-selector {
+  display: flex;
+  align-items: center;
+  width: 220px;
+  max-width: 100%;
 }
 
-[data-slot="combobox-input"] {
-  width: 100%;
-  font-size: 12px;
-  outline: none;
-  background: transparent;
+.model-selector [data-slot="input-group"] {
+  border-radius: var(--radius-s);
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+  box-shadow: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.model-selector [data-slot="input-group"]:focus-within {
+  border-color: var(--background-modifier-border-hover);
+  box-shadow: none;
+}
+
+.model-selector [data-slot="input-group-addon"] {
   border: none;
-  padding: 8px 12px;
-  color: var(--text-primary);
+  background: transparent;
+  padding: 0 var(--size-4-1);
 }
 
-[data-slot="combobox-input"]:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+.model-selector [data-slot="input-group-input"] {
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
+.model-selector [data-slot="input-group-input"]:focus {
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
+.model-selector [data-slot="input-group-button"] {
+  border: none;
+  border-radius: var(--radius-s);
+  background: transparent;
+  box-shadow: none;
+}
+
+.model-selector [data-slot="input-group-button"]:focus-visible {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.model-selector .button.ghost:hover:not(:disabled) {
+  background-color: var(--background-modifier-hover);
+}
+
+.model-selector-input {
+  min-width: 200px;
+}
+
+.model-selector-content {
+  min-width: 220px;
+  padding: var(--size-4-1);
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow-s);
 }
 
 [data-slot="combobox-list"] {
   max-height: 18rem;
+  padding: var(--size-4-1);
   scroll-padding: 0;
   outline: none;
   overflow-x: hidden;
@@ -43,42 +89,44 @@
 }
 
 [data-slot="combobox-empty"] {
-  padding: 24px 0;
+  padding: var(--size-4-3) 0;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--font-ui-smaller);
   color: var(--text-muted);
 }
 
 [data-slot="combobox-group"] {
-  color: var(--text-primary);
+  color: var(--text-normal);
   overflow: hidden;
 }
 
-[data-slot="combobox-group"] [cmdk-group-heading] {
+[data-slot="combobox-label"] {
   color: var(--text-muted);
-  padding: 6px 8px;
-  font-size: 12px;
-  font-weight: 500;
+  padding: var(--size-4-1) var(--size-4-2);
+  font-size: var(--font-ui-smaller);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 [data-slot="combobox-separator"] {
-  background-color: var(--border);
-  margin: 0 -4px;
+  background-color: var(--background-modifier-border);
+  margin: var(--size-4-1) 0;
   height: 1px;
 }
 
 [data-slot="combobox-item"] {
   position: relative;
   display: flex;
-  cursor: default;
+  cursor: pointer;
   align-items: center;
-  gap: 8px;
-  border-radius: 0;
-  padding: 8px;
-  font-size: 12px;
+  gap: var(--size-4-1);
+  border-radius: var(--radius-s);
+  padding: var(--size-4-2) var(--size-4-2);
+  font-size: var(--font-ui-small);
   outline: none;
   user-select: none;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 [data-slot="combobox-item"] svg:not([class*="size-"]) {
@@ -91,10 +139,16 @@
   flex-shrink: 0;
 }
 
+[data-slot="combobox-item"][data-highlighted],
+[data-slot="combobox-item"][data-highlighted="true"],
+[data-slot="combobox-item"]:hover {
+  background-color: var(--background-modifier-hover);
+}
+
 [data-slot="combobox-item"][data-selected="true"],
 [data-slot="combobox-item"][aria-selected="true"] {
-  background-color: var(--bg-muted);
-  color: var(--text-primary);
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
 }
 
 [data-slot="combobox-item"][data-disabled="true"] {

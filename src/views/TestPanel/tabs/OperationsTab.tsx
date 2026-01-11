@@ -7,6 +7,22 @@ import type { App, TFile } from "obsidian";
 import type React from "react";
 import { useState } from "react";
 import { ActionCard, ActionCardGroup } from "@/components";
+import { Button } from "@/components/ui/button";
+import {
+	InputGroup,
+	InputGroupInput,
+	InputGroupTextarea,
+	InputGroupButton,
+} from "@/components/ui/input-group";
+import {
+	IconList,
+	IconFileText,
+	IconPlus,
+	IconPen,
+	IconTrash,
+	IconSearch,
+	IconRotate,
+} from "@/components/ui/Icons";
 import { useFileOperations } from "@/hooks";
 import type { OperationsState } from "@/types/testPanel";
 
@@ -114,35 +130,34 @@ export const OperationsTab: React.FC<OperationsTabProps> = ({
 
 	return (
 		<div className="test-section">
-			<h3>🛠️ Note Operations</h3>
+			<h3>Note Operations</h3>
 
 			<ActionCardGroup title="Read Operations">
 				<ActionCard
 					title="Get Structure"
 					description="Table of contents"
-					icon="📋"
+					icon={<IconList />}
 					variant="safe"
 				>
-					<button
-						type="button"
-						className="test-btn test-btn-primary"
+					<Button
+						variant="default"
+						size="sm"
 						onClick={handleGetStructure}
 						disabled={isLoading}
 					>
-						{isLoading ? "⏳" : "📖"} Get Structure
-					</button>
+						{isLoading ? <IconRotate /> : <IconFileText />}
+						Get Structure
+					</Button>
 				</ActionCard>
 
 				<ActionCard
 					title="Get Contents"
 					description="Read file content"
-					icon="📄"
+					icon={<IconFileText />}
 					variant="safe"
 				>
-					<div className="test-input-group">
-						<input
-							type="text"
-							className="test-input"
+					<InputGroup>
+						<InputGroupInput
 							placeholder="File path (or use context)"
 							value={opsState.getContentsPath}
 							onChange={(e) =>
@@ -153,37 +168,43 @@ export const OperationsTab: React.FC<OperationsTabProps> = ({
 							}
 							disabled={isLoading}
 						/>
-						<button
-							type="button"
-							className="test-btn test-btn-secondary"
-							onClick={handleGetContents}
-							disabled={
-								isLoading || (!opsState.getContentsPath.trim() && !selectedFile)
-							}
-						>
-							Read
-						</button>
-					</div>
+						<InputGroupButton>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleGetContents}
+								disabled={
+									isLoading || (!opsState.getContentsPath.trim() && !selectedFile)
+								}
+							>
+								<IconSearch />
+								Read
+							</Button>
+						</InputGroupButton>
+					</InputGroup>
 				</ActionCard>
 			</ActionCardGroup>
 
 			<ActionCardGroup title="Write Operations">
-				<ActionCard title="Append Content" icon="➕" variant="destructive">
-					<input
-						type="text"
-						className="test-input"
-						placeholder="File path (or use context)"
-						value={opsState.appendContentPath}
-						onChange={(e) =>
-							setOpsState((prev) => ({
-								...prev,
-								appendContentPath: e.target.value,
-							}))
-						}
-						disabled={isLoading}
-					/>
-					<textarea
-						className="test-textarea"
+				<ActionCard
+					title="Append Content"
+					icon={<IconPlus />}
+					variant="destructive"
+				>
+					<InputGroup>
+						<InputGroupInput
+							placeholder="File path (or use context)"
+							value={opsState.appendContentPath}
+							onChange={(e) =>
+								setOpsState((prev) => ({
+									...prev,
+									appendContentPath: e.target.value,
+								}))
+							}
+							disabled={isLoading}
+						/>
+					</InputGroup>
+					<InputGroupTextarea
 						placeholder="Content to append..."
 						value={opsState.appendText}
 						onChange={(e) =>
@@ -192,9 +213,9 @@ export const OperationsTab: React.FC<OperationsTabProps> = ({
 						disabled={isLoading}
 						rows={3}
 					/>
-					<button
-						type="button"
-						className="test-btn test-btn-warning"
+					<Button
+						variant="destructive"
+						size="sm"
 						onClick={handleAppendContent}
 						disabled={
 							isLoading ||
@@ -202,60 +223,75 @@ export const OperationsTab: React.FC<OperationsTabProps> = ({
 							!opsState.appendText.trim()
 						}
 					>
-						⚠️ Append Content (Writes!)
-					</button>
+						<IconPlus />
+						Append Content (Writes!)
+					</Button>
 				</ActionCard>
 
-				<ActionCard title="Patch Content" icon="🔧" variant="destructive">
-					<input
-						type="text"
-						className="test-input"
-						placeholder="File path (or use context)"
-						value={opsState.patchContentPath}
-						onChange={(e) =>
-							setOpsState((prev) => ({
-								...prev,
-								patchContentPath: e.target.value,
-							}))
-						}
-						disabled={isLoading}
-					/>
-					<button
-						type="button"
-						className="test-btn test-btn-warning"
-						onClick={handlePatchContent}
-						disabled={
-							isLoading || (!opsState.patchContentPath.trim() && !selectedFile)
-						}
-					>
-						⚠️ Patch After Frontmatter (Writes!)
-					</button>
+				<ActionCard
+					title="Patch Content"
+					icon={<IconPen />}
+					variant="destructive"
+				>
+					<InputGroup>
+						<InputGroupInput
+							placeholder="File path (or use context)"
+							value={opsState.patchContentPath}
+							onChange={(e) =>
+								setOpsState((prev) => ({
+									...prev,
+									patchContentPath: e.target.value,
+								}))
+							}
+							disabled={isLoading}
+						/>
+						<InputGroupButton>
+							<Button
+								variant="destructive"
+								size="sm"
+								onClick={handlePatchContent}
+								disabled={
+									isLoading || (!opsState.patchContentPath.trim() && !selectedFile)
+								}
+							>
+								<IconPen />
+								Patch
+							</Button>
+						</InputGroupButton>
+					</InputGroup>
 				</ActionCard>
 
-				<ActionCard title="Delete File" icon="🗑️" variant="destructive">
-					<input
-						type="text"
-						className="test-input"
-						placeholder="File path (or use context)"
-						value={opsState.deleteFilePath}
-						onChange={(e) =>
-							setOpsState((prev) => ({
-								...prev,
-								deleteFilePath: e.target.value,
-							}))
-						}
-						disabled={isLoading}
-					/>
-					<button
-						type="button"
-						className="test-btn test-btn-danger"
-						onClick={handleDeleteFile}
-						disabled={
-							isLoading || (!opsState.deleteFilePath.trim() && !selectedFile)
-						}
-					>
-						🗑️ Delete (Moves to Trash)
-					</button>
+				<ActionCard
+					title="Delete File"
+					icon={<IconTrash />}
+					variant="destructive"
+				>
+					<InputGroup>
+						<InputGroupInput
+							placeholder="File path (or use context)"
+							value={opsState.deleteFilePath}
+							onChange={(e) =>
+								setOpsState((prev) => ({
+									...prev,
+									deleteFilePath: e.target.value,
+								}))
+							}
+							disabled={isLoading}
+						/>
+						<InputGroupButton>
+							<Button
+								variant="destructive"
+								size="sm"
+								onClick={handleDeleteFile}
+								disabled={
+									isLoading || (!opsState.deleteFilePath.trim() && !selectedFile)
+								}
+							>
+								<IconTrash />
+								Delete
+							</Button>
+						</InputGroupButton>
+					</InputGroup>
 				</ActionCard>
 			</ActionCardGroup>
 		</div>

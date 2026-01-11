@@ -1,6 +1,6 @@
 import type { ChatModelConfig, MyPluginSettings } from "../../../settings";
-import { ChatModelsTable } from "../../../components/ChatModelsTable";
-import { SettingItem } from "../../../components/SettingItem";
+import { ChatModelsTable } from "../../../components/Settings/ChatModelsTable";
+import { SettingItem } from "../../../components/Settings/SettingItem";
 
 interface ModelSettingsProps {
 	settings: MyPluginSettings;

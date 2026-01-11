@@ -1,0 +1,71 @@
+/* InfoTab Styles */
+
+.info-tab {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-4);
+}
+
+.info-tab-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+}
+
+.info-tab-title {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--text-normal);
+	margin: 0;
+}
+
+.info-tab-file-badge {
+	font-size: 11px;
+	padding: var(--size-4-1) var(--size-4-2);
+	background: var(--background-secondary);
+	border-radius: var(--radius-s);
+	color: var(--text-muted);
+	max-width: 200px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	cursor: var(--cursor);
+}
+
+.info-tab-actions {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-3);
+}
+
+.info-card-action {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+/* Loading spinner */
+.loading-spinner {
+	width: 14px;
+	height: 14px;
+	border: 2px solid currentColor;
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Input group adjustments */
+.info-tab [data-slot="input-group"] {
+	flex: 1;
+}
+
+.info-tab [data-slot="input-group-input"] {
+	font-size: 12px;
+}

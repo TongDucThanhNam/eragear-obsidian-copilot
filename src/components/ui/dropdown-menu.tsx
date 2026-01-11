@@ -30,7 +30,7 @@ function DropdownMenuContent({
 	positionMethod = "fixed",
 	className,
 	...props
-}: MenuPrimitive.Popup.Props &
+}: Omit<MenuPrimitive.Popup.Props, "className"> & { className?: string } &
 	Pick<
 		MenuPrimitive.Positioner.Props,
 		| "align"
@@ -70,7 +70,8 @@ function DropdownMenuLabel({
 	className,
 	inset,
 	...props
-}: MenuPrimitive.GroupLabel.Props & {
+}: Omit<MenuPrimitive.GroupLabel.Props, "className"> & {
+	className?: string;
 	inset?: boolean;
 }) {
 	return (
@@ -88,7 +89,8 @@ function DropdownMenuItem({
 	inset,
 	variant = "default",
 	...props
-}: MenuPrimitive.Item.Props & {
+}: Omit<MenuPrimitive.Item.Props, "className"> & {
+	className?: string;
 	inset?: boolean;
 	variant?: "default" | "destructive";
 }) {
@@ -112,7 +114,8 @@ function DropdownMenuSubTrigger({
 	inset,
 	children,
 	...props
-}: MenuPrimitive.SubmenuTrigger.Props & {
+}: Omit<MenuPrimitive.SubmenuTrigger.Props, "className"> & {
+	className?: string;
 	inset?: boolean;
 }) {
 	return (
@@ -154,7 +157,7 @@ function DropdownMenuCheckboxItem({
 	children,
 	checked,
 	...props
-}: MenuPrimitive.CheckboxItem.Props) {
+}: Omit<MenuPrimitive.CheckboxItem.Props, "className"> & { className?: string }) {
 	return (
 		<MenuPrimitive.CheckboxItem
 			data-slot="dropdown-menu-checkbox-item"
@@ -188,7 +191,7 @@ function DropdownMenuRadioItem({
 	className,
 	children,
 	...props
-}: MenuPrimitive.RadioItem.Props) {
+}: Omit<MenuPrimitive.RadioItem.Props, "className"> & { className?: string }) {
 	return (
 		<MenuPrimitive.RadioItem
 			data-slot="dropdown-menu-radio-item"
@@ -211,7 +214,7 @@ function DropdownMenuRadioItem({
 function DropdownMenuSeparator({
 	className,
 	...props
-}: MenuPrimitive.Separator.Props) {
+}: Omit<MenuPrimitive.Separator.Props, "className"> & { className?: string }) {
 	return (
 		<MenuPrimitive.Separator
 			data-slot="dropdown-menu-separator"

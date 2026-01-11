@@ -9,7 +9,7 @@ import type { TestOutput } from "./testPanel";
 export interface ActionCardProps {
 	title: string;
 	description?: string;
-	icon: string;
+	icon?: React.ReactNode;
 	variant?: "safe" | "destructive" | "default";
 	children: React.ReactNode;
 }

@@ -1,0 +1,118 @@
+
+/* Chat Area - Contains header and scrollable message list */
+.eragear-chat-area {
+	flex: 1;
+	min-height: 0;
+	max-height: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	overflow: hidden;
+	padding: 0;
+}
+
+.eragear-chat-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 12px 16px;
+	margin: 0;
+	flex-shrink: 0;
+	border-bottom: 1px solid var(--eragear-border-color);
+}
+
+.eragear-chat-title {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--eragear-text-main);
+}
+
+.eragear-add-btn {
+	background: var(--eragear-bg-secondary);
+	border: 1px solid var(--eragear-border-color);
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	color: var(--eragear-text-muted);
+	transition: all 0.2s;
+}
+
+.eragear-add-btn:hover {
+	color: var(--eragear-text-main);
+	border-color: var(--eragear-text-muted);
+}
+
+/* New Chat Dropdown Menu */
+.eragear-dropdown-menu {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	margin-top: 4px;
+	background: var(--eragear-bg-secondary);
+	border: 1px solid var(--eragear-border-color);
+	border-radius: 8px;
+	box-shadow: var(--eragear-shadow-lg);
+	min-width: 200px;
+	z-index: 1000;
+	overflow: hidden;
+}
+
+.eragear-dropdown-section-label {
+	padding: 8px 12px 4px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--eragear-text-muted);
+	border-top: 1px solid var(--eragear-border-color);
+}
+
+.eragear-dropdown-section-label:first-child {
+	border-top: none;
+}
+
+.eragear-dropdown-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	padding: 10px 12px;
+	border: none;
+	background: transparent;
+	color: var(--eragear-text-main);
+	font-size: 13px;
+	cursor: pointer;
+	text-align: left;
+	transition: background-color 0.15s;
+}
+
+.eragear-dropdown-item:hover {
+	background-color: var(--eragear-bg-tertiary);
+}
+
+.eragear-dropdown-item:active {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.eragear-dropdown-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 999;
+	background: transparent;
+	border: none;
+	cursor: default;
+}
+
+/* Message List Container - Scrollable area inside chat-area */
+.eragear-chat-area .scrollArea {
+	flex: 1;
+	min-height: 0;
+	max-height: 100%;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}

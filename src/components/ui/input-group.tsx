@@ -95,16 +95,21 @@ export type InputGroupButtonProps = {
 	children?: React.ReactNode;
 	onClick?: React.MouseEventHandler<HTMLButtonElement>;
 	"aria-label"?: string;
+	title?: string;
 };
 
 const InputGroupButtonComponent = forwardRef<HTMLButtonElement, InputGroupButtonProps>(
-	({ className, ...props }, _ref) => {
+	({ className, children, title, ...props }, ref) => {
 		return (
 			<Button
+				ref={ref}
 				data-slot="input-group-button"
 				className={classNames("input-group-button", className)}
+				title={title}
 				{...props}
-			/>
+			>
+				{children}
+			</Button>
 		);
 	}
 );

@@ -4,6 +4,7 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AcpAdapter } from "@/adapters/acp/acp.adapter";
 import { NoteMentionService } from "@/core/mention-service";
+import "./ChatPanel.css";
 import type {
 	OutputUpdate,
 	PermissionRequest,
@@ -19,15 +20,13 @@ import { useAgentClient } from "../../hooks/useAgentClient";
 import {
 	hasMentions,
 	cleanMentionSyntax,
-} from "@/shared/mention-utils";
-import { prepareMessage } from "@/shared/message-service";
+} from "@/core/shared/mention-utils";
+import { prepareMessage } from "@/core/shared/message-service";
 
 import {
-	IconChevronDown,
 	IconFileText,
 	IconFolder,
-	IconPlus,
-} from "@/components/Icons";
+} from "@/components/ui/Icons";
 
 import {
 	DropdownMenu,
@@ -40,10 +39,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import type { Message } from "./types";
-import { SuggestionItem } from "@/components/SuggestionPopover";
-import { ChatInput } from "@/components/ChatInput";
-import PermissionDialog from "@/components/PermissionDialog";
-import { MessageList } from "@/components/MessageList";
+import { SuggestionItem } from "@/components/Chat/SuggestionPopover";
+import { ChatInput } from "@/components/Chat/ChatInput/ChatInput";
+import PermissionDialog from "@/components/Chat/PermissionDialog";
+import { MessageList } from "@/components/Chat/Messages/MessageList";
 import { ContextBadges } from "@/components/ContextBadges";
 
 // Chat mode type
@@ -1208,10 +1207,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	 */
 	const handleStopGeneration = useCallback(async () => {
 		console.log("[ChatPanel] Cancelling current operation...");
-		
+
 		// Save last user message before cancel (to restore it)
 		const savedMessage = lastUserMessage;
-		
+
 		if (agentClient && agentSessionId) {
 			try {
 				await agentClient.cancel(agentSessionId);
@@ -1220,10 +1219,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 				console.warn("[ChatPanel] Failed to cancel operation:", e);
 			}
 		}
-		
+
 		// Reset loading state
 		setIsLoading(false);
-		
+
 		// Restore the last user message to input field
 		if (savedMessage) {
 			setInput(savedMessage);

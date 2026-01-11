@@ -1,0 +1,240 @@
+/* GlobalContextBar Styles - Following CLAUDE.md guidelines */
+
+.gcb-container {
+	/* Tokens: alias from Obsidian variables */
+	--gcb-bg: var(--background-primary);
+	--gcb-bg-secondary: var(--background-secondary);
+	--gcb-text: var(--text-normal);
+	--gcb-text-muted: var(--text-muted);
+	--gcb-border: var(--background-modifier-border);
+	--gcb-accent: var(--interactive-accent);
+	--gcb-accent-hover: var(--interactive-accent-hover);
+	--gcb-radius: var(--radius-m);
+	--gcb-shadow: var(--shadow-s);
+
+	/* Spacing via Obsidian size grid */
+	--gcb-px: var(--size-4-2);  /* 8px */
+	--gcb-py: var(--size-4-2);  /* 8px */
+
+	display: flex;
+	flex-direction: column;
+	padding: var(--size-4-2);
+	background: linear-gradient(
+		to bottom,
+		var(--background-secondary),
+		var(--background-primary)
+	);
+	border-bottom: 2px solid var(--background-modifier-border);
+	flex-shrink: 0;
+}
+
+.gcb-content {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--size-4-4);  /* 16px */
+}
+
+/* Left Section - File Info */
+.gcb-left {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-3);  /* 12px */
+	flex: 1;
+	min-width: 0;
+}
+
+.gcb-icon-wrapper {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--size-4-6);  /* 24px */
+	height: var(--size-4-6);  /* 24px */
+	flex-shrink: 0;
+	color: var(--gcb-text-muted);
+}
+
+.gcb-icon-wrapper svg {
+	width: var(--size-4-5);  /* 20px */
+	height: var(--size-4-5);  /* 20px */
+}
+
+.gcb-info {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.gcb-label {
+	font-size: 0.7rem;
+	color: var(--gcb-text-muted);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.6px;
+	line-height: 1.2;
+}
+
+.gcb-filename {
+	font-size: 0.9rem;
+	color: var(--gcb-text);
+	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-family: var(--font-monospace);
+	letter-spacing: 0.2px;
+}
+
+.gcb-filepath {
+	font-size: 0.7rem;
+	color: var(--gcb-text-muted);
+	font-family: var(--font-monospace);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Right Section - Actions */
+.gcb-actions {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);  /* 8px */
+	flex-shrink: 0;
+}
+
+.gcb-btn-text {
+	margin-left: var(--size-4-1);  /* 4px */
+}
+
+/* Combobox Styles */
+.gcb-combobox-input {
+	display: none;
+}
+
+.gcb-combobox-content {
+	max-height: 320px;
+	background: var(--gcb-bg);
+	border: 1px solid var(--gcb-border);
+	border-radius: var(--gcb-radius);
+	box-shadow: var(--gcb-shadow);
+	z-index: 100;
+}
+
+.gcb-combobox-list {
+	display: flex;
+	flex-direction: column;
+	max-height: 280px;
+	overflow-y: auto;
+	padding: var(--size-4-1);  /* 4px */
+}
+
+.gcb-combobox-list [data-slot="combobox-label"] {
+	font-size: 0.7rem;
+	font-weight: 600;
+	color: var(--gcb-text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	padding: var(--size-4-2);  /* 8px */
+	margin-bottom: var(--size-4-1);  /* 4px */
+	border-bottom: 1px solid var(--gcb-border);
+}
+
+.gcb-combobox-item {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);  /* 8px */
+	padding: var(--size-4-2);  /* 8px */
+	border-radius: var(--radius-s);
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.gcb-combobox-item:hover,
+.gcb-combobox-item[data-highlighted] {
+	background-color: var(--background-modifier-hover);
+}
+
+.gcb-combobox-item[data-selected] {
+	background-color: rgba(var(--interactive-accent-rgb), 0.1);
+}
+
+.gcb-combobox-item-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--size-4-5);  /* 20px */
+	height: var(--size-4-5);  /* 20px */
+	flex-shrink: 0;
+	color: var(--gcb-text-muted);
+}
+
+.gcb-combobox-item-icon svg {
+	width: var(--size-4-4);  /* 16px */
+	height: var(--size-4-4);  /* 16px */
+}
+
+.gcb-combobox-item-content {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	flex: 1;
+}
+
+.gcb-combobox-item-name {
+	font-size: 0.85rem;
+	font-weight: 500;
+	color: var(--gcb-text);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.gcb-combobox-item-path {
+	font-size: 0.7rem;
+	color: var(--gcb-text-muted);
+	font-family: var(--font-monospace);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.gcb-combobox-empty {
+	padding: var(--size-4-4);  /* 16px */
+	text-align: center;
+	color: var(--gcb-text-muted);
+	font-size: 0.85rem;
+	font-style: italic;
+}
+
+/* Scrollbar for combobox list */
+.gcb-combobox-list::-webkit-scrollbar {
+	width: 6px;
+}
+
+.gcb-combobox-list::-webkit-scrollbar-track {
+	background: var(--gcb-bg-secondary);
+	border-radius: 3px;
+}
+
+.gcb-combobox-list::-webkit-scrollbar-thumb {
+	background-color: var(--gcb-border);
+	border-radius: 3px;
+}
+
+.gcb-combobox-list::-webkit-scrollbar-thumb:hover {
+	background-color: var(--gcb-text-muted);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.gcb-content {
+		flex-wrap: wrap;
+		gap: var(--size-4-3);  /* 12px */
+	}
+
+	.gcb-actions {
+		width: 100%;
+		justify-content: flex-end;
+	}
+}

@@ -1,0 +1,36 @@
+
+.test-panel-modern-wrapper {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	overflow: hidden;
+}
+.test-panel-layout-container {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+	gap: 0;
+}
+.test-panel-top-section {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	border-bottom: 2px solid var(--background-modifier-border);
+	background-color: var(--background-primary);
+}
+.test-panel-bottom-section {
+	flex: 0 0 30%;
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	background-color: var(--background-primary);
+	transition: flex-basis 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.test-panel-layout-container.has-collapsed-console .test-panel-bottom-section {
+	flex-basis: 38px; /* Fixed height of header when collapsed */
+}

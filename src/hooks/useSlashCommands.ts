@@ -1,4 +1,4 @@
-import { SuggestionItem } from "@/components/SuggestionPopover";
+import { SuggestionItem } from "@/components/Chat/SuggestionPopover";
 import { useState, useCallback, useEffect } from "react";
 
 export interface UseSlashCommandsReturn {

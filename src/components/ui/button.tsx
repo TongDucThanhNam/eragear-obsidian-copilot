@@ -40,18 +40,25 @@ interface ButtonProps extends React.ComponentProps<typeof ButtonPrimitive> {
 	variant?: ButtonVariant;
 	size?: ButtonSize;
 	className?: string;
+	children?: React.ReactNode;
+	title?: string;
+	onClick?: React.MouseEventHandler<HTMLButtonElement>;
 }
 
 function Button({
 	className,
 	variant = "default",
 	size = "default",
+	children,
+	title,
 	...props
 }: ButtonProps) {
 	const buttonClass = buttonVariants({ variant, size, className });
 
 	return (
-		<ButtonPrimitive data-slot="button" className={buttonClass} {...props} />
+		<button data-slot="button" className={buttonClass} title={title} {...props}>
+			{children}
+		</button>
 	);
 }
 
