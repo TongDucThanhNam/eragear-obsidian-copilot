@@ -12,9 +12,9 @@ import type {
 	GraphStructure,
 	SearchContentPayload,
 } from "./types";
-import type { VaultManager } from "./vault-manager";
-import type { GraphService } from "./graph-service";
-import { getWorkerClient } from "./worker-client";
+import type { VaultManager } from "@/infra/obsidian/vault-manager";
+import type { GraphService } from "@/infra/obsidian/graph-service";
+import { getWorkerClient } from "@/infra/workers/worker-client";
 
 export interface AssemblerConfig {
 	maxGraphHops: number;

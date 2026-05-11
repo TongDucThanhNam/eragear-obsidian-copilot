@@ -64,7 +64,6 @@ function CommandItem({ className, children, ...props }: React.ComponentProps<typ
   return (
     <CommandPrimitive.Item data-slot="command-item" className={classNames(className)} {...props}>
       {children}
-      <CheckIcon className="command-check-icon" />
     </CommandPrimitive.Item>
   )
 }

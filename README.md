@@ -1,19 +1,4 @@
-# Eragear Obsidian Copilot
-
-**An Agentic AI Assistant for Obsidian** that prioritizes deterministic graph context over vector embeddings.
-
-## Key Features
-
-- **Graph-Based Context**: Uses PageRank and Spreading Activation to find relevant notes based on your vault's structure.
-- **Local First**: All processing happens locally on your machine using Web Workers.
-- **deterministic**: No vector databases, no "hallucinated" connections. Connections are based on actual links.
-- **Lexical Search**: Integrated full-text search using MiniSearch.
-
-## Architecture
-
-This plugin uses a **Web Worker** to offload heavy graph algorithms (Graphology) and search indexing (MiniSearch) from the main UI thread.
-For more technical details, see [Architecture Documentation](docs/architecture.md).
-
+b
 ## Installation
 
 1. Clone this repo into your `.obsidian/plugins/` folder.
@@ -26,9 +11,6 @@ For more technical details, see [Architecture Documentation](docs/architecture.m
 - `npm run dev`: Start development watch mode.
 - `npm run build`: Build for production.
 
-## Status (Phase 1 Complete)
+## Status
 
-- [x] Graph Building & PageRank
-- [x] Spreading Activation Context
-- [x] Web Worker Offloading
-- [ ] Phase 2: MCP Server Integration (Coming Soon)
+Active development with focus on ACP/AI SDK chat and building core services that enable future features.

@@ -1,192 +1,202 @@
 # AGENTS.md
 
 ## Mục tiêu
-Chuẩn hoá cách xây UI cho Obsidian Plugin theo mô hình “shadcn-like UI layer”:
-- Feature/UI screen **không import trực tiếp** từ `@base-ui/react/*`.
-- `@/components/ui/*` wrap Base UI để tạo API ổn định (Button, Dialog, Popover, Menu…).
-- Prioritize using icon from library `@phosphor-icons/react` (installed via npm). Remember to add `Icon` in the tail of icon: `Network` -> `NetworkIcon`.
-- Styling dùng **plain CSS** và **Obsidian theme variables**, không dựng theme/config riêng.
 
-## Tài liệu tham khảo chính
-- Base UI Quick Start (unstyled, dùng plain CSS/CSS-in-JS tuỳ bạn): https://base-ui.com/react/overview/quick-start
-- Base UI Styling (data attributes + CSS variables): https://base-ui.com/react/handbook/styling
-- Base UI Composition (render prop, forwardRef + spread props): https://base-ui.com/react/handbook/composition
-- Base UI Popover Portal API (container, default append <body>): https://base-ui.com/react/components/popover
-- Obsidian Theme Migration Guide (spacing `--size-*`, cursor `--cursor`, `--cursor-link`): https://obsidian.md/blog/1-0-theme-migration-guide
-## Quy tắc kiến trúc (bắt buộc)
-### 1) Module boundary
-- Feature layer:
-  - IMPORT: `@/components/ui/*` và domain modules.
-  - KHÔNG IMPORT: `@base-ui/react/*`.
-- UI layer (`@/components/ui/*`):
-  - Được phép import `@base-ui/react/*`.
-  - Chịu trách nhiệm: composition, portal container, className/data-attrs, primitives.
-### 2) Namespace class & low specificity
-- Mọi class CSS của UI layer phải prefix, ví dụ: `cui-` hoặc `${pluginId}-`.
-- Không viết selector global kiểu `button {}`/`input {}`.
-- Tất cả CSS được “neo” vào root container của plugin: `.my-plugin-root`.
+Repo này là Obsidian community plugin `eragear-copilot`. Khi làm việc trong repo, mục tiêu là tạo/sửa plugin theo đường ngắn nhất để chạy được trong Obsidian, nhưng vẫn giữ các chuẩn quan trọng: lifecycle sạch, API Obsidian đúng, UI native, CSS không phá theme, và debug bằng Obsidian CLI thay vì đoán.
 
-### 3) Token strategy: chỉ alias từ Obsidian variables
-- Không hard-code màu.
-- Tạo token alias trong `.my-plugin-root`:
-  - `--cui-bg: var(--background-primary)`
-  - `--cui-text: var(--text-normal)`
-  - `--cui-border: var(--background-modifier-border)`
-  - `--cui-accent: var(--interactive-accent)`
-  - …
+Luôn dùng skill Obsidian ở `.agents/skills/obsidian/SKILL.md` cho mọi task liên quan tới Obsidian API, `Plugin`, `ItemView`, `MarkdownView`, `TFile`, vault operations, settings, manifest, command, hoặc UI trong plugin. Chỉ mở thêm các file trong `reference/` khi cần đúng chủ đề.
 
-## Obsidian-native guidelines (bắt buộc)
-### 1) Spacing theo grid 4px
-Obsidian dùng grid 4px và khuyến nghị dùng `--size-*` cho mọi dimension/padding/margin.
+## Vòng lặp làm việc mặc định
 
-### 2) Cursor convention
-Obsidian chỉ dùng `pointer` cho link; interactive element nên dùng `--cursor`, link dùng `--cursor-link`.
+1. Xác nhận bối cảnh:
+   - Đọc `manifest.json`, `package.json`, `src/main.ts`, và file liên quan trực tiếp tới task.
+   - Chạy `obsidian version`, `obsidian vault info=path`, `obsidian vaults verbose` khi cần debug runtime.
+   - Chạy `obsidian plugin id=eragear-copilot` trước khi dùng `plugin:reload`; nếu CLI báo plugin không tồn tại, kiểm tra vault mismatch thay vì giả định repo đang được Obsidian load.
+2. Sửa nhỏ, đúng chỗ:
+   - Lifecycle và registration ở `src/main.ts`.
+   - Obsidian integration ở `src/app/**`.
+   - Feature UI ở `src/features/**`.
+   - Vault/API adapters ở `src/infra/obsidian/**`.
+   - Reusable UI wrappers ở `src/components/ui/**`.
+3. Verify:
+   - `npm run lint` cho rule TypeScript/Obsidian.
+   - `npm run build` cho bundle production.
+   - Nếu plugin đang được load trong vault: `obsidian plugin:reload id=eragear-copilot`, rồi kiểm tra `obsidian dev:errors` và `obsidian dev:console level=error limit=50`.
+4. Khi hoàn tất, báo rõ file đã sửa, lệnh đã chạy, và lệnh nào không chạy được vì CLI/vault/plugin state.
 
-## Base UI trong mô hình “shadcn-like”
-Base UI là unstyled, bạn tự style bằng plain CSS (hoặc cách khác).
+Obsidian CLI phản ánh trạng thái app/vault đang mở, không phản ánh tự động repo hiện tại. Không dùng CLI để xoá/sửa note của user trừ khi user yêu cầu rõ.
 
-### 1) Composition: dùng render prop (tương đương asChild)
-- Base UI dùng `render` prop để compose part với custom component.
-- Custom component đưa vào `render={<MyButton />}` bắt buộc:
-  - `forwardRef`
-  - spread toàn bộ props vào DOM node underneath
+## Golden path để tạo plugin đơn giản
 
-Quy ước nội bộ:
-- UI layer expose API kiểu shadcn: `asChild?: boolean`
-- Implement bằng cách “map” sang `render` prop (của Base UI hoặc của primitives).
+Khi cần tạo plugin mới hoặc scaffold lại một plugin tối giản, bắt đầu từ plugin chạy được trước, rồi mới thêm feature:
 
-### 2) Styling theo state: data attributes + CSS variables
-Base UI khuyến nghị style state dựa trên:
-- data attributes (ví dụ `[data-checked]`, `[data-open]`…)
-- CSS variables động (ví dụ Popover Popup expose `--available-height`, `--anchor-width`)
+- Required root files: `manifest.json`, `package.json`, `tsconfig.json`, `esbuild.config.mjs`, `src/main.ts`, `styles.css`, `README.md`, `LICENSE`.
+- `manifest.json` phải hợp lệ để submit:
+  - `id` không chứa `obsidian`, không kết thúc bằng `plugin`, chỉ lowercase/digit/dash/underscore.
+  - `name` không chứa `Obsidian`, không kết thúc bằng `Plugin`.
+  - `description` không chứa "This plugin" hoặc "Obsidian", và kết thúc bằng `.`, `?`, `!`, hoặc `)`.
+- `src/main.ts` chỉ làm lifecycle tối thiểu: load settings, register views/settings/commands/events, cleanup tài nguyên tự tạo.
+- Không giữ lại tên template như `MyPlugin`, `SampleModal`, sample commands, hoặc hotkeys mặc định.
 
-## Portal strategy (bắt buộc cho Popup UI)
-### Vấn đề
-Nhiều component có popup (Popover, Menu, Select, Tooltip, Dialog…) render qua Portal.
-Với Popover, Portal mặc định append vào `<body>`.
+Pattern tối thiểu cho `src/main.ts`:
 
-Nếu bạn scope CSS theo `.my-plugin-root ...`, popup portal ra `<body>` sẽ “thoát scope”.
+```ts
+import { Notice, Plugin } from "obsidian";
 
-### Chuẩn nội bộ
-- Trong view root của Obsidian plugin, tạo:
-  - `rootEl` (React mount)
-  - `portalEl` (nằm trong root)
-- Truyền `portalEl` qua React Context (PortalProvider).
-- Mọi `<*.Portal>` trong UI layer phải set `container={portalEl}`.
-Popover Portal hỗ trợ prop `container` (HTMLElement/ShadowRoot/ref/null).
-
-### Stacking context
-- Set `.my-plugin-root { isolation: isolate; }`
-- Mục tiêu: giảm z-index xung đột trong workspace nhiều panes.
-
-## Cấu trúc thư mục đề xuất
-```
-src/
-  component/
-    ui/
-      index.ts
-      portal-provider.tsx
-      tokens.css
-      primitives/
-        button.tsx
-        input.tsx
-        surface.tsx
-        text.tsx
-      popover.tsx
-      dialog.tsx
-      menu.tsx
-      tooltip.tsx
-      select.tsx
+export default class EragearPlugin extends Plugin {
+	async onload(): Promise<void> {
+		this.addCommand({
+			id: "show-status",
+			name: "Show status",
+			callback: () => new Notice(`${this.manifest.name} is ready.`),
+		});
+	}
+}
 ```
 
-## CSS: tokens + primitives + components
-### tokens.css (alias từ Obsidian)
-.my-plugin-root {
-  --cui-bg: var(--background-primary);
-  --cui-bg-2: var(--background-secondary);
-  --cui-text: var(--text-normal);
-  --cui-text-muted: var(--text-muted);
-  --cui-border: var(--background-modifier-border);
+Nếu thêm React view, plugin class không giữ reference tới view. Dùng `registerView()` để return view mới, React root được mount/unmount trong chính `ItemView`.
 
-  --cui-accent: var(--interactive-accent);
-  --cui-accent-hover: var(--interactive-accent-hover);
+## Obsidian API rules bắt buộc
 
-  --cui-radius: var(--radius-m);
-  --cui-shadow: var(--shadow-s);
+- Dùng `this.app`, không dùng global `app`.
+- Dùng `this.addCommand()`, `this.registerEvent()`, `this.registerDomEvent()`, `this.registerInterval()` để Obsidian tự cleanup.
+- Không store `ItemView`/`MarkdownView` instance trong plugin property.
+- Không detach leaves trong `onunload()`.
+- Với active editor, dùng `editorCallback` hoặc `this.app.workspace.getActiveViewOfType(MarkdownView)` và Editor API.
+- Với background file edit, dùng `Vault.process()`.
+- Với frontmatter, dùng `this.app.fileManager.processFrontMatter()`.
+- Với path từ user/settings, dùng `normalizePath()`.
+- Với file lookup, dùng `getAbstractFileByPath()` rồi narrow bằng `instanceof TFile`/`TFolder`; không cast ép kiểu.
+- Với delete/trash, ưu tiên `this.app.fileManager.trashFile(file)`.
+- Với network request trong plugin, dùng `requestUrl()` thay vì `fetch()`.
+- Với platform detection, dùng `Platform` API, không dùng `navigator.userAgent`.
+- Không dùng `innerHTML`/`outerHTML`; dùng React JSX hoặc Obsidian DOM helpers.
+- Tránh regex lookbehind để giữ tương thích iOS cũ.
 
-  /* spacing via Obsidian size grid */
-  --cui-px: var(--size-4-2);  /* 8px */
-  --cui-py: var(--size-4-2);  /* 8px */
+## Commands, settings, và UX text
+
+- UI text dùng sentence case: `Open settings`, không dùng `Open Settings`.
+- Command `id` không chứa plugin id và không chứa chữ `command`.
+- Command `name` không lặp lại plugin name và không chứa chữ `command`.
+- Không đặt default hotkeys.
+- Settings tab dùng `new Setting(containerEl).setName(...).setHeading()`, không tự tạo heading HTML.
+- Settings headings không dùng "General", "settings", "options", hoặc tên plugin làm heading.
+- Notice/error message phải ngắn, actionable, và không spam console trong production.
+
+## UI architecture
+
+Repo dùng mô hình shadcn-like UI layer:
+
+- Feature layer (`src/features/**`, `src/app/**`) được import `@/components/ui/*` và domain modules.
+- Feature layer không import trực tiếp `@base-ui/react/*`.
+- UI layer (`src/components/ui/**`) là nơi duy nhất được wrap Base UI.
+- UI wrappers expose API ổn định kiểu `Button`, `Popover`, `DropdownMenu`, `Tabs`, `Select`, `Combobox`.
+- Nếu wrapper support `asChild`, map sang Base UI `render` prop.
+- Component được đưa vào Base UI `render` phải `forwardRef` và spread toàn bộ props xuống DOM node.
+- Icon ưu tiên `@phosphor-icons/react`; import tên có hậu tố `Icon`, ví dụ `NetworkIcon`, `GearIcon`.
+- Icon-only button bắt buộc có `aria-label` và tooltip/focus state phù hợp.
+
+Check nhanh boundary:
+
+```bash
+rg -n 'from ["'\'']@base-ui/react' src --glob '!src/components/ui/**'
+```
+
+## Portal strategy cho popup UI
+
+Popup UI như Popover, Dialog, Menu, Select, Combobox không được portal thẳng ra `body` nếu làm mất CSS scope.
+
+- View root tạo `rootEl` và `portalEl` nằm trong root plugin.
+- React tree bọc bằng `PortalProvider`.
+- UI layer lấy `container` từ `usePortalContainer()`.
+- Mọi Base UI `<*.Portal>` phải set `container={portalEl}` khi component hỗ trợ.
+- Root container dùng `.eragear-copilot-root { isolation: isolate; }` để giảm xung đột stacking context.
+
+## CSS rules
+
+CSS phải native với Obsidian:
+
+- Root scope thật của repo là `.eragear-copilot-root`, không dùng placeholder `.my-plugin-root`.
+- UI layer dùng prefix `cui-`; feature-specific class dùng prefix `eragear-`.
+- Không viết selector global như `button {}`, `input {}`, `.modal {}`.
+- Không hard-code màu; dùng Obsidian variables hoặc alias token.
+- Spacing/dimension theo grid 4px của Obsidian: `--size-4-1`, `--size-4-2`, `--size-4-3`, `--size-4-4`, ...
+- Cursor interactive dùng `cursor: var(--cursor)`; link dùng `cursor: var(--cursor-link)`.
+- Focus state dùng `:focus-visible` với `--interactive-accent` hoặc `--background-modifier-border-focus`.
+- Không set style inline bằng JS; đưa style vào CSS scoped.
+
+Token alias nên đặt ở `src/components/ui/tokens.css` hoặc `styles.css`:
+
+```css
+.eragear-copilot-root {
+	--cui-bg: var(--background-primary);
+	--cui-bg-2: var(--background-secondary);
+	--cui-text: var(--text-normal);
+	--cui-text-muted: var(--text-muted);
+	--cui-border: var(--background-modifier-border);
+	--cui-accent: var(--interactive-accent);
+	--cui-accent-hover: var(--interactive-accent-hover);
+	--cui-radius: var(--radius-m);
+	--cui-shadow: var(--shadow-s);
+	--cui-px: var(--size-4-2);
+	--cui-py: var(--size-4-2);
+	isolation: isolate;
 }
+```
 
-.my-plugin-root {
-  isolation: isolate;
-}
+Check nhanh màu hard-code:
 
-### Primitive: Button (cursor convention)
-.cui-Button {
-  cursor: var(--cursor);
-  border-radius: var(--cui-radius);
-}
+```bash
+rg -n '#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\(' src styles.css
+```
 
-.cui-LinkLike {
-  cursor: var(--cursor-link);
-}
+## Accessibility bắt buộc
 
-### Component: Popover popup sizing via Base UI CSS vars
-.cui-PopoverPopup {
-  max-height: var(--available-height); /* Base UI exposes on Popover.Popup */
-  background: var(--cui-bg);
-  color: var(--cui-text);
-  border: 1px solid var(--cui-border);
-  border-radius: var(--cui-radius);
-  box-shadow: var(--cui-shadow);
-}
+- Mọi control interactive phải dùng native button/input/select khi có thể.
+- Custom clickable element phải có `role`, `tabindex="0"`, Enter/Space handler, và focus style.
+- Icon button phải có `aria-label`.
+- Dialog/menu/popover phải quản lý focus và đóng được bằng keyboard.
+- Dynamic status nên dùng `role="status"`/`aria-live="polite"` khi user cần biết.
+- Touch target nên đạt tối thiểu 44x44px, nhất là plugin không desktop-only.
 
-## TypeScript patterns (UI layer)
-### 1) PortalProvider (bắt buộc)
-- Portal container được tạo 1 lần / view.
-- UI components dùng `usePortalContainer()`.
+## Debug bằng Obsidian CLI
 
-### 2) Primitives phải forwardRef + spread props
-Mục tiêu:
-- dùng được trong Base UI `render` prop. :contentReference[oaicite:19]{index=19}
+Dùng các lệnh này khi cần kiểm chứng runtime:
 
-### 3) Wrapper component expose API ổn định
-Ví dụ Popover:
-- Popover, PopoverTrigger, PopoverContent (Popup), PopoverClose…
-- Internally map to Base UI parts: Root/Trigger/Portal/Positioner/Popup/Arrow...
+```bash
+obsidian version
+obsidian vault info=path
+obsidian vaults verbose
+obsidian plugin id=eragear-copilot
+obsidian plugin:reload id=eragear-copilot
+obsidian dev:errors
+obsidian dev:console level=error limit=50
+obsidian dev:dom selector=".eragear-copilot-root" total
+obsidian dev:screenshot path="/tmp/eragear-copilot.png"
+```
 
-Popover anatomy có các parts như Root, Trigger, Portal, Positioner, Popup… :contentReference[oaicite:20]{index=20}
+Nếu cần target vault cụ thể:
 
-## Style Settings plugin (tuỳ chọn, không bắt buộc)
-Chỉ dùng khi thật sự cần “tweak” UI density/radius… mà vẫn muốn user chỉnh trong 1 pane chung.
-Style Settings scan comment `/* @settings` (YAML) trong CSS và hỗ trợ variable-* và class-toggle. :contentReference[oaicite:21]{index=21}
+```bash
+obsidian vault=StudyWithTerasumi vault info=path
+obsidian vault=StudyWithTerasumi plugin:reload id=eragear-copilot
+```
 
-Ví dụ (đặt trong styles.css của plugin):
-/* @settings
-name: My Plugin
-id: my-plugin
-settings:
-  -
-    id: density
-    title: Density
-    type: variable-select
-    default: comfy
-    options:
-      - comfy
-      - compact
-*/
+Nếu `plugin:reload` báo không tìm thấy plugin:
 
-Sau đó trong CSS:
-.my-plugin-root {
-  /* map density -> padding, gap... */
-}
+- So sánh `obsidian vault info=path` với vault chứa repo.
+- Kiểm tra plugin folder nằm trong `<vault>/<configDir>/plugins/<manifest id>`.
+- Kiểm tra restricted mode/community plugin enabled state.
+- Không sửa code để "fix" lỗi runtime khi nguyên nhân là CLI đang trỏ sai vault.
 
-## Checklist trước khi merge
-- Không import `@base-ui/react/*` ngoài `@/components/ui/*`.
-- Không hard-code màu; dùng Obsidian variables hoặc alias tokens.
-- Spacing dùng `--size-*`; cursor dùng `--cursor` / `--cursor-link`.
-- Popup UI set portal `container` về root plugin (tránh mất CSS scope).
-- Styling state dùng data-attributes + CSS vars của Base UI (không cần JS).
-- Components compose qua `render` và custom components đảm bảo forwardRef + spread props.
+## Definition of done
+
+Trước khi coi task là xong:
+
+- Không có import `@base-ui/react/*` ngoài `src/components/ui/**`.
+- Không có hard-coded màu/spacing mới trong CSS.
+- Lifecycle dùng registration APIs của Obsidian.
+- File operations dùng API đúng cho active editor/background/frontmatter.
+- UI text sentence case; command id/name sạch.
+- `npm run lint` và `npm run build` đã chạy, hoặc ghi rõ vì sao không chạy.
+- Nếu có thể reload plugin bằng CLI, kiểm tra `obsidian dev:errors` sau reload.

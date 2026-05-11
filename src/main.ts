@@ -12,23 +12,24 @@
  */
 
 import { Notice, Plugin } from "obsidian";
-import {
-	createContextAssembler,
-	createGraphService,
-	createVaultManager,
-	getWorkerClient,
-} from "@/core";
+import { createContextAssembler } from "@/core/context-assembler";
+import { createGraphService } from "@/infra/obsidian/graph-service";
+import { createVaultManager } from "@/infra/obsidian/vault-manager";
+import { getWorkerClient } from "@/infra/workers/worker-client";
 import type { ContextAssembler } from "@/core/context-assembler";
-import type { VaultManager } from "@/core/vault-manager";
+import {
+	type CloudflareService,
+	createCloudflareService,
+} from "@/infra/ai/cloudflare-api";
+import type { VaultManager } from "@/infra/obsidian/vault-manager";
+import { diffViewExtension } from "@/app/editor/diff-view-plugin";
 import {
 	DEFAULT_SETTINGS,
 	initializeSettingsWithVaultPath,
 	type MyPluginSettings,
-} from "@/settings";
-import { diffViewExtension } from "@/editor/diff-view-plugin";
-import { ERAGEAR_VIEW_TYPE, EragearView } from "@/views/eragear-view";
-import { CloudflareService, createCloudflareService } from "@/core/services/cloudflare-api";
-import { CopilotSettingTab } from "@/views/settings/CopilotSettingTab";
+} from "@/app/settings/plugin-settings";
+import { ERAGEAR_VIEW_TYPE, EragearView } from "@/app/views/eragear-view";
+import { CopilotSettingTab } from "@/app/views/settings/CopilotSettingTab";
 
 /**
  * Main Plugin Class
@@ -121,8 +122,9 @@ export default class EragearPlugin extends Plugin {
 				apiEndpoint: this.settings.cloudflareApiEndpoint,
 			},
 			(message: any) => {
-				// Optional: log to plugin console instead of console.log
-				console.log("[CloudflareService]", message);
+				if (this.settings.enableDebugMode) {
+					console.log("[CloudflareService]", message);
+				}
 			},
 		);
 
@@ -138,7 +140,9 @@ export default class EragearPlugin extends Plugin {
 		// 	);
 		// }
 
-		console.log("[Eragear] Services initialized");
+		if (this.settings.enableDebugMode) {
+			console.log("[Eragear] Services initialized");
+		}
 	}
 
 	/**
@@ -201,9 +205,9 @@ export default class EragearPlugin extends Plugin {
 
 		// Listen for metadata changes
 		const unsubscribe = this.vaultManager.onMetadataChanged((file) => {
-			// Debounce and update Worker index
-			// TODO: Implement in ContextAssembler or separate sync service
-			console.debug(`[Eragear] Metadata changed: ${file.path}`);
+			if (this.settings.enableDebugMode) {
+				console.debug(`[Eragear] Metadata changed: ${file.path}`);
+			}
 		});
 
 		// Register cleanup

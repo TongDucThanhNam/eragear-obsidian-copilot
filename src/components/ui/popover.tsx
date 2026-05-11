@@ -1,6 +1,7 @@
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import type * as React from "react";
 import "./popover.css";
+import { usePortalContainer } from "./portal-provider";
 
 function classNames(...classes: (string | undefined | null | false)[]): string {
 	return classes.filter(Boolean).join(" ");
@@ -21,22 +22,44 @@ function PopoverPortal({ ...props }: PopoverPrimitive.Portal.Props) {
 function PopoverPositioner({
 	className,
 	...props
-}: Omit<PopoverPrimitive.Positioner.Props, 'className'> & { className?: string }) {
-	return <PopoverPrimitive.Positioner data-slot="popover-positioner" className={classNames(className)} {...props} />;
+}: Omit<PopoverPrimitive.Positioner.Props, "className"> & {
+	className?: string;
+}) {
+	return (
+		<PopoverPrimitive.Positioner
+			data-slot="popover-positioner"
+			className={classNames(className)}
+			{...props}
+		/>
+	);
 }
 
 function PopoverPopup({
 	className,
 	...props
-}: Omit<PopoverPrimitive.Popup.Props, 'className'> & { className?: string }) {
-	return <PopoverPrimitive.Popup data-slot="popover-popup" className={classNames(className)} {...props} />;
+}: Omit<PopoverPrimitive.Popup.Props, "className"> & { className?: string }) {
+	return (
+		<PopoverPrimitive.Popup
+			data-slot="popover-popup"
+			className={classNames(className)}
+			{...props}
+		/>
+	);
 }
 
 function PopoverViewport({
 	className,
 	...props
-}: Omit<PopoverPrimitive.Viewport.Props, 'className'> & { className?: string }) {
-	return <PopoverPrimitive.Viewport data-slot="popover-viewport" className={classNames(className)} {...props} />;
+}: Omit<PopoverPrimitive.Viewport.Props, "className"> & {
+	className?: string;
+}) {
+	return (
+		<PopoverPrimitive.Viewport
+			data-slot="popover-viewport"
+			className={classNames(className)}
+			{...props}
+		/>
+	);
 }
 
 function PopoverContent({
@@ -47,13 +70,15 @@ function PopoverContent({
 	sideOffset = 4,
 	anchor,
 	...props
-}: Omit<PopoverPrimitive.Popup.Props, 'className'> &
+}: Omit<PopoverPrimitive.Popup.Props, "className"> &
 	Pick<
 		PopoverPrimitive.Positioner.Props,
 		"align" | "alignOffset" | "side" | "sideOffset" | "anchor"
 	> & { className?: string }) {
+	const portalContainer = usePortalContainer();
+
 	return (
-		<PopoverPrimitive.Portal>
+		<PopoverPrimitive.Portal container={portalContainer}>
 			<PopoverPrimitive.Positioner
 				align={align}
 				alignOffset={alignOffset}
@@ -82,7 +107,10 @@ function PopoverHeader({ className, ...props }: React.ComponentProps<"div">) {
 	);
 }
 
-function PopoverTitle({ className, ...props }: Omit<PopoverPrimitive.Title.Props, 'className'> & { className?: string }) {
+function PopoverTitle({
+	className,
+	...props
+}: Omit<PopoverPrimitive.Title.Props, "className"> & { className?: string }) {
 	return (
 		<PopoverPrimitive.Title
 			data-slot="popover-title"
@@ -95,7 +123,9 @@ function PopoverTitle({ className, ...props }: Omit<PopoverPrimitive.Title.Props
 function PopoverDescription({
 	className,
 	...props
-}: Omit<PopoverPrimitive.Description.Props, 'className'> & { className?: string }) {
+}: Omit<PopoverPrimitive.Description.Props, "className"> & {
+	className?: string;
+}) {
 	return (
 		<PopoverPrimitive.Description
 			data-slot="popover-description"
@@ -106,11 +136,14 @@ function PopoverDescription({
 }
 
 export {
-    Popover,
-    PopoverContent,
-    PopoverDescription,
-    PopoverHeader, PopoverPopup, PopoverPortal,
-    PopoverPositioner, PopoverTitle,
-    PopoverTrigger,
-    PopoverViewport
+	Popover,
+	PopoverContent,
+	PopoverDescription,
+	PopoverHeader,
+	PopoverPopup,
+	PopoverPortal,
+	PopoverPositioner,
+	PopoverTitle,
+	PopoverTrigger,
+	PopoverViewport,
 };

@@ -7,41 +7,82 @@ If your plugin does not need CSS, delete this file.
 
 */
 
-/* Collapsible UI System - Adapted from user request */
-.Collapsible {
-	--color-gray-900: var(--text-normal);
-	--color-gray-100: var(--background-secondary);
-	--color-gray-200: var(--background-modifier-border);
-	--color-blue: var(--interactive-accent);
+/* Import CSS tokens */
+@import url("./src/components/ui/tokens.css");
 
+/* Plugin root container - all plugin CSS should be scoped here */
+.eragear-copilot-root {
+	/* Plugin-specific base styles */
+}
+
+/* --- Editor diff widgets --- */
+.cm-editor .eragear-diff-insert {
+	background-color: var(--background-modifier-success);
+	text-decoration: none;
+}
+.cm-editor .eragear-diff-delete {
+	background-color: var(--background-modifier-error);
+	text-decoration: line-through;
+	opacity: 0.8;
+}
+.cm-editor .eragear-diff-widget {
+	display: inline-flex;
+	gap: var(--size-4-1);
+	margin-left: var(--size-4-1);
+	vertical-align: middle;
+}
+.cm-editor .eragear-diff-btn {
+	cursor: var(--cursor);
+	padding: var(--size-2-1) var(--size-4-1);
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-smaller);
+	font-weight: 600;
+	border: 1px solid var(--background-modifier-border);
+	color: var(--text-on-accent);
+	background-color: var(--interactive-accent);
+}
+.cm-editor .eragear-diff-btn:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+.cm-editor .eragear-btn-accept {
+	background-color: var(--background-modifier-success);
+	border-color: var(--background-modifier-success);
+}
+.cm-editor .eragear-btn-reject {
+	background-color: var(--background-modifier-error);
+	border-color: var(--background-modifier-error);
+}
+
+/* Collapsible UI System - Adapted from user request */
+.eragear-copilot-root .Collapsible {
 	display: flex;
 	flex-direction: column;
 	justify-content: flex-start;
-	color: var(--color-gray-900);
+	color: var(--cui-text);
 }
 
-
-.test-input,
-.test-textarea {
-	padding: 0.75rem 1rem;
-	border: 1.5px solid var(--background-modifier-border);
-	border-radius: 0.5rem;
-	background-color: var(--background-primary);
-	color: var(--text-normal);
+.eragear-copilot-root .test-input,
+.eragear-copilot-root .test-textarea {
+	padding: var(--cui-py) var(--cui-px);
+	border: 1.5px solid var(--cui-border);
+	border-radius: var(--cui-radius);
+	background-color: var(--cui-bg);
+	color: var(--cui-text);
 	font-size: 0.9rem;
 	font-family: inherit;
-	transition: all 0.2s ease;
+	transition: all var(--cui-transition);
 }
-.test-input:hover,
-.test-textarea:hover {
-	border-color: var(--text-muted);
+.eragear-copilot-root .test-input:hover,
+.eragear-copilot-root .test-textarea:hover {
+	border-color: var(--cui-text-muted);
 }
-.test-input:focus,
-.test-textarea:focus {
+.eragear-copilot-root .test-input:focus,
+.eragear-copilot-root .test-textarea:focus {
 	outline: none;
-	border-color: var(--interactive-accent);
-	box-shadow: 0 0 0 3px #6496ff26;
-	background-color: var(--background-primary);
+	border-color: var(--cui-accent);
+	box-shadow: 0 0 0 3px var(--cui-accent-hover);
+	background-color: var(--cui-bg);
 }
 .test-textarea {
 	resize: vertical;
@@ -69,7 +110,7 @@ If your plugin does not need CSS, delete this file.
 	background-color: var(--background-tertiary);
 	border-color: var(--interactive-accent);
 	transform: translateY(-1px);
-	box-shadow: 0 4px 12px #0000001a;
+	box-shadow: var(--shadow-s);
 }
 .test-btn:focus-visible {
 	outline: 2px solid var(--interactive-accent);
@@ -90,28 +131,28 @@ If your plugin does not need CSS, delete this file.
 }
 .test-btn-primary:hover:not(:disabled) {
 	opacity: 0.9;
-	box-shadow: 0 4px 12px #6496ff4d;
+	box-shadow: var(--shadow-m);
 }
 .test-btn-secondary {
 	background-color: var(--background-tertiary);
 }
 .test-btn-warning {
-	background-color: #ffa50026;
-	color: #ff9f00;
-	border-color: #ff9f00;
+	background-color: var(--background-modifier-warning);
+	color: var(--text-warning);
+	border-color: var(--text-warning);
 }
 .test-btn-warning:hover:not(:disabled) {
-	background-color: #ffa5004d;
-	box-shadow: 0 4px 12px #ffa50033;
+	background-color: var(--background-modifier-warning-hover);
+	box-shadow: var(--shadow-s);
 }
 .test-btn-danger {
-	background-color: #ff000026;
+	background-color: var(--background-modifier-error);
 	color: var(--text-error);
 	border-color: var(--text-error);
 }
 .test-btn-danger:hover:not(:disabled) {
-	background-color: #ff00004d;
-	box-shadow: 0 4px 12px #f003;
+	background-color: var(--background-modifier-error-hover);
+	box-shadow: var(--shadow-s);
 }
 .test-btn-small {
 	padding: 0.5rem 0.875rem;
@@ -253,7 +294,6 @@ If your plugin does not need CSS, delete this file.
 	max-height: fit-content;
 	overflow: visible;
 }
-
 
 /* Update main container to support full heightTabs */
 .eragear-main {

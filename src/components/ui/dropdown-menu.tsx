@@ -1,9 +1,10 @@
 "use client";
 
-import type * as React from "react";
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { CaretRightIcon, CheckIcon } from "@phosphor-icons/react";
+import type * as React from "react";
 import "./dropdown-menu.css";
+import { usePortalContainer } from "./portal-provider";
 
 function classNames(...classes: (string | undefined | null | false)[]): string {
 	return classes.filter(Boolean).join(" ");
@@ -30,8 +31,7 @@ function DropdownMenuContent({
 	positionMethod = "fixed",
 	className,
 	...props
-}: Omit<MenuPrimitive.Popup.Props, "className"> & { className?: string } &
-	Pick<
+}: Omit<MenuPrimitive.Popup.Props, "className"> & { className?: string } & Pick<
 		MenuPrimitive.Positioner.Props,
 		| "align"
 		| "alignOffset"
@@ -41,8 +41,10 @@ function DropdownMenuContent({
 		| "sticky"
 		| "positionMethod"
 	>) {
+	const portalContainer = usePortalContainer();
+
 	return (
-		<MenuPrimitive.Portal>
+		<MenuPrimitive.Portal container={portalContainer}>
 			<MenuPrimitive.Positioner
 				style={{ outline: "none", zIndex: 50 }}
 				align={align}
@@ -157,7 +159,9 @@ function DropdownMenuCheckboxItem({
 	children,
 	checked,
 	...props
-}: Omit<MenuPrimitive.CheckboxItem.Props, "className"> & { className?: string }) {
+}: Omit<MenuPrimitive.CheckboxItem.Props, "className"> & {
+	className?: string;
+}) {
 	return (
 		<MenuPrimitive.CheckboxItem
 			data-slot="dropdown-menu-checkbox-item"

@@ -1,0 +1,80 @@
+/* Collapsible Component - Base UI wrapper with Obsidian theme */
+
+/* Root */
+.collapsible {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+}
+
+/* Trigger */
+.collapsible-trigger {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	margin: 0;
+	border: 0;
+	outline: 0;
+	padding: var(--size-4-2) var(--size-4-3);
+	border-radius: var(--radius-s);
+	background-color: transparent;
+	color: var(--text-normal);
+	font-family: inherit;
+	font-size: 0.85rem;
+	line-height: 1.25rem;
+	font-weight: 500;
+	cursor: var(--cursor);
+	transition: background-color 0.15s ease;
+	width: 100%;
+	text-align: left;
+}
+
+.collapsible-trigger:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.collapsible-trigger:active {
+	background-color: var(--background-modifier-border);
+}
+
+.collapsible-trigger:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
+}
+
+.collapsible-trigger[data-open] .collapsible-icon {
+	transform: rotate(90deg);
+}
+
+/* Icon */
+.collapsible-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--size-4-4);
+	height: var(--size-4-4);
+	color: var(--text-muted);
+	transition: transform 0.2s ease;
+	flex-shrink: 0;
+}
+
+/* Panel */
+.collapsible-panel {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	overflow: hidden;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	transition: all 0.2s ease-out;
+	padding: 0;
+}
+
+.collapsible-panel[data-starting-style],
+.collapsible-panel[data-ending-style] {
+	height: 0;
+}
+
+.collapsible-panel[hidden] {
+	display: none;
+}

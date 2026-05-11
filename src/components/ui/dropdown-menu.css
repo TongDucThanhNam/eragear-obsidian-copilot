@@ -13,6 +13,7 @@
 	overflow-y: auto;
 	outline: none;
 	animation: fadeIn 0.1s ease-out;
+	pointer-events: auto;
 }
 
 /* New Chat dropdown - ensure it doesn't overflow to the right */

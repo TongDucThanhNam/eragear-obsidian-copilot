@@ -1,6 +1,5 @@
-import type React from "react";
-import { Button as ButtonPrimitive } from "@base-ui/react/button";
-import "./button.css";
+import React from "react";
+import "./button-new.css";
 
 function classNames(...classes: (string | undefined | null | false)[]): string {
 	return classes.filter(Boolean).join(" ");
@@ -33,34 +32,66 @@ const buttonVariants = (config?: {
 		size = "default",
 		className = "",
 	} = config || {};
-	return classNames("button", `${variant}`, `size-${size}`, className);
+	return classNames(
+		"cui-button",
+		`cui-button-variant-${variant}`,
+		`cui-button-size-${size}`,
+		className,
+	);
 };
 
-interface ButtonProps extends React.ComponentProps<typeof ButtonPrimitive> {
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 	variant?: ButtonVariant;
 	size?: ButtonSize;
 	className?: string;
 	children?: React.ReactNode;
 	title?: string;
-	onClick?: React.MouseEventHandler<HTMLButtonElement>;
+	asChild?: boolean;
+	render?: React.ReactNode;
 }
 
-function Button({
-	className,
-	variant = "default",
-	size = "default",
-	children,
-	title,
-	...props
-}: ButtonProps) {
-	const buttonClass = buttonVariants({ variant, size, className });
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+	(
+		{
+			className,
+			variant = "default",
+			size = "default",
+			children,
+			title,
+			asChild,
+			render,
+			...props
+		},
+		ref,
+	) => {
+		const buttonClass = buttonVariants({ variant, size, className });
 
-	return (
-		<button data-slot="button" className={buttonClass} title={title} {...props}>
-			{children}
-		</button>
-	);
-}
+		if (asChild && React.isValidElement(render)) {
+			return React.cloneElement(render as React.ReactElement<any>, {
+				...props,
+				className: classNames(
+					buttonClass,
+					(render as React.ReactElement<any>).props.className,
+				),
+				ref,
+			});
+		}
+
+		return (
+			<button
+				data-slot="button"
+				className={buttonClass}
+				title={title}
+				ref={ref}
+				{...props}
+			>
+				{children}
+			</button>
+		);
+	},
+);
+
+Button.displayName = "Button";
 
 export { Button, buttonVariants };
 export type { ButtonProps };

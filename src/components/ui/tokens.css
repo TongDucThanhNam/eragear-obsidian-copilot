@@ -1,0 +1,67 @@
+/**
+ * CSS Tokens
+ *
+ * Token aliases from Obsidian theme variables.
+ * All plugin-specific tokens are prefixed with --cui- (Component UI).
+ * Scoping: .eragear-copilot-root
+ */
+
+.eragear-copilot-root {
+	/* Background colors */
+	--cui-bg: var(--background-primary);
+	--cui-bg-2: var(--background-secondary);
+	--cui-bg-3: var(--background-tertiary);
+	--cui-bg-hover: var(--background-modifier-hover);
+
+	/* Text colors */
+	--cui-text: var(--text-normal);
+	--cui-text-muted: var(--text-muted);
+	--cui-text-faint: var(--text-faint);
+
+	/* Border colors */
+	--cui-border: var(--background-modifier-border);
+	--cui-border-hover: var(--background-modifier-border-hover);
+
+	/* Accent colors */
+	--cui-accent: var(--interactive-accent);
+	--cui-accent-hover: var(--interactive-accent-hover);
+	--cui-accent-text: var(--text-on-accent);
+
+	/* Destructive colors */
+	--cui-destructive: var(--text-error);
+	--cui-destructive-bg: rgba(var(--color-red-rgb, 239, 68, 68), 0.1);
+
+	/* Muted colors */
+	--cui-muted: var(--background-modifier-form-field);
+
+	/* Spacing based on 4px grid */
+	--cui-px: var(--size-4-2); /* 8px */
+	--cui-py: var(--size-4-2); /* 8px */
+	--cui-gap: var(--size-4-1); /* 4px */
+	--cui-gap-lg: var(--size-4-2); /* 8px */
+
+	/* Typography */
+	--cui-font-size: var(--font-ui-medium);
+	--cui-font-size-sm: var(--font-ui-smaller);
+	--cui-font-size-xs: var(--font-ui-smallest);
+	--cui-line-height: 1.5;
+
+	/* Radius */
+	--cui-radius: var(--radius-m);
+	--cui-radius-sm: var(--radius-s);
+	--cui-radius-lg: var(--radius-l);
+
+	/* Shadow */
+	--cui-shadow: var(--shadow-s);
+	--cui-shadow-lg: var(--shadow-m);
+
+	/* Transitions */
+	--cui-transition: 0.2s ease;
+
+	/* Cursor */
+	--cui-cursor: var(--cursor);
+	--cui-cursor-link: var(--cursor-link);
+
+	/* Stacking context */
+	isolation: isolate;
+}

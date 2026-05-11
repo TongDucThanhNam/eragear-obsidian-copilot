@@ -1,0 +1,175 @@
+/**
+ * Button Component Styles
+ *
+ * Component: Button
+ * Prefix: cui-button
+ * Supports: variants (default, outline, secondary, ghost, destructive, link), sizes, asChild
+ */
+
+.eragear-copilot-root .cui-button {
+	font-size: var(--cui-font-size);
+	font-weight: 500;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	white-space: nowrap;
+	transition: all var(--cui-transition);
+	border: 1px solid transparent;
+	outline: none;
+	cursor: var(--cui-cursor);
+	user-select: none;
+	padding: 0 var(--cui-px);
+	height: 32px;
+	gap: var(--cui-gap);
+	border-radius: var(--cui-radius);
+	background-clip: padding-box;
+	min-width: 44px;
+	min-height: 44px;
+}
+
+.eragear-copilot-root .cui-button svg:not([class*="size-"]) {
+	width: 16px;
+	height: 16px;
+	pointer-events: none;
+}
+
+.eragear-copilot-root .cui-button:disabled {
+	pointer-events: none;
+	opacity: 0.5;
+}
+
+.eragear-copilot-root .cui-button:focus-visible {
+	border-color: var(--cui-accent);
+	box-shadow: 0 0 0 2px var(--cui-accent);
+	outline: none;
+	outline-offset: 2px;
+}
+
+/* Variants */
+.eragear-copilot-root .cui-button.cui-button-variant-default {
+	background-color: var(--cui-accent);
+	color: var(--cui-accent-text);
+}
+
+.eragear-copilot-root
+	.cui-button.cui-button-variant-default:hover:not(:disabled) {
+	opacity: 0.9;
+}
+
+.eragear-copilot-root .cui-button.cui-button-variant-outline {
+	border-color: var(--cui-border);
+	background-color: var(--cui-bg);
+	color: var(--cui-text);
+}
+
+.eragear-copilot-root
+	.cui-button.cui-button-variant-outline:hover:not(:disabled) {
+	background-color: var(--cui-bg-hover);
+}
+
+.eragear-copilot-root .cui-button.cui-button-variant-secondary {
+	background-color: var(--cui-bg-2);
+	color: var(--cui-text);
+}
+
+.eragear-copilot-root
+	.cui-button.cui-button-variant-secondary:hover:not(:disabled) {
+	background-color: var(--cui-bg-3);
+}
+
+.eragear-copilot-root .cui-button.cui-button-variant-ghost {
+	background-color: transparent;
+	color: var(--cui-text);
+}
+
+.eragear-copilot-root
+	.cui-button.cui-button-variant-ghost:hover:not(:disabled) {
+	background-color: var(--cui-bg-hover);
+}
+
+.eragear-copilot-root .cui-button.cui-button-variant-destructive {
+	background-color: var(--cui-destructive-bg);
+	color: var(--cui-destructive);
+	border-color: var(--cui-destructive);
+}
+
+.eragear-copilot-root
+	.cui-button.cui-button-variant-destructive:hover:not(:disabled) {
+	background-color: rgba(var(--color-red-rgb, 239, 68, 68), 0.2);
+}
+
+.eragear-copilot-root .cui-button.cui-button-variant-link {
+	color: var(--cui-accent);
+	text-decoration: underline;
+	text-decoration-offset: 4px;
+	background: none;
+	border: none;
+	cursor: var(--cui-cursor-link);
+}
+
+.eragear-copilot-root .cui-button.cui-button-variant-link:hover:not(:disabled) {
+	text-decoration: underline;
+}
+
+/* Sizes */
+.eragear-copilot-root .cui-button.cui-button-size-xs {
+	height: 24px;
+	font-size: var(--cui-font-size-xs);
+	padding: 0 8px;
+	gap: 4px;
+}
+
+.eragear-copilot-root .cui-button.cui-button-size-xs svg:not([class*="size-"]) {
+	width: 12px;
+	height: 12px;
+}
+
+.eragear-copilot-root .cui-button.cui-button-size-sm {
+	height: 28px;
+	font-size: var(--cui-font-size-sm);
+	padding: 0 10px;
+	gap: 4px;
+}
+
+.eragear-copilot-root .cui-button.cui-button-size-sm svg:not([class*="size-"]) {
+	width: 14px;
+	height: 14px;
+}
+
+.eragear-copilot-root .cui-button.cui-button-size-lg {
+	height: 36px;
+	font-size: 14px;
+	padding: 0 10px;
+	gap: 6px;
+}
+
+.eragear-copilot-root .cui-button.cui-button-size-icon {
+	width: 44px;
+	height: 44px;
+	padding: 0;
+}
+
+.eragear-copilot-root .cui-button.cui-button-size-icon-xs {
+	width: 24px;
+	height: 24px;
+	padding: 0;
+}
+
+.eragear-copilot-root
+	.cui-button.cui-button-size-icon-xs
+	svg:not([class*="size-"]) {
+	width: 12px;
+	height: 12px;
+}
+
+.eragear-copilot-root .cui-button.cui-button-size-icon-sm {
+	width: 28px;
+	height: 28px;
+	padding: 0;
+}
+
+.eragear-copilot-root .cui-button.cui-button-size-icon-lg {
+	width: 36px;
+	height: 36px;
+	padding: 0;
+}
