@@ -7,11 +7,11 @@
  */
 
 import React, {
+	useCallback,
 	createContext,
 	type ReactNode,
-	type RefObject,
 	useContext,
-	useRef,
+	useState,
 } from "react";
 
 export interface PortalContextValue {
@@ -26,10 +26,13 @@ export interface PortalProviderProps {
 }
 
 export function PortalProvider({ children, container }: PortalProviderProps) {
-	const portalRef = useRef<HTMLElement | null>(null);
+	const [portalElement, setPortalElement] = useState<HTMLDivElement | null>(null);
 
-	// Use provided container or create ref
-	const portalContainer = container || portalRef.current;
+	const handlePortalRef = useCallback((element: HTMLDivElement | null) => {
+		setPortalElement(element);
+	}, []);
+
+	const portalContainer = container ?? portalElement;
 
 	const value: PortalContextValue = {
 		portalContainer,
@@ -40,14 +43,8 @@ export function PortalProvider({ children, container }: PortalProviderProps) {
 			{children}
 			{!container && (
 				<div
-					ref={portalRef as RefObject<HTMLDivElement>}
+					ref={handlePortalRef}
 					className="eragear-portal-container"
-					style={{
-						position: "absolute",
-						top: 0,
-						left: 0,
-						pointerEvents: "none",
-					}}
 				/>
 			)}
 		</PortalContext.Provider>

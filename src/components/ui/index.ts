@@ -7,6 +7,17 @@
 
 export { Button, type ButtonProps } from "./button";
 export {
+	Dialog,
+	DialogBackdrop,
+	DialogClose,
+	DialogContent,
+	DialogDescription,
+	DialogPortal,
+	DialogTitle,
+	DialogTrigger,
+	DialogViewport,
+} from "./dialog";
+export {
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
 	DropdownMenuContent,

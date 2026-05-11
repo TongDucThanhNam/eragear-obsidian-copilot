@@ -6,12 +6,14 @@ Repo này là Obsidian community plugin `eragear-copilot`. Khi làm việc trong
 
 Luôn dùng skill Obsidian ở `.agents/skills/obsidian/SKILL.md` cho mọi task liên quan tới Obsidian API, `Plugin`, `ItemView`, `MarkdownView`, `TFile`, vault operations, settings, manifest, command, hoặc UI trong plugin. Chỉ mở thêm các file trong `reference/` khi cần đúng chủ đề.
 
+Vault dùng để phát triển plugin là `PlaygrondObsidianVault` ở `/home/terasumi/Documents/PlaygrondObsidianVault`. Không chạy debug/reload plugin trên vault chính như `StudyWithTerasumi` trừ khi user yêu cầu rõ. Khi dùng Obsidian CLI cho plugin dev, ưu tiên truyền `vault=PlaygrondObsidianVault` trong lệnh để tránh nhắm nhầm vault đang active.
+
 ## Vòng lặp làm việc mặc định
 
 1. Xác nhận bối cảnh:
    - Đọc `manifest.json`, `package.json`, `src/main.ts`, và file liên quan trực tiếp tới task.
-   - Chạy `obsidian version`, `obsidian vault info=path`, `obsidian vaults verbose` khi cần debug runtime.
-   - Chạy `obsidian plugin id=eragear-copilot` trước khi dùng `plugin:reload`; nếu CLI báo plugin không tồn tại, kiểm tra vault mismatch thay vì giả định repo đang được Obsidian load.
+   - Chạy `obsidian version`, `obsidian vault=PlaygrondObsidianVault vault info=path`, `obsidian vaults verbose` khi cần debug runtime.
+   - Chạy `obsidian vault=PlaygrondObsidianVault plugin id=eragear-copilot` trước khi dùng `plugin:reload`; nếu CLI báo plugin không tồn tại, kiểm tra vault mismatch thay vì giả định repo đang được Obsidian load.
 2. Sửa nhỏ, đúng chỗ:
    - Lifecycle và registration ở `src/main.ts`.
    - Obsidian integration ở `src/app/**`.
@@ -21,7 +23,7 @@ Luôn dùng skill Obsidian ở `.agents/skills/obsidian/SKILL.md` cho mọi task
 3. Verify:
    - `npm run lint` cho rule TypeScript/Obsidian.
    - `npm run build` cho bundle production.
-   - Nếu plugin đang được load trong vault: `obsidian plugin:reload id=eragear-copilot`, rồi kiểm tra `obsidian dev:errors` và `obsidian dev:console level=error limit=50`.
+   - Nếu plugin đang được load trong vault dev: `obsidian vault=PlaygrondObsidianVault plugin:reload id=eragear-copilot`, rồi kiểm tra `obsidian vault=PlaygrondObsidianVault dev:errors` và `obsidian vault=PlaygrondObsidianVault dev:console level=error limit=50`.
 4. Khi hoàn tất, báo rõ file đã sửa, lệnh đã chạy, và lệnh nào không chạy được vì CLI/vault/plugin state.
 
 Obsidian CLI phản ánh trạng thái app/vault đang mở, không phản ánh tự động repo hiện tại. Không dùng CLI để xoá/sửa note của user trừ khi user yêu cầu rõ.
@@ -165,26 +167,26 @@ Dùng các lệnh này khi cần kiểm chứng runtime:
 
 ```bash
 obsidian version
-obsidian vault info=path
+obsidian vault=PlaygrondObsidianVault vault info=path
 obsidian vaults verbose
-obsidian plugin id=eragear-copilot
-obsidian plugin:reload id=eragear-copilot
-obsidian dev:errors
-obsidian dev:console level=error limit=50
-obsidian dev:dom selector=".eragear-copilot-root" total
-obsidian dev:screenshot path="/tmp/eragear-copilot.png"
+obsidian vault=PlaygrondObsidianVault plugin id=eragear-copilot
+obsidian vault=PlaygrondObsidianVault plugin:reload id=eragear-copilot
+obsidian vault=PlaygrondObsidianVault dev:errors
+obsidian vault=PlaygrondObsidianVault dev:console level=error limit=50
+obsidian vault=PlaygrondObsidianVault dev:dom selector=".eragear-copilot-root" total
+obsidian vault=PlaygrondObsidianVault dev:screenshot path="/tmp/eragear-copilot.png"
 ```
 
-Nếu cần target vault cụ thể:
+Không dùng vault chính cho workflow phát triển plugin. Nếu CLI đang active ở vault khác, vẫn target vault dev cụ thể:
 
 ```bash
-obsidian vault=StudyWithTerasumi vault info=path
-obsidian vault=StudyWithTerasumi plugin:reload id=eragear-copilot
+obsidian vault=PlaygrondObsidianVault vault info=path
+obsidian vault=PlaygrondObsidianVault plugin:reload id=eragear-copilot
 ```
 
 Nếu `plugin:reload` báo không tìm thấy plugin:
 
-- So sánh `obsidian vault info=path` với vault chứa repo.
+- So sánh `obsidian vault=PlaygrondObsidianVault vault info=path` với vault chứa repo.
 - Kiểm tra plugin folder nằm trong `<vault>/<configDir>/plugins/<manifest id>`.
 - Kiểm tra restricted mode/community plugin enabled state.
 - Không sửa code để "fix" lỗi runtime khi nguyên nhân là CLI đang trỏ sai vault.
@@ -199,4 +201,4 @@ Trước khi coi task là xong:
 - File operations dùng API đúng cho active editor/background/frontmatter.
 - UI text sentence case; command id/name sạch.
 - `npm run lint` và `npm run build` đã chạy, hoặc ghi rõ vì sao không chạy.
-- Nếu có thể reload plugin bằng CLI, kiểm tra `obsidian dev:errors` sau reload.
+- Nếu có thể reload plugin bằng CLI, kiểm tra `obsidian vault=PlaygrondObsidianVault dev:errors` sau reload.

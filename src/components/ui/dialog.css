@@ -1,0 +1,61 @@
+.eragear-copilot-root .cui-dialog-backdrop {
+	position: absolute;
+	inset: 0;
+	z-index: var(--cui-overlay-z-index);
+	background: var(--cui-backdrop);
+	backdrop-filter: blur(var(--size-2-1));
+}
+
+.eragear-copilot-root .cui-dialog-viewport {
+	position: absolute;
+	inset: 0;
+	z-index: calc(var(--cui-overlay-z-index) + 1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--size-4-4);
+	pointer-events: none;
+}
+
+.eragear-copilot-root .cui-dialog-content {
+	pointer-events: auto;
+	width: min(100%, var(--cui-dialog-max-width));
+	max-height: calc(100% - var(--size-4-8));
+	overflow: auto;
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-4);
+	padding: var(--size-4-6);
+	color: var(--cui-text);
+	background: var(--cui-bg);
+	border: var(--border-width) solid var(--cui-border);
+	border-radius: var(--cui-radius-lg);
+	box-shadow: var(--cui-shadow-lg);
+}
+
+.eragear-copilot-root .cui-dialog-content:focus-visible {
+	outline: 2px solid var(--cui-accent);
+	outline-offset: 2px;
+}
+
+.eragear-copilot-root .cui-dialog-title {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-3);
+	margin: 0;
+	color: var(--cui-text);
+	font-size: var(--font-ui-large);
+	font-weight: var(--font-bold);
+	line-height: var(--line-height-tight);
+}
+
+.eragear-copilot-root .cui-dialog-title svg {
+	flex: 0 0 auto;
+}
+
+.eragear-copilot-root .cui-dialog-description {
+	margin: 0;
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-medium);
+	line-height: var(--line-height-normal);
+}

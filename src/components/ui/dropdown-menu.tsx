@@ -46,7 +46,7 @@ function DropdownMenuContent({
 	return (
 		<MenuPrimitive.Portal container={portalContainer}>
 			<MenuPrimitive.Positioner
-				style={{ outline: "none", zIndex: 50 }}
+				className="cui-menu-positioner"
 				align={align}
 				alignOffset={alignOffset}
 				side={side}
@@ -56,7 +56,7 @@ function DropdownMenuContent({
 			>
 				<MenuPrimitive.Popup
 					data-slot="dropdown-menu-content"
-					className={classNames("dropdownMenuContent", className)}
+					className={classNames("cui-menu-content", className)}
 					{...props}
 				/>
 			</MenuPrimitive.Positioner>
@@ -80,7 +80,7 @@ function DropdownMenuLabel({
 		<MenuPrimitive.GroupLabel
 			data-slot="dropdown-menu-label"
 			data-inset={inset}
-			className={classNames("menuLabel", className)}
+			className={classNames("cui-menu-label", className)}
 			{...props}
 		/>
 	);
@@ -101,7 +101,7 @@ function DropdownMenuItem({
 			data-slot="dropdown-menu-item"
 			data-inset={inset}
 			data-variant={variant}
-			className={classNames("menuItem", className)}
+			className={classNames("cui-menu-item", className)}
 			{...props}
 		/>
 	);
@@ -124,11 +124,11 @@ function DropdownMenuSubTrigger({
 		<MenuPrimitive.SubmenuTrigger
 			data-slot="dropdown-menu-sub-trigger"
 			data-inset={inset}
-			className={classNames("subTrigger", className)}
+			className={classNames("cui-menu-sub-trigger", className)}
 			{...props}
 		>
 			{children}
-			<CaretRightIcon className={"caretIcon"} />
+			<CaretRightIcon className="cui-menu-caret" />
 		</MenuPrimitive.SubmenuTrigger>
 	);
 }
@@ -165,12 +165,12 @@ function DropdownMenuCheckboxItem({
 	return (
 		<MenuPrimitive.CheckboxItem
 			data-slot="dropdown-menu-checkbox-item"
-			className={classNames("checkboxItem", className)}
+			className={classNames("cui-menu-checkbox-item", className)}
 			checked={checked}
 			{...props}
 		>
 			<span
-				className={"itemIndicator"}
+				className="cui-menu-item-indicator"
 				data-slot="dropdown-menu-checkbox-item-indicator"
 			>
 				<MenuPrimitive.CheckboxItemIndicator>
@@ -199,11 +199,11 @@ function DropdownMenuRadioItem({
 	return (
 		<MenuPrimitive.RadioItem
 			data-slot="dropdown-menu-radio-item"
-			className={classNames("radioItem", className)}
+			className={classNames("cui-menu-radio-item", className)}
 			{...props}
 		>
 			<span
-				className={"itemIndicator"}
+				className="cui-menu-item-indicator"
 				data-slot="dropdown-menu-radio-item-indicator"
 			>
 				<MenuPrimitive.RadioItemIndicator>
@@ -222,7 +222,7 @@ function DropdownMenuSeparator({
 	return (
 		<MenuPrimitive.Separator
 			data-slot="dropdown-menu-separator"
-			className={classNames("separator", className)}
+			className={classNames("cui-menu-separator", className)}
 			{...props}
 		/>
 	);
@@ -235,7 +235,7 @@ function DropdownMenuShortcut({
 	return (
 		<span
 			data-slot="dropdown-menu-shortcut"
-			className={classNames("shortcut", className)}
+			className={classNames("cui-menu-shortcut", className)}
 			{...props}
 		/>
 	);

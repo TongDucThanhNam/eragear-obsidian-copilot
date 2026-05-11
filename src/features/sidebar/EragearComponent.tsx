@@ -19,8 +19,8 @@ export const EragearComponent: React.FC<EragearComponentProps> = ({
 	// Active TABS management (defaultValue="chat")
 	return (
 		<AppContextProvider>
-			<PortalProvider>
-				<div className="eragear-copilot-root">
+			<div className="eragear-copilot-root">
+				<PortalProvider>
 					<div className="eragear-main">
 						<Tabs defaultValue="chat" className="eragear-main-tabs">
 							<TabsList className="">
@@ -40,8 +40,8 @@ export const EragearComponent: React.FC<EragearComponentProps> = ({
 							</TabsContent>
 						</Tabs>
 					</div>
-				</div>
-			</PortalProvider>
+				</PortalProvider>
+			</div>
 		</AppContextProvider>
 	);
 };

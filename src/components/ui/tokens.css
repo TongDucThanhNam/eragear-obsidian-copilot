@@ -7,11 +7,14 @@
  */
 
 .eragear-copilot-root {
+	position: relative;
+
 	/* Background colors */
 	--cui-bg: var(--background-primary);
 	--cui-bg-2: var(--background-secondary);
 	--cui-bg-3: var(--background-tertiary);
 	--cui-bg-hover: var(--background-modifier-hover);
+	--cui-backdrop: var(--background-modifier-cover);
 
 	/* Text colors */
 	--cui-text: var(--text-normal);
@@ -29,7 +32,7 @@
 
 	/* Destructive colors */
 	--cui-destructive: var(--text-error);
-	--cui-destructive-bg: rgba(var(--color-red-rgb, 239, 68, 68), 0.1);
+	--cui-destructive-bg: var(--background-modifier-error);
 
 	/* Muted colors */
 	--cui-muted: var(--background-modifier-form-field);
@@ -39,6 +42,11 @@
 	--cui-py: var(--size-4-2); /* 8px */
 	--cui-gap: var(--size-4-1); /* 4px */
 	--cui-gap-lg: var(--size-4-2); /* 8px */
+	--cui-size-xs: var(--size-4-6); /* 24px */
+	--cui-size-sm: var(--size-4-7); /* 28px */
+	--cui-size-md: var(--size-4-8); /* 32px */
+	--cui-size-lg: var(--size-4-9); /* 36px */
+	--cui-touch-target: 44px;
 
 	/* Typography */
 	--cui-font-size: var(--font-ui-medium);
@@ -55,6 +63,10 @@
 	--cui-shadow: var(--shadow-s);
 	--cui-shadow-lg: var(--shadow-m);
 
+	/* Overlays */
+	--cui-overlay-z-index: 50;
+	--cui-dialog-max-width: calc(var(--size-4-8) * 14);
+
 	/* Transitions */
 	--cui-transition: 0.2s ease;
 
@@ -64,4 +76,15 @@
 
 	/* Stacking context */
 	isolation: isolate;
+}
+
+.eragear-copilot-root .eragear-portal-container {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	z-index: var(--cui-overlay-z-index);
+}
+
+.eragear-copilot-root .eragear-portal-container > * {
+	pointer-events: auto;
 }

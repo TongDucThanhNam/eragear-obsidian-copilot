@@ -1,6 +1,18 @@
-import { Dialog } from "@base-ui/react/dialog";
+import { LockKeyIcon } from "@phosphor-icons/react";
 import type React from "react";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogBackdrop,
+	DialogClose,
+	DialogContent,
+	DialogDescription,
+	DialogPortal,
+	DialogTitle,
+	DialogViewport,
+} from "@/components/ui/dialog";
 import type { PermissionRequest } from "@/core/models/session-update";
+import "./PermissionDialog.css";
 
 export interface PermissionDialogProps {
 	request: PermissionRequest;
@@ -16,23 +28,21 @@ export const PermissionDialog: React.FC<PermissionDialogProps> = ({
 	const { title, description, options } = request;
 
 	return (
-		<Dialog.Root open={true} onOpenChange={(open) => !open && onDismiss?.()}>
-			<Dialog.Portal>
-				<Dialog.Backdrop className="permission-dialog-backdrop" />
-				<Dialog.Viewport className="permission-dialog-viewport">
-					<Dialog.Popup className="permission-dialog-popup">
-						<Dialog.Title className="permission-dialog-title">
-							<span style={{ fontSize: "1.4rem" }}>🔐</span>
+		<Dialog open={true} onOpenChange={(open) => !open && onDismiss?.()}>
+			<DialogPortal>
+				<DialogBackdrop />
+				<DialogViewport>
+					<DialogContent className="permission-dialog">
+						<DialogTitle>
+							<LockKeyIcon size={22} weight="duotone" aria-hidden="true" />
 							{title}
-						</Dialog.Title>
+						</DialogTitle>
 
 						{description && (
-							<Dialog.Description className="permission-dialog-description">
-								{description}
-							</Dialog.Description>
+							<DialogDescription>{description}</DialogDescription>
 						)}
 
-						<div className="permission-options">
+						<div className="permission-dialog-options">
 							{options.map((option) => {
 								const isAllow =
 									option.id.toLowerCase().includes("allow") ||
@@ -45,42 +55,42 @@ export const PermissionDialog: React.FC<PermissionDialogProps> = ({
 									option.id.toLowerCase().includes("cancel");
 
 								return (
-									<button
+									<Button
 										type="button"
 										key={option.id}
 										onClick={() => onRespond(option.id)}
-										className={`test-btn ${isAllow ? "test-btn-primary" : "test-btn-secondary"} ${isDeny ? "test-btn-danger" : ""}`}
-										style={{
-											width: "100%",
-											justifyContent: "center",
-											fontWeight: option.isDefault ? 700 : 500,
-										}}
+										variant={
+											isDeny ? "destructive" : isAllow ? "default" : "secondary"
+										}
+										className="permission-dialog-option"
+										data-default={option.isDefault ? "true" : undefined}
 										aria-label={option.label}
 									>
 										{option.label}
-									</button>
+									</Button>
 								);
 							})}
 						</div>
 
 						{onDismiss && (
-							<Dialog.Close
-								className="test-btn test-btn-small"
-								style={{
-									border: "none",
-									background: "none",
-									color: "var(--text-muted)",
-									marginTop: "4px",
-								}}
-								aria-label="Cancel and dismiss dialog"
+							<DialogClose
+								render={
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										className="permission-dialog-dismiss"
+										aria-label="Cancel and dismiss dialog"
+									/>
+								}
 							>
 								Cancel
-							</Dialog.Close>
+							</DialogClose>
 						)}
-					</Dialog.Popup>
-				</Dialog.Viewport>
-			</Dialog.Portal>
-		</Dialog.Root>
+					</DialogContent>
+				</DialogViewport>
+			</DialogPortal>
+		</Dialog>
 	);
 };
 

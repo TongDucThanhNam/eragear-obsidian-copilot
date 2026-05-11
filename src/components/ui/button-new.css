@@ -19,12 +19,10 @@
 	cursor: var(--cui-cursor);
 	user-select: none;
 	padding: 0 var(--cui-px);
-	height: 32px;
+	height: var(--cui-size-md);
 	gap: var(--cui-gap);
 	border-radius: var(--cui-radius);
 	background-clip: padding-box;
-	min-width: 44px;
-	min-height: 44px;
 }
 
 .eragear-copilot-root .cui-button svg:not([class*="size-"]) {
@@ -95,7 +93,7 @@
 
 .eragear-copilot-root
 	.cui-button.cui-button-variant-destructive:hover:not(:disabled) {
-	background-color: rgba(var(--color-red-rgb, 239, 68, 68), 0.2);
+	background-color: var(--background-modifier-error-hover);
 }
 
 .eragear-copilot-root .cui-button.cui-button-variant-link {
@@ -113,10 +111,10 @@
 
 /* Sizes */
 .eragear-copilot-root .cui-button.cui-button-size-xs {
-	height: 24px;
+	height: var(--cui-size-xs);
 	font-size: var(--cui-font-size-xs);
-	padding: 0 8px;
-	gap: 4px;
+	padding: 0 var(--size-4-2);
+	gap: var(--size-4-1);
 }
 
 .eragear-copilot-root .cui-button.cui-button-size-xs svg:not([class*="size-"]) {
@@ -125,10 +123,10 @@
 }
 
 .eragear-copilot-root .cui-button.cui-button-size-sm {
-	height: 28px;
+	height: var(--cui-size-sm);
 	font-size: var(--cui-font-size-sm);
-	padding: 0 10px;
-	gap: 4px;
+	padding: 0 var(--size-4-3);
+	gap: var(--size-4-1);
 }
 
 .eragear-copilot-root .cui-button.cui-button-size-sm svg:not([class*="size-"]) {
@@ -137,21 +135,21 @@
 }
 
 .eragear-copilot-root .cui-button.cui-button-size-lg {
-	height: 36px;
-	font-size: 14px;
-	padding: 0 10px;
-	gap: 6px;
+	height: var(--cui-size-lg);
+	font-size: var(--cui-font-size);
+	padding: 0 var(--size-4-3);
+	gap: var(--size-4-2);
 }
 
 .eragear-copilot-root .cui-button.cui-button-size-icon {
-	width: 44px;
-	height: 44px;
+	width: var(--cui-touch-target);
+	height: var(--cui-touch-target);
 	padding: 0;
 }
 
 .eragear-copilot-root .cui-button.cui-button-size-icon-xs {
-	width: 24px;
-	height: 24px;
+	width: var(--cui-size-xs);
+	height: var(--cui-size-xs);
 	padding: 0;
 }
 
@@ -163,13 +161,13 @@
 }
 
 .eragear-copilot-root .cui-button.cui-button-size-icon-sm {
-	width: 28px;
-	height: 28px;
+	width: var(--cui-size-sm);
+	height: var(--cui-size-sm);
 	padding: 0;
 }
 
 .eragear-copilot-root .cui-button.cui-button-size-icon-lg {
-	width: 36px;
-	height: 36px;
+	width: var(--cui-size-lg);
+	height: var(--cui-size-lg);
 	padding: 0;
 }
