@@ -30,6 +30,14 @@ import {
 } from "@/app/settings/plugin-settings";
 import { ERAGEAR_VIEW_TYPE, EragearView } from "@/app/views/eragear-view";
 import { CopilotSettingTab } from "@/app/views/settings/CopilotSettingTab";
+import { generateHtmlExplainerForNote } from "@/learning/artifact-manager";
+import { generateNextActionQueue } from "@/learning/next-action-engine";
+import { scanVaultLearningNotes } from "@/learning/note-scanner";
+import type {
+	GeneratedArtifact,
+	LearningScanResult,
+	NextActionCandidate,
+} from "@/learning/types";
 
 /**
  * Main Plugin Class
@@ -46,6 +54,7 @@ export default class EragearPlugin extends Plugin {
 
 	// UI state
 	private statusBar: HTMLElement | null = null;
+	private lastLearningScan: LearningScanResult | null = null;
 
 	async onload() {
 		try {
@@ -69,7 +78,7 @@ export default class EragearPlugin extends Plugin {
 
 			// 6. Update status bar
 			this.updateStatusBar("ready");
-		} catch (error) {
+		} catch {
 			this.updateStatusBar("error");
 			new Notice("Eragear: Failed to initialize plugin");
 		}
@@ -85,7 +94,7 @@ export default class EragearPlugin extends Plugin {
 			// Vue framework/React should handle component cleanup
 
 			this.updateStatusBar("unloaded");
-		} catch (error) {
+		} catch {
 			// Silent cleanup failure
 		}
 	}
@@ -162,7 +171,7 @@ export default class EragearPlugin extends Plugin {
 		});
 
 		// Add ribbon icon
-		this.addRibbonIcon("bot", "Open Eragear Copilot", () => {
+		this.addRibbonIcon("bot", "Open Eragear copilot", () => {
 			this.activateView();
 		});
 
@@ -179,19 +188,80 @@ export default class EragearPlugin extends Plugin {
 	 */
 	private registerCommands(): void {
 		this.addCommand({
-			id: "open-eragear-copilot",
-			name: "Open Copilot Sidebar",
+			id: "open-copilot",
+			name: "Open copilot sidebar",
 			callback: () => {
 				this.activateView();
 			},
 		});
 
 		this.addCommand({
-			id: "eragear-search",
-			name: "Search Vault with Eragear",
+			id: "search-vault",
+			name: "Search vault",
 			callback: async () => {
 				if (!this.contextAssembler) return;
 				new Notice("Eragear search feature coming soon");
+			},
+		});
+
+		this.addCommand({
+			id: "open-learning-center",
+			name: "Open learning center",
+			callback: () => {
+				this.activateView();
+			},
+		});
+
+		this.addCommand({
+			id: "scan-learning-notes",
+			name: "Scan learning notes",
+			callback: () => {
+				const scan = this.scanLearningNotes();
+				new Notice(
+					`Learning scan: ${scan.summary.totalNotes} notes, ${scan.summary.weakNotes} weak, ${scan.summary.missingArtifacts} missing artifacts, ${scan.summary.dueReviews} due reviews.`,
+				);
+			},
+		});
+
+		this.addCommand({
+			id: "show-weak-notes",
+			name: "Show weak notes",
+			callback: () => {
+				const scan = this.scanLearningNotes();
+				const firstWeakNote = scan.weakNotes[0];
+				if (!firstWeakNote) {
+					new Notice("No weak notes found.");
+					return;
+				}
+
+				new Notice(
+					`Weak notes: ${scan.summary.weakNotes}. First: ${firstWeakNote.title}`,
+				);
+			},
+		});
+
+		this.addCommand({
+			id: "what-should-i-do-next",
+			name: "What should I do next?",
+			callback: () => {
+				const next = this.getNextLearningAction();
+				if (!next) {
+					new Notice("No learning action found.");
+					return;
+				}
+
+				new Notice(`Next: ${next.action} for ${next.note.title}`);
+			},
+		});
+
+		this.addCommand({
+			id: "generate-html-explainer",
+			name: "Generate HTML explainer",
+			callback: async () => {
+				const artifact = await this.generateHtmlExplainerForActiveNote();
+				if (artifact) {
+					new Notice(`HTML explainer created: ${artifact.artifactPath}`);
+				}
 			},
 		});
 	}
@@ -223,10 +293,10 @@ export default class EragearPlugin extends Plugin {
 		if (!this.statusBar) return;
 
 		const messages: Record<string, string> = {
-			ready: "Eragear: Ready",
-			processing: "Eragear: Processing...",
-			error: "Eragear: Error",
-			unloaded: "Eragear: Unloaded",
+			ready: "Eragear: ready",
+			processing: "Eragear: processing...",
+			error: "Eragear: error",
+			unloaded: "Eragear: unloaded",
 		};
 
 		const message = messages[status];
@@ -295,6 +365,43 @@ export default class EragearPlugin extends Plugin {
 				workspace.revealLeaf(leaf);
 			}
 		}
+	}
+
+	scanLearningNotes(): LearningScanResult {
+		const scan = scanVaultLearningNotes(this.app);
+		this.lastLearningScan = scan;
+		return scan;
+	}
+
+	getLearningScan(): LearningScanResult {
+		return this.lastLearningScan ?? this.scanLearningNotes();
+	}
+
+	getNextLearningAction(): NextActionCandidate | null {
+		const scan = this.getLearningScan();
+		return generateNextActionQueue(
+			scan,
+			this.settings.activeLearningSprint || undefined,
+		)[0] ?? null;
+	}
+
+	getLearningActionQueue(): NextActionCandidate[] {
+		return generateNextActionQueue(
+			this.getLearningScan(),
+			this.settings.activeLearningSprint || undefined,
+		);
+	}
+
+	async generateHtmlExplainerForActiveNote(): Promise<GeneratedArtifact | null> {
+		const activeFile = this.app.workspace.getActiveFile();
+		if (!activeFile) {
+			new Notice("Open a note first.");
+			return null;
+		}
+
+		const artifact = await generateHtmlExplainerForNote(this.app, activeFile);
+		this.lastLearningScan = scanVaultLearningNotes(this.app);
+		return artifact;
 	}
 
 	/**

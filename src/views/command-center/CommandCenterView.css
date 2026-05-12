@@ -1,0 +1,151 @@
+.eragear-copilot-root .eragear-main-tabs-list {
+	justify-content: flex-start;
+	width: 100%;
+	box-sizing: border-box;
+	overflow-x: hidden;
+	overflow-y: hidden;
+}
+
+.eragear-copilot-root
+	.eragear-main-tabs-list
+	[data-slot="tabs-trigger"] {
+	flex: 1 1 0;
+	min-width: 0;
+	padding-inline: var(--size-4-3);
+}
+
+.eragear-copilot-root .eragear-learning-center {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-3);
+	min-height: 0;
+	height: 100%;
+	overflow-y: auto;
+	padding: var(--size-4-3);
+	color: var(--cui-text);
+}
+
+.eragear-copilot-root .eragear-learning-header,
+.eragear-copilot-root .eragear-learning-panel-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+}
+
+.eragear-copilot-root .eragear-learning-header h2,
+.eragear-copilot-root .eragear-learning-panel h3 {
+	margin: 0;
+	color: var(--cui-text);
+	font-size: var(--font-ui-medium);
+	line-height: var(--line-height-tight);
+}
+
+.eragear-copilot-root .eragear-learning-header p,
+.eragear-copilot-root .eragear-learning-panel p {
+	margin: var(--size-4-1) 0 0;
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-small);
+	line-height: var(--line-height-normal);
+}
+
+.eragear-copilot-root .eragear-learning-summary,
+.eragear-copilot-root .eragear-learning-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--size-4-2);
+}
+
+.eragear-copilot-root .eragear-learning-metric,
+.eragear-copilot-root .eragear-learning-panel {
+	border: var(--border-width) solid var(--cui-border);
+	border-radius: var(--radius-s);
+	background: var(--cui-bg-2);
+}
+
+.eragear-copilot-root .eragear-learning-metric {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-1);
+	padding: var(--size-4-2);
+	min-width: 0;
+}
+
+.eragear-copilot-root .eragear-learning-metric span {
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.eragear-copilot-root .eragear-learning-metric strong {
+	color: var(--cui-text);
+	font-size: var(--font-ui-large);
+	line-height: var(--line-height-tight);
+}
+
+.eragear-copilot-root .eragear-learning-panel {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding: var(--size-4-3);
+}
+
+.eragear-copilot-root .eragear-next-action {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.eragear-copilot-root .eragear-next-action strong {
+	display: block;
+	color: var(--cui-text);
+	font-size: var(--font-ui-medium);
+	line-height: var(--line-height-normal);
+}
+
+.eragear-copilot-root .eragear-next-action ul,
+.eragear-copilot-root .eragear-learning-note-list {
+	margin: 0;
+	padding-left: var(--size-4-4);
+}
+
+.eragear-copilot-root .eragear-next-action li,
+.eragear-copilot-root .eragear-learning-note-list li {
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-small);
+	line-height: var(--line-height-normal);
+}
+
+.eragear-copilot-root .eragear-learning-note-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.eragear-copilot-root .eragear-learning-note-list li {
+	padding-inline-start: var(--size-4-1);
+}
+
+.eragear-copilot-root .eragear-learning-note-list span {
+	display: block;
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.eragear-copilot-root .eragear-learning-link {
+	display: inline;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--cui-text);
+	cursor: var(--cursor-link);
+	font: inherit;
+	text-align: start;
+	text-decoration: underline;
+	text-decoration-thickness: var(--border-width);
+	text-underline-offset: var(--size-4-1);
+}
+
+.eragear-copilot-root .eragear-learning-link:focus-visible {
+	outline: var(--border-width) solid var(--cui-accent);
+	outline-offset: var(--size-4-1);
+}

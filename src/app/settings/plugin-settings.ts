@@ -91,6 +91,7 @@ export interface MyPluginSettings {
 	maxGraphHops: number;
 	searchMaxResults: number;
 	debounceDelay: number;
+	activeLearningSprint: string;
 	cloudflareAccessId: string;
 	cloudflareAccessSecret: string;
 	cloudflareApiEndpoint: string;
@@ -246,6 +247,7 @@ export const DEFAULT_SETTINGS: MyPluginSettings = {
 	maxGraphHops: 3,
 	searchMaxResults: 50,
 	debounceDelay: 300,
+	activeLearningSprint: "",
 	cloudflareAccessId: "",
 	cloudflareAccessSecret: "",
 	cloudflareApiEndpoint: "https://api.eragear.app",
