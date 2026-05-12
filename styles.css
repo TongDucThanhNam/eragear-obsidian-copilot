@@ -7,21 +7,29 @@ If your plugin does not need CSS, delete this file.
 
 */
 
-/* Import CSS tokens */
-@import url("./src/components/ui/tokens.css");
+/* Import neo-brutalist typography */
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Work+Sans:wght@400;600;800&display=swap");
 
 /* Plugin root container - all plugin CSS should be scoped here */
 .eragear-copilot-root {
 	/* Plugin-specific base styles */
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 0;
+	overflow: hidden;
+	background: var(--paper);
+	color: var(--ink);
+	font-family: var(--font-ui-newsprint);
 }
 
 /* --- Editor diff widgets --- */
 .cm-editor .eragear-diff-insert {
-	background-color: var(--background-modifier-success);
+	background-color: var(--paper-dark);
 	text-decoration: none;
 }
 .cm-editor .eragear-diff-delete {
-	background-color: var(--background-modifier-error);
+	background-color: var(--accent);
 	text-decoration: line-through;
 	opacity: 0.8;
 }
@@ -38,20 +46,20 @@ If your plugin does not need CSS, delete this file.
 	font-size: var(--font-ui-smaller);
 	font-weight: 600;
 	border: 1px solid var(--background-modifier-border);
-	color: var(--text-on-accent);
-	background-color: var(--interactive-accent);
+	color: var(--paper);
+	background-color: var(--ink);
 }
 .cm-editor .eragear-diff-btn:focus-visible {
-	outline: 2px solid var(--interactive-accent);
+	outline: 2px solid var(--accent);
 	outline-offset: 2px;
 }
 .cm-editor .eragear-btn-accept {
-	background-color: var(--background-modifier-success);
-	border-color: var(--background-modifier-success);
+	background-color: var(--ink);
+	border-color: var(--ink);
 }
 .cm-editor .eragear-btn-reject {
-	background-color: var(--background-modifier-error);
-	border-color: var(--background-modifier-error);
+	background-color: var(--accent);
+	border-color: var(--accent);
 }
 
 /* Collapsible UI System - Adapted from user request */
@@ -81,7 +89,7 @@ If your plugin does not need CSS, delete this file.
 .eragear-copilot-root .test-textarea:focus {
 	outline: none;
 	border-color: var(--cui-accent);
-	box-shadow: 0 0 0 3px var(--cui-accent-hover);
+	box-shadow: var(--shadow);
 	background-color: var(--cui-bg);
 }
 .test-textarea {
@@ -107,13 +115,13 @@ If your plugin does not need CSS, delete this file.
 	letter-spacing: 0.3px;
 }
 .test-btn:hover:not(:disabled) {
-	background-color: var(--background-tertiary);
-	border-color: var(--interactive-accent);
+	background-color: var(--paper-dark);
+	border-color: var(--accent);
 	transform: translateY(-1px);
-	box-shadow: var(--shadow-s);
+	box-shadow: var(--shadow);
 }
 .test-btn:focus-visible {
-	outline: 2px solid var(--interactive-accent);
+	outline: 2px solid var(--accent);
 	outline-offset: 2px;
 }
 .test-btn:active:not(:disabled) {
@@ -124,35 +132,35 @@ If your plugin does not need CSS, delete this file.
 	cursor: not-allowed;
 }
 .test-btn-primary {
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
-	border-color: var(--interactive-accent);
+	background-color: var(--ink);
+	color: var(--paper);
+	border-color: var(--ink);
 	font-weight: 700;
 }
 .test-btn-primary:hover:not(:disabled) {
 	opacity: 0.9;
-	box-shadow: var(--shadow-m);
+	box-shadow: var(--shadow);
 }
 .test-btn-secondary {
 	background-color: var(--background-tertiary);
 }
 .test-btn-warning {
-	background-color: var(--background-modifier-warning);
-	color: var(--text-warning);
-	border-color: var(--text-warning);
+	background-color: var(--paper);
+	color: var(--accent);
+	border-color: var(--accent);
 }
 .test-btn-warning:hover:not(:disabled) {
-	background-color: var(--background-modifier-warning-hover);
-	box-shadow: var(--shadow-s);
+	background-color: var(--paper-dark);
+	box-shadow: var(--shadow);
 }
 .test-btn-danger {
-	background-color: var(--background-modifier-error);
-	color: var(--text-error);
-	border-color: var(--text-error);
+	background-color: var(--accent);
+	color: var(--paper);
+	border-color: var(--accent);
 }
 .test-btn-danger:hover:not(:disabled) {
-	background-color: var(--background-modifier-error-hover);
-	box-shadow: var(--shadow-s);
+	background-color: var(--accent);
+	box-shadow: var(--shadow);
 }
 .test-btn-small {
 	padding: 0.5rem 0.875rem;
@@ -184,8 +192,8 @@ If your plugin does not need CSS, delete this file.
 .test-result-item {
 	padding: 0.75rem;
 	border-radius: var(--radius-s);
-	background-color: var(--background-primary);
-	border-left: 3px solid var(--interactive-accent);
+	background-color: var(--paper);
+	border-left: 3px solid var(--accent);
 	display: flex;
 	flex-direction: column;
 	gap: 0.25rem;
@@ -194,7 +202,7 @@ If your plugin does not need CSS, delete this file.
 }
 .test-result-item:hover {
 	transform: translate(4px);
-	box-shadow: 0 2px 4px #0000001a;
+	box-shadow: var(--shadow);
 }
 .result-basename {
 	font-weight: 600;
@@ -259,19 +267,23 @@ If your plugin does not need CSS, delete this file.
 	display: flex;
 	flex-direction: column;
 	height: 100%;
+	min-height: 0;
 	background-color: var(--background-primary);
 	color: var(--text-normal);
 	font-family: var(--font-interface);
 	position: relative;
+	overflow: hidden;
 }
 
 .eragear-messages {
 	display: flex;
 	flex-direction: column;
-	gap: 1.25rem;
+	flex: 1;
+	gap: var(--size-4-4);
 	scroll-behavior: smooth;
-	padding: 1.5rem;
+	padding: var(--size-4-4);
 	width: 100%;
+	min-height: 0;
 }
 
 /* Messages wrapper - scrollable container */
@@ -287,10 +299,10 @@ If your plugin does not need CSS, delete this file.
 	flex-shrink: 0;
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
-	padding: 12px 16px;
-	background-color: var(--eragear-bg-body);
-	border-top: 1px solid var(--eragear-border-color);
+	gap: var(--size-4-2);
+	padding: var(--size-4-3) var(--size-4-4) var(--size-4-4);
+	background: var(--background-secondary);
+	border-top: var(--border-width) solid var(--background-modifier-border);
 	max-height: fit-content;
 	overflow: visible;
 }
@@ -300,6 +312,7 @@ If your plugin does not need CSS, delete this file.
 	display: flex;
 	flex-direction: column;
 	height: 100%;
+	min-height: 0;
 	overflow: hidden;
 }
 
@@ -320,4 +333,2116 @@ If your plugin does not need CSS, delete this file.
 	min-height: 0;
 	overflow: hidden;
 	height: 100%;
+}
+
+.eragear-copilot-root .eragear-main-tabs > [data-slot="tabs-list"] {
+	display: flex;
+	justify-content: flex-start;
+	gap: var(--size-4-1);
+	height: var(--cui-size-lg);
+	padding: var(--size-4-1);
+	background: var(--background-primary);
+	border-bottom: var(--border-width) solid var(--background-modifier-border);
+	border-radius: 0;
+}
+
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"] {
+	flex: 0 0 auto;
+	gap: var(--size-4-1);
+	height: 100%;
+	min-width: calc(var(--size-4-12) * 3);
+	padding: 0 var(--size-4-3);
+	background: transparent;
+	border-color: transparent;
+	border-radius: var(--radius-s);
+	color: var(--text-muted);
+}
+
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"]:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"][data-selected],
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"][data-active],
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"][aria-selected="true"] {
+	background: var(--background-primary);
+	border-color: var(--background-modifier-border);
+	color: var(--text-normal);
+}
+
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"]::after {
+	display: none;
+}
+
+.eragear-copilot-root .eragear-main-tabs > [data-slot="tabs-content"] {
+	flex: 1;
+	min-height: 0;
+	height: auto;
+}
+
+/* --- Newspaper design system override --- */
+.eragear-copilot-root,
+.eragear-copilot-root * {
+	box-sizing: border-box;
+}
+
+.eragear-copilot-root {
+	background: var(--paper);
+	color: var(--ink);
+	font-family: var(--font-ui-newsprint);
+}
+
+.eragear-copilot-root :is(button, input, textarea, select, code, pre, kbd),
+.eragear-copilot-root :is([data-slot], .cui-button, .test-btn) {
+	font-family: var(--font-ui-newsprint);
+}
+
+.eragear-copilot-root :is(h1, h2, h3, .brand, .eragear-chat-title) {
+	font-family: var(--font-brand);
+	font-weight: 900;
+	letter-spacing: 0;
+}
+
+.eragear-copilot-root p {
+	font-family: var(--font-body);
+}
+
+.eragear-copilot-root :is(
+	.eragear-container,
+	.eragear-main,
+	.eragear-chat-area,
+	.eragear-messages-wrapper,
+	.eragear-messages,
+	.eragear-input-container,
+	.eragear-tab-panel,
+	[data-slot="tabs-content"]
+) {
+	background: var(--paper);
+	color: var(--ink);
+}
+
+.eragear-copilot-root :is(
+	[data-slot="card"],
+	[data-slot="command"],
+	[data-slot="popover-content"],
+	[data-slot="select-content"],
+	[data-slot="combobox-content"],
+	[data-slot="hover-card-content"],
+	.cui-menu-content,
+	.cui-dialog-content,
+	.prompt-input-group,
+	.model-selector-content,
+	.test-results,
+	.test-output,
+	.action-card,
+	.console-log-panel,
+	.global-context-bar,
+	.gcb-panel
+) {
+	background: var(--paper);
+	color: var(--ink);
+	border: 2px solid var(--ink);
+	border-radius: 0;
+	box-shadow: var(--shadow);
+}
+
+.eragear-copilot-root :is(
+	.eragear-chat-header,
+	.eragear-main-tabs > [data-slot="tabs-list"],
+	[data-slot="command-input-wrapper"],
+	.prompt-input-footer,
+	.eragear-input-container
+) {
+	background: var(--paper-dark);
+	border-color: var(--ink);
+}
+
+.eragear-copilot-root .eragear-chat-header {
+	border-bottom: 2px solid var(--ink);
+}
+
+.eragear-copilot-root .eragear-input-container {
+	border-top: 2px solid var(--ink);
+	padding: var(--size-4-4);
+}
+
+.eragear-copilot-root .prompt-input-group[data-slot="input-group"] {
+	border: 2px solid var(--ink);
+	background: var(--paper);
+	box-shadow: var(--shadow);
+}
+
+.eragear-copilot-root .prompt-input-textarea[data-slot="input-group-textarea"] {
+	min-height: calc(var(--size-4-8) * 3);
+	border-bottom: 2px solid var(--ink);
+	font-family: var(--font-ui-newsprint);
+}
+
+.eragear-copilot-root .prompt-input-footer[data-slot="input-group-addon"] {
+	background: var(--paper-dark);
+}
+
+.eragear-copilot-root .eragear-main-tabs > [data-slot="tabs-list"] {
+	height: var(--size-4-10);
+	padding: var(--size-4-2);
+	border-bottom: 2px solid var(--ink);
+}
+
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"],
+.eragear-copilot-root :is(.cui-button, .test-btn, .eragear-add-btn),
+.eragear-copilot-root :is(
+	[data-slot="select-trigger"],
+	[data-slot="combobox-item"],
+	[data-slot="select-item"],
+	.cui-menu-item,
+	.cui-menu-sub-trigger
+) {
+	border: 2px solid var(--ink);
+	border-radius: 0;
+	color: var(--ink);
+	background: var(--paper);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	box-shadow: none;
+}
+
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"][data-selected],
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"][data-active],
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"][aria-selected="true"],
+.eragear-copilot-root :is(.cui-button-variant-default, .test-btn-primary),
+.eragear-copilot-root :is(
+	[data-slot="select-item"][data-highlighted],
+	[data-slot="combobox-item"][data-highlighted],
+	.cui-menu-item[data-highlighted],
+	.cui-menu-sub-trigger[data-highlighted],
+	.cui-menu-sub-trigger[data-open]
+) {
+	background: var(--ink);
+	color: var(--paper);
+	border-color: var(--ink);
+	box-shadow: var(--shadow);
+}
+
+.eragear-copilot-root :is(.cui-button-variant-destructive, .test-btn-danger),
+.eragear-copilot-root [data-slot="badge"][data-variant="destructive"] {
+	background: var(--accent);
+	color: var(--paper);
+	border-color: var(--accent);
+}
+
+.eragear-copilot-root :is(.cui-button-variant-link, a) {
+	color: var(--accent);
+	cursor: var(--cursor-link);
+}
+
+.eragear-copilot-root :is(
+	input,
+	textarea,
+	[data-slot="input-group"],
+	[data-slot="input-group-input"],
+	[data-slot="input-group-textarea"],
+	.test-input,
+	.test-textarea
+) {
+	background: var(--paper);
+	color: var(--ink);
+	border-color: var(--ink);
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.eragear-copilot-root :is(input, textarea)::placeholder {
+	color: color-mix(in srgb, var(--ink) 56%, var(--paper));
+	font-family: var(--font-ui-newsprint);
+}
+
+.eragear-copilot-root :is(
+	button,
+	input,
+	textarea,
+	[tabindex],
+	[data-slot="select-trigger"],
+	[data-slot="combobox-item"],
+	[data-slot="select-item"],
+	.cui-button
+):focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+	box-shadow: var(--shadow);
+}
+
+.eragear-copilot-root [data-slot="badge"] {
+	border: 2px solid var(--ink);
+	border-radius: 0;
+	background: var(--paper);
+	color: var(--ink);
+	font-family: var(--font-ui-newsprint);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.eragear-copilot-root [data-slot="badge"][data-variant="default"],
+.eragear-copilot-root [data-slot="badge"][data-variant="secondary"] {
+	background: var(--paper-dark);
+	color: var(--ink);
+}
+
+.eragear-copilot-root .eragear-chat-status,
+.eragear-copilot-root :is(.eragear-agent-name, .eragear-empty-state, .result-path) {
+	color: color-mix(in srgb, var(--ink) 62%, var(--paper));
+	font-family: var(--font-ui-newsprint);
+}
+
+.eragear-copilot-root .eragear-empty-state-icon {
+	background: var(--paper);
+	border: 2px solid var(--line);
+	border-radius: 0;
+	color: var(--ink);
+	box-shadow: var(--shadow);
+}
+
+.eragear-copilot-root .prompt-input-submit:not(:disabled),
+.eragear-copilot-root .eragear-send-button {
+	background: var(--accent);
+	color: var(--paper);
+	border-color: var(--accent);
+	box-shadow: var(--shadow);
+}
+
+.eragear-copilot-root .model-selector [data-slot="input-group"] {
+	border: 2px solid transparent;
+	background: var(--paper);
+}
+
+.eragear-copilot-root .model-selector [data-slot="input-group"]:hover,
+.eragear-copilot-root .model-selector [data-slot="input-group"]:focus-within {
+	border-color: var(--ink);
+	background: var(--paper-dark);
+}
+
+.eragear-copilot-root [data-slot="command-list"]::-webkit-scrollbar-thumb,
+.eragear-copilot-root [data-slot="scroll-area-thumb"] {
+	background: var(--ink);
+}
+
+.eragear-copilot-root :is(
+	[data-slot="command-separator"],
+	[data-slot="select-separator"],
+	.cui-menu-separator,
+	[data-slot="combobox-separator"]
+) {
+	background: var(--ink);
+}
+
+.eragear-copilot-root .result-computed,
+.eragear-copilot-root [data-result="true"],
+.eragear-copilot-root .computed-result {
+	background: var(--result);
+	color: #fff;
+}
+
+.eragear-copilot-root .prompt-input-button.cui-button,
+.eragear-copilot-root .prompt-input-submit.cui-button {
+	width: var(--cui-size-lg);
+	height: var(--cui-size-lg);
+	border: 2px solid var(--ink);
+	border-radius: 0;
+	font-family: var(--font-ui-newsprint);
+	opacity: 1;
+}
+
+.eragear-copilot-root .prompt-input-button.cui-button {
+	background: var(--paper);
+	color: var(--ink);
+	box-shadow: none;
+}
+
+.eragear-copilot-root .prompt-input-button.cui-button:hover:not(:disabled) {
+	background: var(--ink);
+	color: var(--paper);
+}
+
+.eragear-copilot-root .prompt-input-submit.cui-button:not(:disabled) {
+	background: var(--accent);
+	color: var(--paper);
+	border-color: var(--ink);
+	box-shadow: var(--shadow);
+}
+
+.eragear-copilot-root .prompt-input-submit.cui-button:disabled {
+	background: var(--paper-dark);
+	color: var(--ink);
+	border-color: var(--line);
+	box-shadow: none;
+	opacity: 1;
+}
+
+/* --- Editorial workbench polish: full UI pass --- */
+.eragear-copilot-root .eragear-main {
+	background: var(--paper);
+	border-left: 2px solid var(--ink);
+	font-family: var(--font-ui-newsprint);
+}
+
+.eragear-copilot-root .eragear-main-tabs > [data-slot="tabs-list"] {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: var(--size-4-2);
+	height: calc(var(--size-4-12) + var(--size-4-1));
+	padding: var(--size-4-2);
+	background: var(--paper-dark);
+	border-bottom: 2px solid var(--ink);
+}
+
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"] {
+	flex: 0 1 calc(var(--size-4-12) * 4);
+	min-width: calc(var(--size-4-12) * 3);
+	height: var(--cui-size-lg);
+	background: var(--paper);
+	color: var(--ink);
+	border: 2px solid var(--ink);
+	box-shadow: none;
+	font-family: var(--font-ui-newsprint);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"]:hover,
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"][data-selected],
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"][data-active],
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"][aria-selected="true"] {
+	background: var(--ink);
+	color: var(--paper);
+	border-color: var(--ink);
+	box-shadow: var(--shadow);
+}
+
+.eragear-copilot-root .test-panel-layout-container > [data-slot="tabs"] {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.eragear-copilot-root
+	.test-panel-layout-container
+	> [data-slot="tabs"]
+	> [data-slot="tabs-content"] {
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: var(--size-4-4);
+}
+
+.eragear-copilot-root .eragear-chat-header {
+	min-height: calc(var(--size-4-12) + var(--size-4-8));
+	padding: var(--size-4-4) var(--size-4-5);
+	background: var(--paper);
+	border-bottom: 2px solid var(--ink);
+}
+
+.eragear-copilot-root .eragear-chat-title {
+	font-family: var(--font-brand);
+	font-size: 1.15rem;
+	font-weight: 900;
+	letter-spacing: 0;
+}
+
+.eragear-copilot-root .eragear-chat-status {
+	color: var(--ink);
+	font-family: var(--font-ui-newsprint);
+	font-weight: 400;
+}
+
+.eragear-copilot-root .eragear-add-btn {
+	width: var(--cui-touch-target);
+	height: var(--cui-touch-target);
+	background: var(--paper);
+	color: var(--ink);
+	border: 2px solid var(--ink);
+	border-radius: 0;
+}
+
+.eragear-copilot-root .eragear-add-btn:hover {
+	background: var(--ink);
+	color: var(--paper);
+	border-color: var(--ink);
+	box-shadow: var(--shadow);
+}
+
+.eragear-copilot-root .eragear-messages-wrapper {
+	background: var(--paper);
+	border-bottom: 2px solid var(--ink);
+}
+
+.eragear-copilot-root .eragear-messages {
+	gap: var(--size-4-4);
+	padding: var(--size-4-5);
+}
+
+.eragear-copilot-root .eragear-empty-state {
+	align-self: center;
+	justify-self: center;
+	width: min(100%, calc(var(--size-4-12) * 8));
+	min-height: 0;
+	margin: auto;
+	padding: var(--size-4-6);
+	background: var(--paper);
+	color: var(--ink);
+	border: 2px solid var(--ink);
+	box-shadow: var(--shadow);
+	text-align: center;
+}
+
+.eragear-copilot-root .eragear-empty-state-icon {
+	width: var(--cui-touch-target);
+	height: var(--cui-touch-target);
+	background: var(--paper-dark);
+	color: var(--ink);
+	border: 2px solid var(--ink);
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.eragear-copilot-root .eragear-empty-state p {
+	font-family: var(--font-body);
+	font-size: 1rem;
+	color: var(--ink);
+}
+
+.eragear-copilot-root .eragear-message-group {
+	display: flex;
+	width: 100%;
+}
+
+.eragear-copilot-root .eragear-message-group.user {
+	justify-content: flex-end;
+}
+
+.eragear-copilot-root .eragear-message-group.assistant,
+.eragear-copilot-root .eragear-message-group.system {
+	justify-content: flex-start;
+}
+
+.eragear-copilot-root .eragear-message-content {
+	width: min(100%, calc(var(--size-4-12) * 13));
+	overflow: hidden;
+	padding: var(--size-4-4);
+	background: var(--paper);
+	color: var(--ink);
+	border: 2px solid var(--ink);
+	box-shadow: var(--shadow);
+}
+
+.eragear-copilot-root .eragear-message-group.user .eragear-message-content {
+	background: var(--ink);
+	color: var(--paper);
+	box-shadow: none;
+}
+
+.eragear-copilot-root .markdown-text-renderer {
+	font-family: var(--font-body);
+	font-size: 0.96rem;
+	line-height: 1.65;
+}
+
+.eragear-copilot-root .markdown-text-renderer :is(p, ul, ol, pre, blockquote) {
+	margin-top: 0;
+}
+
+.eragear-copilot-root .markdown-text-renderer :is(code, pre) {
+	font-family: var(--font-ui-newsprint);
+}
+
+.eragear-copilot-root .markdown-text-renderer pre {
+	padding: var(--size-4-3);
+	background: var(--paper-dark);
+	border: 2px solid var(--ink);
+	border-radius: 0;
+}
+
+.eragear-copilot-root .eragear-msg-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: var(--size-4-1);
+	margin-top: var(--size-4-3);
+	padding-top: var(--size-4-2);
+	border-top: 1px solid var(--line);
+}
+
+.eragear-copilot-root .eragear-action-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--cui-size-sm);
+	height: var(--cui-size-sm);
+	padding: 0;
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--ink);
+	border-radius: 0;
+	cursor: var(--cursor);
+}
+
+.eragear-copilot-root .eragear-action-icon:hover {
+	background: var(--ink);
+	color: var(--paper);
+}
+
+.eragear-copilot-root .output-list,
+.eragear-copilot-root .tool-call-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2) 0;
+}
+
+.eragear-copilot-root .output-message {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2) var(--size-4-3);
+	background: var(--paper);
+	color: var(--ink);
+	border: 2px solid var(--ink);
+	font-family: var(--font-ui-newsprint);
+	font-size: 0.85rem;
+}
+
+.eragear-copilot-root .output-message.output-error,
+.eragear-copilot-root .output-message.output-warning {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.eragear-copilot-root .output-message.output-info {
+	background: var(--result);
+	color: #fff;
+}
+
+.eragear-copilot-root .output-message-icon {
+	display: inline-flex;
+	padding-top: 1px;
+}
+
+.eragear-copilot-root .output-message-text {
+	flex: 1;
+	min-width: 0;
+	word-break: break-word;
+}
+
+.eragear-copilot-root .tool-call-card,
+.eragear-copilot-root .terminal-renderer,
+.eragear-copilot-root .reasoning-block {
+	background: var(--paper);
+	color: var(--ink);
+	border: 2px solid var(--ink);
+	box-shadow: var(--shadow);
+	font-family: var(--font-ui-newsprint);
+}
+
+.eragear-copilot-root .tool-call-card {
+	display: flex;
+	flex-direction: column;
+	padding: var(--size-4-3);
+	cursor: var(--cursor);
+}
+
+.eragear-copilot-root .tool-call-card[data-status="running"] {
+	border-color: var(--result);
+}
+
+.eragear-copilot-root .tool-call-card[data-status="failed"] {
+	border-color: var(--accent);
+}
+
+.eragear-copilot-root .tool-call-card-header {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	min-width: 0;
+}
+
+.eragear-copilot-root .tool-call-status-dot {
+	width: var(--size-4-2);
+	height: var(--size-4-2);
+	background: var(--line);
+	border: 1px solid var(--ink);
+	flex-shrink: 0;
+}
+
+.eragear-copilot-root .tool-call-status-dot[data-status="running"] {
+	background: var(--result);
+}
+
+.eragear-copilot-root .tool-call-status-dot[data-status="complete"] {
+	background: var(--ink);
+}
+
+.eragear-copilot-root .tool-call-status-dot[data-status="failed"] {
+	background: var(--accent);
+}
+
+.eragear-copilot-root .tool-call-kind {
+	display: inline-flex;
+	color: var(--ink);
+}
+
+.eragear-copilot-root .tool-call-title {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-weight: 700;
+}
+
+.eragear-copilot-root .tool-call-location {
+	max-width: calc(var(--size-4-12) * 3);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: color-mix(in srgb, var(--ink) 62%, var(--paper));
+	font-size: 0.75rem;
+}
+
+.eragear-copilot-root .tool-call-chevron {
+	display: inline-flex;
+	transition: transform 0.16s ease;
+}
+
+.eragear-copilot-root .tool-call-chevron[data-open] {
+	transform: rotate(90deg);
+}
+
+.eragear-copilot-root .tool-call-card-body,
+.eragear-copilot-root .tool-call-content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	margin-top: var(--size-4-3);
+}
+
+.eragear-copilot-root .tool-call-section-label {
+	margin-bottom: var(--size-4-1);
+	color: var(--accent);
+	font-size: 0.7rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.eragear-copilot-root .tool-call-pre,
+.eragear-copilot-root .tool-call-diff {
+	max-height: calc(var(--size-4-12) * 5);
+	margin: 0;
+	padding: var(--size-4-3);
+	overflow: auto;
+	background: var(--paper-dark);
+	color: var(--ink);
+	border: 1px solid var(--ink);
+	font-family: var(--font-ui-newsprint);
+	font-size: 0.78rem;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.eragear-copilot-root .tool-call-diff-line {
+	margin: 0;
+	padding: var(--size-4-1) var(--size-4-2);
+	border-left: 3px solid var(--ink);
+}
+
+.eragear-copilot-root .tool-call-diff-line.is-removed {
+	color: var(--accent);
+	border-left-color: var(--accent);
+}
+
+.eragear-copilot-root .tool-call-diff-line.is-added {
+	color: var(--ink);
+}
+
+.eragear-copilot-root .terminal-renderer {
+	padding: var(--size-4-3);
+	user-select: text;
+}
+
+.eragear-copilot-root .terminal-renderer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	margin-bottom: var(--size-4-2);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+.eragear-copilot-root .terminal-renderer-status {
+	padding: var(--size-4-1) var(--size-4-2);
+	border: 1px solid var(--ink);
+	font-size: 0.68rem;
+}
+
+.eragear-copilot-root .terminal-renderer-status.is-running {
+	background: var(--result);
+	color: #fff;
+}
+
+.eragear-copilot-root .terminal-renderer-status.is-cancelled,
+.eragear-copilot-root .terminal-renderer-exit[data-status="failed"] {
+	background: var(--accent);
+	color: var(--paper);
+}
+
+.eragear-copilot-root .terminal-renderer-status.is-finished,
+.eragear-copilot-root .terminal-renderer-exit[data-status="complete"] {
+	background: var(--ink);
+	color: var(--paper);
+}
+
+.eragear-copilot-root .terminal-renderer-output {
+	min-height: calc(var(--size-4-12) + var(--size-4-2));
+	max-height: calc(var(--size-4-12) * 7);
+	overflow: auto;
+	padding: var(--size-4-3);
+	background: var(--ink);
+	color: var(--paper);
+	border: 1px solid var(--ink);
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.eragear-copilot-root .terminal-renderer-exit {
+	display: inline-block;
+	margin-top: var(--size-4-2);
+	padding: var(--size-4-1) var(--size-4-2);
+	border: 1px solid var(--ink);
+	font-size: 0.75rem;
+}
+
+.eragear-copilot-root .reasoning-block {
+	margin-block: var(--size-4-2);
+	overflow: hidden;
+	border-radius: 0;
+}
+
+.eragear-copilot-root .reasoning-trigger {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	width: 100%;
+	min-height: var(--cui-touch-target);
+	padding: 0 var(--size-4-3);
+	background: var(--paper-dark);
+	color: var(--ink);
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	font-family: var(--font-ui-newsprint);
+	font-weight: 700;
+	text-align: left;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	cursor: var(--cursor);
+}
+
+.eragear-copilot-root .reasoning-trigger:hover,
+.eragear-copilot-root .reasoning-trigger:focus-visible {
+	background: var(--ink);
+	color: var(--paper);
+	box-shadow: none;
+}
+
+.eragear-copilot-root .reasoning-block[data-open] .reasoning-trigger {
+	background: var(--ink);
+	color: var(--paper);
+	border-bottom: 2px solid var(--ink);
+}
+
+.eragear-copilot-root .reasoning-title {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.eragear-copilot-root .reasoning-state {
+	color: inherit;
+	font-size: 0.72rem;
+}
+
+.eragear-copilot-root .reasoning-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	transition: transform 0.16s ease;
+}
+
+.eragear-copilot-root .reasoning-content {
+	background: var(--paper);
+	border-top: 2px solid var(--ink);
+}
+
+.eragear-copilot-root .reasoning-block[data-open] .reasoning-icon {
+	transform: rotate(180deg);
+}
+
+.eragear-copilot-root .reasoning-inner {
+	padding: var(--size-4-4);
+	border-left: 4px solid var(--accent);
+	font-family: var(--font-body);
+	line-height: 1.6;
+}
+
+.eragear-copilot-root .reasoning-inner .markdown-text-renderer {
+	font-family: var(--font-body);
+	font-size: 0.95rem;
+	line-height: 1.6;
+}
+
+.eragear-copilot-root .reasoning-inner .markdown-text-renderer :is(p, ul, ol) {
+	margin-bottom: var(--size-4-2);
+}
+
+.eragear-copilot-root .reasoning-inner .markdown-text-renderer :last-child {
+	margin-bottom: 0;
+}
+
+.eragear-copilot-root .test-panel-modern-wrapper,
+.eragear-copilot-root .test-panel-layout-container,
+.eragear-copilot-root .test-panel-top-section,
+.eragear-copilot-root .test-panel-bottom-section {
+	background: var(--paper);
+	color: var(--ink);
+}
+
+.eragear-copilot-root .test-panel-bottom-section {
+	border-top: 2px solid var(--ink);
+}
+
+.eragear-copilot-root .action-card-icon {
+	background: var(--paper-dark);
+	border: 2px solid var(--ink);
+	border-radius: 0;
+	color: var(--ink);
+}
+
+.eragear-copilot-root .action-card-title,
+.eragear-copilot-root .action-card-group-title {
+	font-family: var(--font-ui-newsprint);
+	color: var(--ink);
+}
+
+.eragear-copilot-root .console-log-panel {
+	border: 0;
+	box-shadow: none;
+}
+
+/* --- Obsidian UI audit pass --- */
+.eragear-copilot-root :is(
+	button,
+	input,
+	textarea,
+	[tabindex],
+	[data-slot="select-trigger"],
+	[data-slot="combobox-item"],
+	[data-slot="select-item"],
+	.cui-button
+):focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 2px;
+	box-shadow: 3px 3px 0 var(--accent);
+}
+
+.eragear-copilot-root .eragear-input-container {
+	padding: var(--size-4-3);
+}
+
+.eragear-copilot-root .prompt-input-textarea[data-slot="input-group-textarea"] {
+	min-height: calc(var(--size-4-8) * 2);
+	max-height: calc(var(--size-4-12) * 3);
+	padding: var(--size-4-3);
+}
+
+.eragear-copilot-root .prompt-input-footer[data-slot="input-group-addon"] {
+	min-height: var(--size-4-10);
+	padding: var(--size-4-1) var(--size-4-2);
+}
+
+.eragear-copilot-root .eragear-empty-state {
+	width: min(100%, calc(var(--size-4-12) * 6));
+	padding: var(--size-4-4);
+	box-shadow: 3px 3px 0 var(--ink);
+}
+
+.eragear-copilot-root .eragear-empty-state p {
+	font-size: 0.95rem;
+}
+
+.eragear-copilot-root .eragear-empty-state-icon {
+	width: var(--cui-size-lg);
+	height: var(--cui-size-lg);
+}
+
+.eragear-copilot-root .tab-nav-trigger {
+	min-width: 0;
+	gap: var(--size-4-1);
+	overflow: hidden;
+	line-height: 1;
+}
+
+.eragear-copilot-root .tab-nav-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+}
+
+.eragear-copilot-root .tab-nav-icon svg {
+	display: block;
+}
+
+.eragear-copilot-root .tab-nav-label {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.eragear-copilot-root .hero-search-wrapper:focus-within,
+.eragear-copilot-root .search-input:focus {
+	border-color: var(--ink);
+	box-shadow: 3px 3px 0 var(--accent);
+}
+
+.eragear-copilot-root .test-panel-layout-container.has-collapsed-console .test-panel-bottom-section {
+	flex-basis: calc(var(--size-4-9) + 2px);
+	overflow: hidden;
+}
+
+.eragear-copilot-root .console-header {
+	height: var(--size-4-9);
+	background: var(--paper);
+	border-bottom: 2px solid var(--ink);
+	font-family: var(--font-ui-newsprint);
+}
+
+.eragear-copilot-root .console-empty {
+	padding: var(--size-4-6) var(--size-4-4);
+}
+
+.eragear-copilot-root .console-log-panel.is-collapsed,
+.eragear-copilot-root .console-body[hidden] {
+	overflow: hidden;
+	display: none;
+}
+
+.eragear-copilot-root .console-log-panel.is-collapsed {
+	display: flex;
+}
+
+.eragear-copilot-root
+	.eragear-input-section
+	.prompt-input-button.cui-button.input-group-button,
+.eragear-copilot-root
+	.eragear-input-section
+	.prompt-input-submit.cui-button.input-group-button {
+	width: var(--cui-touch-target);
+	min-width: var(--cui-touch-target);
+	height: var(--cui-touch-target);
+}
+
+.eragear-copilot-root
+	.eragear-input-section
+	.model-selector
+	[data-slot="input-group"] {
+	height: var(--cui-touch-target);
+}
+
+.eragear-copilot-root
+	.eragear-input-section
+	.model-selector
+	[data-slot="input-group-input"] {
+	height: var(--cui-touch-target);
+}
+
+.eragear-copilot-root
+	.eragear-input-section
+	.model-selector
+	[data-slot="input-group-button"].cui-button {
+	width: var(--cui-size-lg);
+	min-width: var(--cui-size-lg);
+	height: var(--cui-size-lg);
+}
+
+/* --- Neo-brutalist final system override --- */
+.eragear-copilot-root,
+.eragear-settings-container,
+.eragear-settings {
+	--nb-bg: #f4f1ea;
+	--nb-bg-dot: #d8d8d8;
+	--nb-surface: #ffffff;
+	--nb-surface-muted: #eae8e3;
+	--nb-ink: #000000;
+	--nb-muted: #5f5f5f;
+	--nb-yellow: #ffe066;
+	--nb-blue: #2563eb;
+	--nb-lime: #a6fa75;
+	--nb-pink: #f43f5e;
+	--nb-red: #ef4444;
+	--nb-code: #eae8e3;
+	--nb-shadow-sm: 2px 2px 0 var(--nb-ink);
+	--nb-shadow: 4px 4px 0 var(--nb-ink);
+	--nb-shadow-lg: 6px 6px 0 var(--nb-ink);
+
+	--paper: var(--nb-bg);
+	--paper-dark: var(--nb-surface-muted);
+	--ink: var(--nb-ink);
+	--accent: var(--nb-yellow);
+	--line: var(--nb-ink);
+	--shadow: var(--nb-shadow);
+	--result: var(--nb-blue);
+
+	--font-brand: "DM Serif Display", Georgia, serif;
+	--font-body: "Work Sans", var(--font-interface), sans-serif;
+	--font-ui-newsprint: "Space Mono", "Courier New", monospace;
+	--font-code: "Space Mono", "Courier New", monospace;
+}
+
+.eragear-copilot-root,
+.eragear-copilot-root *,
+.eragear-settings-container,
+.eragear-settings-container * {
+	box-sizing: border-box;
+}
+
+.eragear-copilot-root,
+.eragear-settings-container {
+	background: var(--nb-bg);
+	color: var(--nb-ink);
+	font-family: var(--font-body);
+}
+
+.eragear-copilot-root ::selection,
+.eragear-settings-container ::selection {
+	background: color-mix(in srgb, var(--nb-pink) 45%, transparent);
+}
+
+.eragear-copilot-root :is(button, input, textarea, select, code, pre, kbd),
+.eragear-settings-container :is(button, input, textarea, select, code, pre, kbd),
+.eragear-copilot-root :is([data-slot], .cui-button, .test-btn),
+.eragear-settings-container :is([data-slot], .cui-button, .test-btn) {
+	font-family: var(--font-ui-newsprint);
+}
+
+.eragear-copilot-root :is(h1, h2, h3, .brand, .eragear-chat-title),
+.eragear-settings-container :is(h1, h2, h3, .brand) {
+	font-family: var(--font-brand);
+	font-weight: 400;
+	letter-spacing: 0;
+}
+
+.eragear-copilot-root ::-webkit-scrollbar {
+	width: 12px;
+	height: 12px;
+}
+
+.eragear-copilot-root ::-webkit-scrollbar-track {
+	background: var(--nb-bg);
+	border-left: 2px solid var(--nb-ink);
+}
+
+.eragear-copilot-root ::-webkit-scrollbar-thumb {
+	background: var(--nb-ink);
+}
+
+.eragear-copilot-root :is(
+	.eragear-container,
+	.eragear-main,
+	.eragear-chat-area,
+	.eragear-tab-panel,
+	.test-panel-modern-wrapper,
+	.test-panel-layout-container,
+	.test-panel-top-section,
+	.test-panel-bottom-section,
+	[data-slot="tabs-content"]
+) {
+	background: var(--nb-bg);
+	color: var(--nb-ink);
+}
+
+.eragear-copilot-root .eragear-main {
+	border-left: 4px solid var(--nb-ink);
+}
+
+.eragear-copilot-root :is(
+	[data-slot="card"],
+	[data-slot="command"],
+	[data-slot="popover-content"],
+	[data-slot="select-content"],
+	[data-slot="combobox-content"],
+	[data-slot="hover-card-content"],
+	.cui-menu-content,
+	.cui-dialog-content,
+	.action-card,
+	.console-log-panel,
+	.global-context-bar,
+	.gcb-panel,
+	.suggestion-popover,
+	.test-results,
+	.test-output,
+	.eragear-empty-state,
+	.prompt-input-group
+) {
+	background: var(--nb-surface);
+	color: var(--nb-ink);
+	border: 4px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow);
+}
+
+.eragear-copilot-root :is(
+	button,
+	input,
+	textarea,
+	[tabindex],
+	[data-slot="select-trigger"],
+	[data-slot="combobox-item"],
+	[data-slot="select-item"],
+	.cui-button
+):focus-visible,
+.eragear-settings-container :is(button, input, textarea, select):focus-visible {
+	outline: 3px solid var(--nb-blue);
+	outline-offset: 3px;
+	box-shadow: var(--nb-shadow-sm);
+}
+
+.eragear-copilot-root :is(
+	.cui-button,
+	.test-btn,
+	.eragear-add-btn,
+	.prompt-input-button,
+	.prompt-input-submit,
+	.console-btn,
+	.search-btn,
+	.hero-search-btn,
+	[data-slot="select-trigger"],
+	[data-slot="combobox-item"],
+	[data-slot="select-item"],
+	.cui-menu-item,
+	.cui-menu-sub-trigger
+),
+.eragear-settings-container :is(button, input, select, textarea) {
+	border: 2px solid var(--nb-ink);
+	border-radius: 0;
+	background: var(--nb-surface);
+	color: var(--nb-ink);
+	box-shadow: var(--nb-shadow-sm);
+	font-family: var(--font-ui-newsprint);
+	font-weight: 700;
+}
+
+.eragear-copilot-root :is(
+	.cui-button,
+	.test-btn,
+	.eragear-add-btn,
+	.prompt-input-button,
+	.prompt-input-submit,
+	.console-btn,
+	.search-btn,
+	.hero-search-btn
+):hover:not(:disabled) {
+	background: var(--nb-yellow);
+	color: var(--nb-ink);
+	box-shadow: 1px 1px 0 var(--nb-ink);
+	transform: translate(2px, 2px);
+}
+
+.eragear-copilot-root :is(.cui-button-variant-default, .test-btn-primary),
+.eragear-copilot-root :is(
+	[data-slot="select-item"][data-highlighted],
+	[data-slot="combobox-item"][data-highlighted],
+	.cui-menu-item[data-highlighted],
+	.cui-menu-sub-trigger[data-highlighted],
+	.cui-menu-sub-trigger[data-open]
+) {
+	background: var(--nb-ink);
+	color: var(--nb-surface);
+	border-color: var(--nb-ink);
+	box-shadow: var(--nb-shadow);
+}
+
+.eragear-copilot-root :is(.cui-button-variant-destructive, .test-btn-danger),
+.eragear-copilot-root [data-slot="badge"][data-variant="destructive"] {
+	background: var(--nb-red);
+	color: var(--nb-surface);
+	border-color: var(--nb-ink);
+}
+
+.eragear-copilot-root [data-slot="badge"] {
+	background: var(--nb-surface);
+	color: var(--nb-ink);
+	border: 2px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow-sm);
+	font-family: var(--font-ui-newsprint);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+.eragear-copilot-root [data-slot="badge"][data-variant="secondary"] {
+	background: var(--nb-lime);
+}
+
+.eragear-copilot-root .eragear-main-tabs > [data-slot="tabs-list"],
+.eragear-copilot-root .eragear-chat-header,
+.eragear-copilot-root .eragear-input-container {
+	background: var(--nb-bg);
+	border-color: var(--nb-ink);
+}
+
+.eragear-copilot-root .eragear-main-tabs > [data-slot="tabs-list"] {
+	height: 64px;
+	padding: var(--size-4-2);
+	gap: var(--size-4-2);
+	border-bottom: 4px solid var(--nb-ink);
+}
+
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"] {
+	height: 44px;
+	min-width: min(46%, 240px);
+	background: var(--nb-bg);
+	border: 2px solid var(--nb-ink);
+	box-shadow: none;
+	font-family: var(--font-ui-newsprint);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"]:hover,
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"][data-selected],
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"][data-active],
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"][aria-selected="true"] {
+	background: var(--nb-ink);
+	color: var(--nb-surface);
+	box-shadow: var(--nb-shadow);
+}
+
+.eragear-copilot-root .eragear-chat-header {
+	min-height: 108px;
+	padding: var(--size-4-6) var(--size-4-6);
+	border-bottom: 4px solid var(--nb-ink);
+	box-shadow: 0 4px 0 var(--nb-ink);
+	z-index: 2;
+}
+
+.eragear-copilot-root .eragear-chat-heading {
+	gap: var(--size-4-4);
+	flex-wrap: wrap;
+}
+
+.eragear-copilot-root .eragear-chat-title {
+	font-size: 2.1rem;
+	line-height: 0.9;
+}
+
+.eragear-copilot-root .eragear-chat-status,
+.eragear-copilot-root .eragear-agent-name {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-4-1);
+	max-width: min(100%, 320px);
+	padding: var(--size-4-1) var(--size-4-3);
+	background: var(--nb-surface);
+	color: var(--nb-ink);
+	border: 2px solid var(--nb-ink);
+	box-shadow: var(--nb-shadow-sm);
+	font-family: var(--font-ui-newsprint);
+	font-size: 0.8rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.eragear-copilot-root .eragear-chat-status strong {
+	color: var(--nb-blue);
+	font-weight: 700;
+}
+
+.eragear-copilot-root .eragear-add-btn {
+	width: auto;
+	min-width: var(--cui-touch-target);
+	height: 56px;
+	gap: var(--size-4-2);
+	padding: 0 var(--size-4-4);
+	background: var(--nb-surface);
+	color: var(--nb-ink);
+	border: 2px solid var(--nb-ink);
+	box-shadow: var(--nb-shadow);
+	font-family: var(--font-ui-newsprint);
+	font-weight: 700;
+}
+
+.eragear-copilot-root .eragear-add-label {
+	display: inline;
+}
+
+.eragear-copilot-root .eragear-messages-wrapper {
+	background:
+		radial-gradient(var(--nb-bg-dot) 1px, transparent 1px),
+		var(--nb-bg);
+	background-size: 16px 16px;
+	border-bottom: 4px solid var(--nb-ink);
+}
+
+.eragear-copilot-root .eragear-messages {
+	width: 100%;
+	max-width: 960px;
+	margin: 0 auto;
+	gap: var(--size-4-8);
+	padding: var(--size-4-8) var(--size-4-6);
+}
+
+.eragear-copilot-root .eragear-message-group {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--size-4-3);
+	width: 100%;
+}
+
+.eragear-copilot-root .eragear-message-group.user {
+	justify-content: flex-end;
+}
+
+.eragear-copilot-root .eragear-message-group.assistant,
+.eragear-copilot-root .eragear-message-group.system {
+	justify-content: flex-start;
+}
+
+.eragear-copilot-root .eragear-message-avatar {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 48px;
+	height: 48px;
+	border: 2px solid var(--nb-ink);
+	border-radius: 999px;
+	box-shadow: var(--nb-shadow-sm);
+}
+
+.eragear-copilot-root .eragear-message-avatar.user {
+	background: var(--nb-surface);
+	color: var(--nb-ink);
+}
+
+.eragear-copilot-root .eragear-message-avatar.assistant {
+	background: var(--nb-ink);
+	color: var(--nb-surface);
+}
+
+.eragear-copilot-root .eragear-message-content {
+	width: auto;
+	max-width: min(82%, 760px);
+	overflow: visible;
+	padding: var(--size-4-5);
+	background: var(--nb-surface);
+	color: var(--nb-ink);
+	border: 4px solid var(--nb-ink);
+	border-radius: 0 18px 18px 18px;
+	box-shadow: var(--nb-shadow-lg);
+	font-family: var(--font-body);
+	font-size: 1rem;
+	line-height: 1.65;
+}
+
+.eragear-copilot-root .eragear-message-group.user .eragear-message-content {
+	background: var(--nb-yellow);
+	color: var(--nb-ink);
+	border-radius: 18px 0 18px 18px;
+	box-shadow: var(--nb-shadow);
+}
+
+.eragear-copilot-root .eragear-message-group.system .eragear-message-content {
+	width: 100%;
+	max-width: 100%;
+	background: var(--nb-surface);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow);
+}
+
+.eragear-copilot-root .eragear-message-meta {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	margin-bottom: var(--size-4-3);
+	padding-bottom: var(--size-4-1);
+	border-bottom: 2px solid color-mix(in srgb, var(--nb-ink) 22%, transparent);
+	color: var(--nb-blue);
+	font-family: var(--font-ui-newsprint);
+	font-size: 0.8rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.eragear-copilot-root .eragear-message-group.user .eragear-message-meta {
+	color: var(--nb-ink);
+}
+
+.eragear-copilot-root .eragear-message-verified {
+	display: inline-flex;
+	color: var(--nb-lime);
+	filter: drop-shadow(1px 1px 0 var(--nb-ink));
+}
+
+.eragear-copilot-root .markdown-text-renderer {
+	font-family: var(--font-body);
+	font-size: 1rem;
+	line-height: 1.65;
+}
+
+.eragear-copilot-root .markdown-text-renderer :is(p, ul, ol, blockquote) {
+	margin-top: 0;
+	margin-bottom: var(--size-4-3);
+}
+
+.eragear-copilot-root .markdown-text-renderer :last-child {
+	margin-bottom: 0;
+}
+
+.eragear-copilot-root .markdown-text-renderer :is(code, pre),
+.eragear-copilot-root .eragear-code-block {
+	font-family: var(--font-code);
+}
+
+.eragear-copilot-root .eragear-code-block {
+	overflow: hidden;
+	margin: var(--size-4-4) 0;
+	background: var(--nb-code);
+	border: 2px solid var(--nb-ink);
+	border-radius: 8px;
+	box-shadow: var(--nb-shadow-sm);
+}
+
+.eragear-copilot-root .eragear-code-block-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2) var(--size-4-4);
+	background: var(--nb-ink);
+	color: var(--nb-surface);
+	font-family: var(--font-code);
+	font-size: 0.78rem;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.eragear-copilot-root .eragear-code-block-copy {
+	height: 28px;
+	padding: 0 var(--size-4-2);
+	background: transparent;
+	color: var(--nb-surface);
+	border: 0;
+	box-shadow: none;
+	font-family: var(--font-code);
+	font-weight: 700;
+	cursor: var(--cursor);
+}
+
+.eragear-copilot-root .eragear-code-block-copy:hover {
+	color: var(--nb-yellow);
+}
+
+.eragear-copilot-root .eragear-code-block pre {
+	margin: 0;
+	padding: var(--size-4-4);
+	overflow-x: auto;
+	background: var(--nb-code);
+	color: var(--nb-pink);
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	font-family: var(--font-code);
+	font-size: 0.9rem;
+	line-height: 1.55;
+}
+
+.eragear-copilot-root .eragear-code-block code {
+	background: transparent;
+	color: inherit;
+	border: 0;
+	padding: 0;
+}
+
+.eragear-copilot-root .reasoning-block {
+	margin-block: var(--size-4-3);
+	overflow: hidden;
+	background: var(--nb-surface);
+	border: 2px solid var(--nb-ink);
+	border-radius: 8px;
+	box-shadow: var(--nb-shadow-sm);
+}
+
+.eragear-copilot-root .reasoning-trigger {
+	min-height: 44px;
+	padding: 0 var(--size-4-4);
+	background: var(--nb-code);
+	color: var(--nb-ink);
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	font-family: var(--font-code);
+}
+
+.eragear-copilot-root .reasoning-trigger:hover,
+.eragear-copilot-root .reasoning-trigger:focus-visible,
+.eragear-copilot-root .reasoning-block[data-open] .reasoning-trigger {
+	background: var(--nb-ink);
+	color: var(--nb-surface);
+}
+
+.eragear-copilot-root .reasoning-inner {
+	padding: var(--size-4-4);
+	border-left: 6px solid var(--nb-yellow);
+	font-family: var(--font-body);
+}
+
+.eragear-copilot-root .typing-indicator-content {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	width: auto;
+	min-width: 92px;
+	height: 60px;
+	padding: 0 var(--size-4-5);
+}
+
+.eragear-copilot-root .typing-dot {
+	width: 9px;
+	height: 9px;
+	background: var(--nb-ink);
+	border-radius: 999px;
+	animation: eragear-typing-bounce 1s infinite ease-in-out;
+}
+
+.eragear-copilot-root .typing-dot:nth-child(2) {
+	animation-delay: 0.12s;
+}
+
+.eragear-copilot-root .typing-dot:nth-child(3) {
+	animation-delay: 0.24s;
+}
+
+@keyframes eragear-typing-bounce {
+	0%,
+	80%,
+	100% {
+		transform: translateY(0);
+	}
+	40% {
+		transform: translateY(-6px);
+	}
+}
+
+.eragear-copilot-root .eragear-msg-actions {
+	gap: var(--size-4-1);
+	margin-top: var(--size-4-4);
+	padding-top: var(--size-4-3);
+	border-top: 2px solid color-mix(in srgb, var(--nb-ink) 16%, transparent);
+}
+
+.eragear-copilot-root .eragear-action-icon {
+	width: 36px;
+	height: 36px;
+	background: var(--nb-surface);
+	color: var(--nb-ink);
+	border: 2px solid var(--nb-ink);
+	box-shadow: none;
+}
+
+.eragear-copilot-root .eragear-action-icon:hover {
+	background: var(--nb-yellow);
+	color: var(--nb-ink);
+	box-shadow: var(--nb-shadow-sm);
+}
+
+.eragear-copilot-root .eragear-input-container {
+	padding: var(--size-4-4) var(--size-4-5);
+	background: var(--nb-surface);
+	border-top: 4px solid var(--nb-ink);
+	box-shadow: 0 -4px 0 var(--nb-ink);
+}
+
+.eragear-copilot-root .eragear-input-section {
+	width: min(100%, 960px);
+	margin: 0 auto;
+}
+
+.eragear-copilot-root .prompt-input-group[data-slot="input-group"] {
+	overflow: visible;
+	background: var(--nb-bg);
+	border: 4px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow);
+}
+
+.eragear-copilot-root .prompt-input-group[data-slot="input-group"]:focus-within {
+	background: var(--nb-surface);
+	box-shadow: var(--nb-shadow-lg);
+}
+
+.eragear-copilot-root .prompt-input-textarea[data-slot="input-group-textarea"] {
+	min-height: 72px;
+	max-height: 220px;
+	padding: var(--size-4-4);
+	border-bottom: 2px solid var(--nb-ink);
+	color: var(--nb-ink);
+	font-family: var(--font-code);
+	font-size: 0.95rem;
+	line-height: 1.45;
+}
+
+.eragear-copilot-root .prompt-input-textarea::placeholder {
+	color: var(--nb-muted);
+}
+
+.eragear-copilot-root .prompt-input-footer[data-slot="input-group-addon"] {
+	min-height: 64px;
+	padding: var(--size-4-2);
+	background: var(--nb-bg);
+	border-top: 0;
+}
+
+.eragear-copilot-root .prompt-input-tools {
+	gap: var(--size-4-2);
+}
+
+.eragear-copilot-root .prompt-input-button.cui-button,
+.eragear-copilot-root .prompt-input-submit.cui-button {
+	width: 54px;
+	min-width: 54px;
+	height: 54px;
+	border: 2px solid var(--nb-ink);
+	border-radius: 0;
+}
+
+.eragear-copilot-root .prompt-input-submit.cui-button:not(:disabled) {
+	background: var(--nb-ink);
+	color: var(--nb-surface);
+	border-color: var(--nb-ink);
+	box-shadow: var(--nb-shadow-sm);
+}
+
+.eragear-copilot-root .prompt-input-submit.cui-button:not(:disabled):hover {
+	background: var(--nb-lime);
+	color: var(--nb-ink);
+}
+
+.eragear-copilot-root .prompt-input-submit.cui-button:disabled {
+	background: var(--nb-surface);
+	color: var(--nb-muted);
+	border-color: color-mix(in srgb, var(--nb-ink) 24%, transparent);
+	box-shadow: none;
+}
+
+.eragear-copilot-root .model-selector {
+	min-width: min(300px, 42vw);
+}
+
+.eragear-copilot-root .model-selector [data-slot="input-group"] {
+	height: 54px;
+	background: var(--nb-bg);
+	border: 2px solid var(--nb-ink);
+	box-shadow: none;
+}
+
+.eragear-copilot-root .model-selector [data-slot="input-group"]:hover,
+.eragear-copilot-root .model-selector [data-slot="input-group"]:focus-within {
+	background: var(--nb-yellow);
+	box-shadow: var(--nb-shadow-sm);
+}
+
+.eragear-copilot-root .model-selector [data-slot="input-group-input"] {
+	height: 50px;
+	font-family: var(--font-code);
+	font-weight: 700;
+}
+
+.eragear-copilot-root .prompt-input-attachment,
+.eragear-copilot-root .prompt-input-attachment-hover,
+.eragear-copilot-root .prompt-input-select-trigger {
+	background: var(--nb-surface);
+	border: 2px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow-sm);
+}
+
+.eragear-copilot-root .output-message,
+.eragear-copilot-root .tool-call-card,
+.eragear-copilot-root .terminal-renderer {
+	background: var(--nb-surface);
+	color: var(--nb-ink);
+	border: 4px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow);
+	font-family: var(--font-code);
+}
+
+.eragear-copilot-root .output-message.output-info,
+.eragear-copilot-root .terminal-renderer-status.is-running {
+	background: var(--nb-blue);
+	color: var(--nb-surface);
+}
+
+.eragear-copilot-root .output-message.output-error,
+.eragear-copilot-root .output-message.output-warning {
+	border-color: var(--nb-ink);
+	color: var(--nb-red);
+}
+
+.eragear-copilot-root .tool-call-pre,
+.eragear-copilot-root .tool-call-diff,
+.eragear-copilot-root .terminal-renderer-output {
+	background: var(--nb-code);
+	color: var(--nb-ink);
+	border: 2px solid var(--nb-ink);
+	font-family: var(--font-code);
+}
+
+.eragear-copilot-root .terminal-renderer-output {
+	background: var(--nb-ink);
+	color: var(--nb-surface);
+}
+
+.eragear-copilot-root .test-panel-bottom-section {
+	border-top: 4px solid var(--nb-ink);
+}
+
+.eragear-copilot-root .action-card,
+.eragear-copilot-root .action-card-group {
+	background: var(--nb-surface);
+	border: 4px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow);
+}
+
+.eragear-copilot-root .action-card:hover {
+	background: var(--nb-yellow);
+	transform: translate(2px, 2px);
+	box-shadow: var(--nb-shadow-sm);
+}
+
+.eragear-copilot-root .action-card-icon {
+	background: var(--nb-lime);
+	border: 2px solid var(--nb-ink);
+	border-radius: 999px;
+	box-shadow: var(--nb-shadow-sm);
+	color: var(--nb-ink);
+}
+
+.eragear-copilot-root .action-card-title,
+.eragear-copilot-root .action-card-group-title,
+.eragear-copilot-root .console-label {
+	font-family: var(--font-code);
+	color: var(--nb-ink);
+	font-weight: 700;
+}
+
+.eragear-copilot-root .global-context-bar,
+.eragear-copilot-root .console-header {
+	background: var(--nb-bg);
+	border-bottom: 4px solid var(--nb-ink);
+	font-family: var(--font-code);
+}
+
+.eragear-copilot-root .console-log-panel {
+	background: var(--nb-surface);
+	border: 0;
+	box-shadow: none;
+}
+
+.eragear-copilot-root .console-log-item {
+	background: var(--nb-surface);
+	border: 2px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow-sm);
+}
+
+.eragear-copilot-root .console-count {
+	background: var(--nb-ink);
+	color: var(--nb-surface);
+	border-radius: 0;
+}
+
+.eragear-copilot-root .hero-search-wrapper,
+.eragear-copilot-root .search-input,
+.eragear-copilot-root .test-input,
+.eragear-copilot-root .test-textarea {
+	background: var(--nb-surface);
+	color: var(--nb-ink);
+	border: 2px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow-sm);
+	font-family: var(--font-code);
+}
+
+.eragear-copilot-root .hero-search-wrapper:focus-within,
+.eragear-copilot-root .search-input:focus,
+.eragear-copilot-root .test-input:focus,
+.eragear-copilot-root .test-textarea:focus {
+	border-color: var(--nb-ink);
+	box-shadow: var(--nb-shadow);
+}
+
+.eragear-copilot-root .suggestion-popover,
+.eragear-copilot-root .cui-menu-content,
+.eragear-copilot-root [data-slot="combobox-content"],
+.eragear-copilot-root [data-slot="select-content"],
+.eragear-copilot-root [data-slot="popover-content"],
+.eragear-copilot-root .cui-dialog-content {
+	background: var(--nb-surface);
+	border: 4px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow-lg);
+}
+
+.eragear-copilot-root .suggestion-command-item,
+.eragear-copilot-root :is([data-slot="combobox-item"], [data-slot="select-item"], .cui-menu-item) {
+	border: 2px solid transparent;
+	border-radius: 0;
+}
+
+.eragear-copilot-root .suggestion-command-item:hover,
+.eragear-copilot-root .suggestion-command-item[data-selected="true"],
+.eragear-copilot-root :is([data-slot="combobox-item"], [data-slot="select-item"], .cui-menu-item):hover {
+	background: var(--nb-yellow);
+	border-color: var(--nb-ink);
+	color: var(--nb-ink);
+}
+
+.eragear-copilot-root .suggestion-popover-icon {
+	background: var(--nb-surface);
+	border: 2px solid var(--nb-ink);
+	border-radius: 999px;
+	color: var(--nb-ink);
+	box-shadow: var(--nb-shadow-sm);
+}
+
+.eragear-settings-container,
+.eragear-settings,
+.eragear-chat-models {
+	background: var(--nb-bg) !important;
+	color: var(--nb-ink);
+	font-family: var(--font-body);
+}
+
+.eragear-settings :is(h1, h2, h3, h4),
+.eragear-chat-models :is(h1, h2, h3, h4) {
+	color: var(--nb-ink) !important;
+	font-family: var(--font-brand);
+	font-weight: 400;
+}
+
+.eragear-settings :is(button, input, select, textarea),
+.eragear-chat-models :is(button, input, select, textarea) {
+	background: var(--nb-surface) !important;
+	color: var(--nb-ink) !important;
+	border: 2px solid var(--nb-ink) !important;
+	border-radius: 0 !important;
+	box-shadow: var(--nb-shadow-sm) !important;
+	font-family: var(--font-code);
+}
+
+.eragear-settings :is(button):hover,
+.eragear-chat-models :is(button):hover {
+	background: var(--nb-yellow) !important;
+}
+
+.eragear-chat-models :is(table, thead, tbody, tr, td, th),
+.eragear-chat-models [style] {
+	border-color: var(--nb-ink) !important;
+	color: var(--nb-ink) !important;
+}
+
+@media (max-width: 720px) {
+	.eragear-copilot-root .eragear-chat-header {
+		min-height: 92px;
+		padding: var(--size-4-4);
+	}
+
+	.eragear-copilot-root .eragear-chat-title {
+		font-size: 1.65rem;
+	}
+
+	.eragear-copilot-root .eragear-add-label {
+		display: none;
+	}
+
+	.eragear-copilot-root .eragear-messages {
+		padding: var(--size-4-5) var(--size-4-3);
+		gap: var(--size-4-5);
+	}
+
+	.eragear-copilot-root .eragear-message-avatar {
+		width: 40px;
+		height: 40px;
+	}
+
+	.eragear-copilot-root .eragear-message-content {
+		max-width: calc(100% - 52px);
+		padding: var(--size-4-4);
+		font-size: 0.95rem;
+	}
+
+	.eragear-copilot-root .eragear-input-container {
+		padding: var(--size-4-3);
+	}
+
+	.eragear-copilot-root .prompt-input-footer[data-slot="input-group-addon"] {
+		flex-wrap: wrap;
+	}
+
+	.eragear-copilot-root .model-selector {
+		min-width: min(100%, 220px);
+	}
+}
+
+/* Final reasoning block lock: brutal system, not pill/newspaper styling. */
+.eragear-copilot-root .reasoning-block {
+	margin-block: var(--size-4-4);
+	overflow: hidden;
+	background: var(--nb-surface);
+	border: 4px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow);
+}
+
+.eragear-copilot-root .reasoning-trigger {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	min-height: 48px;
+	padding: 0 var(--size-4-4);
+	color: var(--nb-surface);
+	background: var(--nb-ink);
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	font-family: var(--font-code);
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.eragear-copilot-root .reasoning-trigger:hover,
+.eragear-copilot-root .reasoning-trigger:focus-visible,
+.eragear-copilot-root .reasoning-block[data-open] .reasoning-trigger {
+	color: var(--nb-ink);
+	background: var(--nb-yellow);
+	box-shadow: none;
+}
+
+.eragear-copilot-root .reasoning-content {
+	background: var(--nb-surface);
+	border-top: 4px solid var(--nb-ink);
+}
+
+.eragear-copilot-root .reasoning-inner {
+	padding: var(--size-4-5);
+	border-left: 8px solid var(--nb-red);
+	font-family: var(--font-body);
+	font-size: 1rem;
+	line-height: 1.65;
+}
+
+.eragear-copilot-root .tab-navigation {
+	justify-content: flex-start;
+	width: 100%;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scrollbar-width: thin;
+}
+
+.eragear-copilot-root .tab-navigation .tab-nav-trigger {
+	flex: 1 1 0;
+	min-width: 104px;
+	overflow: visible;
+	padding-inline: var(--size-4-3);
+}
+
+.eragear-copilot-root .tab-navigation .tab-nav-label {
+	min-width: auto;
+	overflow: visible;
+	text-overflow: clip;
+	white-space: nowrap;
 }

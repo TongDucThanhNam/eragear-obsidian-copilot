@@ -1,80 +1,91 @@
-/* Collapsible Component - Base UI wrapper with Obsidian theme */
-
-/* Root */
-.collapsible {
+.eragear-copilot-root .cui-collapsible {
 	display: flex;
 	flex-direction: column;
 	width: 100%;
 }
 
-/* Trigger */
-.collapsible-trigger {
+.eragear-copilot-root .cui-collapsible-trigger {
 	display: flex;
 	align-items: center;
 	gap: var(--size-4-2);
-	margin: 0;
-	border: 0;
-	outline: 0;
-	padding: var(--size-4-2) var(--size-4-3);
-	border-radius: var(--radius-s);
-	background-color: transparent;
-	color: var(--text-normal);
-	font-family: inherit;
-	font-size: 0.85rem;
-	line-height: 1.25rem;
-	font-weight: 500;
-	cursor: var(--cursor);
-	transition: background-color 0.15s ease;
 	width: 100%;
+	margin: 0;
+	padding: var(--size-4-2) var(--size-4-3);
+	color: var(--cui-text);
+	background: transparent;
+	border: 0;
+	border-radius: var(--cui-radius-sm);
+	outline: 0;
+	font-family: inherit;
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-medium);
+	line-height: var(--line-height-tight);
 	text-align: left;
+	cursor: var(--cui-cursor);
+	transition: background-color var(--anim-duration-fast) ease;
 }
 
-.collapsible-trigger:hover {
-	background-color: var(--background-modifier-hover);
+.eragear-copilot-root .cui-collapsible-trigger:hover {
+	background: var(--cui-bg-hover);
 }
 
-.collapsible-trigger:active {
-	background-color: var(--background-modifier-border);
+.eragear-copilot-root .cui-collapsible-trigger:active {
+	background: var(--cui-border);
 }
 
-.collapsible-trigger:focus-visible {
-	outline: 2px solid var(--interactive-accent);
-	outline-offset: -2px;
+.eragear-copilot-root .cui-collapsible-trigger:focus-visible {
+	outline: var(--size-4-1) solid var(--cui-accent);
+	outline-offset: calc(var(--size-4-1) * -1);
 }
 
-.collapsible-trigger[data-open] .collapsible-icon {
+.eragear-copilot-root
+	.cui-collapsible-trigger[data-open]
+	.cui-collapsible-icon {
 	transform: rotate(90deg);
 }
 
-/* Icon */
-.collapsible-icon {
+.eragear-copilot-root .cui-collapsible-icon {
 	display: flex;
+	flex-shrink: 0;
 	align-items: center;
 	justify-content: center;
 	width: var(--size-4-4);
 	height: var(--size-4-4);
-	color: var(--text-muted);
-	transition: transform 0.2s ease;
-	flex-shrink: 0;
+	color: var(--cui-text-muted);
+	transition: transform var(--cui-transition);
 }
 
-/* Panel */
-.collapsible-panel {
+.eragear-copilot-root .cui-collapsible-panel {
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
 	overflow: hidden;
-	font-size: 0.875rem;
-	line-height: 1.25rem;
-	transition: all 0.2s ease-out;
 	padding: 0;
+	font-size: var(--font-ui-medium);
+	line-height: var(--line-height-tight);
+	transition: height var(--cui-transition);
 }
 
-.collapsible-panel[data-starting-style],
-.collapsible-panel[data-ending-style] {
+.eragear-copilot-root .cui-collapsible-panel[data-starting-style],
+.eragear-copilot-root .cui-collapsible-panel[data-ending-style] {
 	height: 0;
 }
 
-.collapsible-panel[hidden] {
+.eragear-copilot-root .cui-collapsible-panel[hidden] {
 	display: none;
+}
+
+/* Neo-brutalist hardening */
+.eragear-copilot-root .cui-collapsible-trigger {
+	border-radius: 0;
+	font-family: var(--font-code);
+	font-weight: 700;
+}
+
+.eragear-copilot-root .cui-collapsible-trigger:hover {
+	background: var(--nb-yellow);
+}
+
+.eragear-copilot-root .cui-collapsible-trigger:focus-visible {
+	outline: 3px solid var(--nb-yellow);
 }

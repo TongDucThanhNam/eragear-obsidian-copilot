@@ -1,136 +1,191 @@
-[data-slot="command"] {
-	background-color: var(--background-primary);
-	color: var(--text-normal);
-	border-radius: var(--radius-l);
-	border: 1px solid var(--background-modifier-border);
-	box-shadow: var(--shadow-l);
+.eragear-copilot-root [data-slot="command"] {
 	display: flex;
 	flex-direction: column;
 	gap: 0;
-	width: min(420px, 100%);
+	width: min(calc(var(--size-4-8) * 13), 100%);
 	overflow: hidden;
+	color: var(--cui-text);
+	background: var(--cui-bg);
+	border: var(--border-width) solid var(--cui-border);
+	border-radius: var(--cui-radius-lg);
+	box-shadow: var(--cui-shadow-lg);
 }
 
-[data-slot="command-input-wrapper"] {
-	border-bottom: 1px solid var(--background-modifier-border);
+.eragear-copilot-root [data-slot="command-input-wrapper"] {
 	padding: var(--size-4-2);
-	background: var(--background-primary);
+	background: var(--cui-bg);
+	border-bottom: var(--border-width) solid var(--cui-border);
 }
 
-[data-slot="command-input"] {
+.eragear-copilot-root [data-slot="command-input"] {
 	width: 100%;
-	font-size: var(--font-ui-medium);
+	padding: 0;
+	color: var(--cui-text);
 	background: transparent;
 	border: none;
-	padding: 0;
-	color: var(--text-normal);
-	line-height: 1.5;
+	font-size: var(--font-ui-medium);
+	line-height: var(--line-height-normal);
 }
 
-[data-slot="command-input"]::placeholder {
-	color: var(--text-faint);
+.eragear-copilot-root [data-slot="command-input"]::placeholder {
+	color: var(--cui-text-faint);
 }
 
-[data-slot="command-input"]:focus-visible {
+.eragear-copilot-root [data-slot="command-input"]:focus-visible {
 	outline: none;
 }
 
-[data-slot="command-list"] {
-	max-height: 320px;
-	overflow-y: auto;
-	padding: var(--size-4-2) 0;
+.eragear-copilot-root [data-slot="command-list"] {
+	max-height: calc(var(--size-4-8) * 10);
 	margin: 0;
+	padding: var(--size-4-2) 0;
+	overflow-y: auto;
 }
 
-[data-slot="command-list"]::-webkit-scrollbar {
-	width: 4px;
+.eragear-copilot-root [data-slot="command-list"]::-webkit-scrollbar {
+	width: var(--size-4-1);
 }
 
-[data-slot="command-list"]::-webkit-scrollbar-thumb {
-	background-color: var(--background-modifier-border);
-	border-radius: var(--radius-m);
+.eragear-copilot-root [data-slot="command-list"]::-webkit-scrollbar-thumb {
+	background: var(--cui-border);
+	border-radius: var(--cui-radius);
 }
 
-[data-slot="command-group"] {
+.eragear-copilot-root [data-slot="command-group"] {
 	padding: 0;
 }
 
-[data-slot="command-group"] [cmdk-group-heading] {
+.eragear-copilot-root [data-slot="command-group"] [cmdk-group-heading] {
 	display: block;
 	padding: var(--size-4-4) var(--size-4-4) var(--size-4-2);
-	font-size: 10px;
-	font-weight: 700;
-	color: var(--text-faint);
+	color: var(--cui-text-faint);
+	font-size: var(--font-ui-smallest);
+	font-weight: var(--font-bold);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 }
 
-[data-slot="command-separator"] {
-	height: 1px;
-	background-color: var(--background-modifier-border);
+.eragear-copilot-root [data-slot="command-separator"] {
+	height: var(--border-width);
 	margin: var(--size-4-2) var(--size-4-4);
+	background: var(--cui-border);
 	opacity: 0.5;
 }
 
-[data-slot="command-item"] {
+.eragear-copilot-root [data-slot="command-item"] {
 	position: relative;
 	display: flex;
 	align-items: center;
 	gap: var(--size-4-3);
+	margin: var(--size-2-1) var(--size-4-2);
 	padding: var(--size-4-2) var(--size-4-4);
-	border-radius: var(--radius-m);
+	color: var(--cui-text);
+	border: var(--border-width) solid transparent;
+	border-radius: var(--cui-radius);
 	font-size: var(--font-ui-small);
-	color: var(--text-normal);
-	cursor: var(--cursor);
-	margin: 2px var(--size-4-2);
-	transition: all 0.1s ease-in-out;
-	border: 1px solid transparent;
+	cursor: var(--cui-cursor);
+	transition:
+		background-color var(--anim-duration-fast) ease-in-out,
+		border-color var(--anim-duration-fast) ease-in-out;
 }
 
-[data-slot="command-item"] svg:not([class*="size-"]) {
-	width: 18px;
-	height: 18px;
-	color: var(--text-muted);
+.eragear-copilot-root [data-slot="command-item"] svg:not([class*="size-"]) {
+	width: var(--icon-size-s);
+	height: var(--icon-size-s);
+	color: var(--cui-text-muted);
 }
 
-[data-slot="command-item"][data-selected="true"],
-[data-slot="command-item"][aria-selected="true"] {
-	background-color: var(--background-modifier-hover);
-	border-color: var(--background-modifier-border);
+.eragear-copilot-root [data-slot="command-item"][data-selected="true"],
+.eragear-copilot-root [data-slot="command-item"][aria-selected="true"] {
+	background: var(--cui-bg-hover);
+	border-color: var(--cui-border);
 }
 
-[data-slot="command-item"][data-disabled="true"] {
+.eragear-copilot-root [data-slot="command-item"][data-disabled="true"] {
 	pointer-events: none;
 	opacity: 0.3;
 }
 
-[data-slot="command-shortcut"] {
+.eragear-copilot-root [data-slot="command-shortcut"] {
 	margin-left: auto;
-	font-size: 10px;
-	font-weight: 600;
-	color: var(--text-faint);
+	padding: 0 var(--size-4-1);
+	color: var(--cui-text-faint);
+	background: var(--cui-bg-2);
+	border: var(--border-width) solid var(--cui-border);
+	border-radius: var(--cui-radius-sm);
+	font-size: var(--font-ui-smallest);
+	font-weight: var(--font-semibold, 600);
 	letter-spacing: 0.05em;
-	padding: 2px 4px;
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-s);
 }
 
-[data-slot="command-empty"] {
+.eragear-copilot-root [data-slot="command-empty"] {
 	padding: var(--size-4-12);
-	text-align: center;
+	color: var(--cui-text-muted);
 	font-size: var(--font-ui-small);
-	color: var(--text-muted);
+	text-align: center;
 }
 
-[data-slot="command-item"] .command-check-icon {
-	width: 14px;
-	height: 14px;
-	margin-left: auto;
-	color: var(--interactive-accent);
+.eragear-copilot-root [data-slot="command-item"] .command-check-icon {
 	display: none;
+	width: var(--icon-size-s);
+	height: var(--icon-size-s);
+	margin-left: auto;
+	color: var(--cui-accent);
 }
 
-[data-slot="command-item"][data-selected="true"] .command-check-icon {
+.eragear-copilot-root
+	[data-slot="command-item"][data-selected="true"]
+	.command-check-icon {
 	display: block;
+}
+
+.eragear-copilot-root .cui-command-input-icon {
+	flex-shrink: 0;
+	width: var(--icon-size-s);
+	height: var(--icon-size-s);
+	color: var(--cui-text-muted);
+	opacity: 0.5;
+}
+
+/* Neo-brutalist hardening */
+.eragear-copilot-root [data-slot="command"] {
+	background: var(--nb-surface);
+	border: 4px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow-lg);
+}
+
+.eragear-copilot-root [data-slot="command-input-wrapper"] {
+	background: var(--nb-surface);
+	border-bottom: 2px solid var(--nb-ink);
+}
+
+.eragear-copilot-root [data-slot="command-input"],
+.eragear-copilot-root [data-slot="command-group"] [cmdk-group-heading],
+.eragear-copilot-root [data-slot="command-item"],
+.eragear-copilot-root [data-slot="command-shortcut"] {
+	font-family: var(--font-code);
+}
+
+.eragear-copilot-root [data-slot="command-item"] {
+	border: 2px solid transparent;
+	border-radius: 0;
+	font-weight: 700;
+}
+
+.eragear-copilot-root [data-slot="command-item"][data-selected="true"],
+.eragear-copilot-root [data-slot="command-item"][aria-selected="true"] {
+	background: var(--nb-yellow);
+	border-color: var(--nb-ink);
+}
+
+.eragear-copilot-root [data-slot="command-separator"] {
+	height: 2px;
+	background: var(--nb-ink);
+}
+
+.eragear-copilot-root [data-slot="command-shortcut"] {
+	background: var(--nb-yellow);
+	border: 2px solid var(--nb-ink);
+	border-radius: 0;
 }

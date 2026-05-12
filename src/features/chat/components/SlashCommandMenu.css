@@ -5,10 +5,10 @@
 	bottom: 80px;
 	left: 1.25rem;
 	right: 1.25rem;
-	background-color: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 0.75rem;
-	box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+	background-color: var(--paper);
+	border: 2px solid var(--ink);
+	border-radius: 0;
+	box-shadow: var(--shadow);
 	z-index: 1000;
 	overflow: hidden;
 	animation: slideUpShort 0.2s ease-out;
@@ -45,7 +45,7 @@
 
 .slash-command-name {
 	font-weight: 700;
-	color: var(--interactive-accent);
+	color: var(--accent);
 	min-width: 60px;
 }
 

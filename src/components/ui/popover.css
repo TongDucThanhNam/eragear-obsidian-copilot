@@ -1,45 +1,82 @@
-[data-slot="popover-content"] {
+.eragear-copilot-root [data-slot="popover-content"] {
 	position: relative;
-	z-index: 50;
-	width: 18rem;
-	border-radius: 0;
-	border: 1px solid rgba(var(--foreground), 0.1);
-	background-color: var(--bg-popover);
-	color: var(--text-popover-foreground);
-	padding: 0.625rem;
-	font-size: 0.75rem;
-	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+	z-index: var(--cui-overlay-z-index);
+	width: min(calc(var(--size-4-8) * 9), calc(100vw - var(--size-4-4)));
+	max-height: var(--available-height, calc(var(--size-4-8) * 10));
+	padding: var(--size-4-3);
 	display: flex;
 	flex-direction: column;
-	gap: 0.625rem;
+	gap: var(--size-4-3);
+	color: var(--cui-text);
+	background: var(--cui-bg);
+	border: var(--border-width) solid var(--cui-border);
+	border-radius: var(--cui-radius);
+	box-shadow: var(--cui-shadow-lg);
 	outline: none;
 	transform-origin: var(--transform-origin);
-	animation: popoverFadeIn 0.1s ease;
+	animation: cui-popover-in var(--anim-duration-fast) ease-out;
 }
 
-@keyframes popoverFadeIn {
+.eragear-copilot-root .cui-popover-positioner {
+	z-index: var(--cui-overlay-z-index);
+	outline: none;
+}
+
+.eragear-copilot-root [data-slot="popover-content"][data-ending-style] {
+	animation: cui-popover-out var(--anim-duration-fast) ease-out;
+}
+
+@keyframes cui-popover-in {
 	from {
 		opacity: 0;
+		transform: scale(0.98);
 	}
 	to {
 		opacity: 1;
+		transform: scale(1);
 	}
 }
 
-[data-slot="popover-header"] {
+@keyframes cui-popover-out {
+	from {
+		opacity: 1;
+		transform: scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: scale(0.98);
+	}
+}
+
+.eragear-copilot-root [data-slot="popover-header"] {
 	display: flex;
 	flex-direction: column;
-	gap: 0.25rem;
-	font-size: 0.75rem;
+	gap: var(--size-4-1);
+	font-size: var(--font-ui-small);
 }
 
-[data-slot="popover-title"] {
-	font-size: 0.875rem;
-	font-weight: 500;
+.eragear-copilot-root [data-slot="popover-title"] {
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-medium);
 }
 
-[data-slot="popover-description"] {
-	font-size: 0.75rem;
-	line-height: 1.5;
-	color: var(--text-muted-foreground);
+.eragear-copilot-root [data-slot="popover-description"] {
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-small);
+	line-height: var(--line-height-normal);
+}
+
+/* Neo-brutalist hardening */
+.eragear-copilot-root [data-slot="popover-content"] {
+	background: var(--nb-surface);
+	border: 4px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow-lg);
+}
+
+.eragear-copilot-root [data-slot="popover-title"] {
+	font-family: var(--font-code);
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
 }

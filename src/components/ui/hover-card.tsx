@@ -4,6 +4,7 @@ import type * as React from "react";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { useCallback, useState } from "react";
 import "./hover-card.css";
+import { usePortalContainer } from "./portal-provider";
 
 function classNames(...classes: (string | undefined | null | false)[]): string {
 	return classes.filter(Boolean).join(" ");
@@ -85,14 +86,16 @@ export function HoverCardContent({
 	sideOffset = 4,
 	...props
 }: HoverCardContentProps) {
+	const portalContainer = usePortalContainer();
+
 	return (
-		<PopoverPrimitive.Portal>
+		<PopoverPrimitive.Portal container={portalContainer}>
 			<PopoverPrimitive.Positioner
 				align={align}
 				alignOffset={alignOffset}
 				side={side}
 				sideOffset={sideOffset}
-				className="isolate z-50"
+				className="cui-hover-card-positioner"
 			>
 				<PopoverPrimitive.Popup
 					data-slot="hover-card-content"

@@ -1,7 +1,9 @@
 import type { App } from "obsidian";
 import type React from "react";
+import "@/components/ui/tokens.css";
 import { PortalProvider } from "@/components/ui/portal-provider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { IconMessage, IconWrench } from "@/components/ui/Icons";
 import type EragearPlugin from "@/main";
 import { ChatPanel } from "@/features/chat/ChatPanel";
 import { TestPanel } from "@/features/test-panel/TestPanel";
@@ -25,10 +27,12 @@ export const EragearComponent: React.FC<EragearComponentProps> = ({
 						<Tabs defaultValue="chat" className="eragear-main-tabs">
 							<TabsList className="">
 								<TabsTrigger value="chat" className="">
-									💬 Chat
+									<IconMessage />
+									<span>Chat</span>
 								</TabsTrigger>
 								<TabsTrigger value="playground" className="">
-									🛠️ Playground
+									<IconWrench />
+									<span>Playground</span>
 								</TabsTrigger>
 							</TabsList>
 

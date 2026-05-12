@@ -7,6 +7,7 @@ import type { App } from "obsidian";
 import type React from "react";
 import { useState } from "react";
 import { ActionCard, ActionCardGroup } from "@/features/test-panel/components/ActionCard";
+import { IconFileText, IconFolder } from "@/components/ui/Icons";
 import { useFileOperations } from "@/features/test-panel/hooks/useFileOperations";
 import type { FilesState } from "@/features/test-panel/types";
 
@@ -39,7 +40,7 @@ export const FilesTab: React.FC<FilesTabProps> = ({ app, onAddOutput }) => {
 		setIsLoading(true);
 		try {
 			if (!filesState.dirPath.trim()) {
-				onAddOutput("✗ listFilesInDir()", "Enter directory path", "info");
+				onAddOutput("listFilesInDir()", "Enter directory path", "info");
 				return;
 			}
 			await fileOps.listFilesInDir(filesState.dirPath);
@@ -50,13 +51,16 @@ export const FilesTab: React.FC<FilesTabProps> = ({ app, onAddOutput }) => {
 
 	return (
 		<div className="test-section">
-			<h3>🗂️ Files & Organization</h3>
+			<h3>
+				<IconFolder />
+				Files and organization
+			</h3>
 
 			<ActionCardGroup title="Vault Navigation">
 				<ActionCard
 					title="List Vault Root"
 					description="All files & folders"
-					icon="📂"
+					icon={<IconFolder />}
 					variant="safe"
 				>
 					<button
@@ -73,7 +77,7 @@ export const FilesTab: React.FC<FilesTabProps> = ({ app, onAddOutput }) => {
 				<ActionCard
 					title="List Directory"
 					description="Files in folder"
-					icon="📁"
+					icon={<IconFileText />}
 					variant="safe"
 				>
 					<div className="test-input-group">

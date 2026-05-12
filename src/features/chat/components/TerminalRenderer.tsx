@@ -32,14 +32,7 @@ export const TerminalRenderer: React.FC<TerminalRendererProps> = ({
 	const [isCancelled, setIsCancelled] = useState(false);
 	const intervalRef = useRef<number | null>(null);
 
-	console.log(
-		`[TerminalRenderer] Component rendered for terminal ${terminalId}, adapter: ${!!acpAdapter}`,
-	);
-
 	useEffect(() => {
-		console.log(
-			`[TerminalRenderer] useEffect triggered for ${terminalId}, adapter: ${!!acpAdapter}`,
-		);
 		if (!terminalId || !acpAdapter) return;
 
 		const pollOutput = async () => {
@@ -48,10 +41,6 @@ export const TerminalRenderer: React.FC<TerminalRendererProps> = ({
 					terminalId,
 					sessionId: "",
 				});
-				console.log(
-					`[TerminalRenderer] Poll result for ${terminalId}:`,
-					result,
-				);
 				setOutput(result.output);
 				if (result.exitStatus) {
 					setExitStatus({
@@ -67,10 +56,6 @@ export const TerminalRenderer: React.FC<TerminalRendererProps> = ({
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error ? error.message : String(error);
-
-				console.log(
-					`[TerminalRenderer] Polling error for terminal ${terminalId}: ${errorMessage}`,
-				);
 
 				// If terminal not found and no exit status was captured, it was likely cancelled
 				if (errorMessage.includes("not found") && !exitStatus) {
@@ -110,79 +95,32 @@ export const TerminalRenderer: React.FC<TerminalRendererProps> = ({
 	}, [isRunning]);
 
 	return (
-		<div
-			className="terminal-renderer"
-			style={{
-				padding: "12px",
-				marginTop: "4px",
-				backgroundColor: "var(--background-secondary)",
-				border: "1px solid var(--background-modifier-border)",
-				borderRadius: "8px",
-				fontSize: "12px",
-				fontFamily: "var(--font-monospace)",
-				userSelect: "text",
-			}}
-		>
-			<div
-				className="terminal-renderer-header"
-				style={{
-					fontWeight: "bold",
-					marginBottom: "8px",
-					display: "flex",
-					alignItems: "center",
-					gap: "8px",
-					fontFamily: "var(--font-interface)",
-				}}
-			>
-				🖥️ Terminal {terminalId.slice(0, 8)}
+		<div className="terminal-renderer">
+			<div className="terminal-renderer-header">
+				<span>Terminal {terminalId.slice(0, 8)}</span>
 				{isRunning ? (
-					<span style={{ fontSize: "10px", color: "var(--color-green)" }}>
-						● RUNNING
+					<span className="terminal-renderer-status is-running">
+						Running
 					</span>
 				) : isCancelled ? (
-					<span style={{ fontSize: "10px", color: "var(--color-orange)" }}>
-						● CANCELLED
+					<span className="terminal-renderer-status is-cancelled">
+						Cancelled
 					</span>
 				) : (
-					<span style={{ fontSize: "10px", color: "var(--text-muted)" }}>
-						● FINISHED
+					<span className="terminal-renderer-status is-finished">
+						Finished
 					</span>
 				)}
 			</div>
 
-			<div
-				className="terminal-renderer-output"
-				style={{
-					backgroundColor: "var(--background-primary)",
-					padding: "8px",
-					borderRadius: "4px",
-					border: "1px solid var(--background-modifier-border)",
-					minHeight: "50px",
-					maxHeight: "300px",
-					overflow: "auto",
-					whiteSpace: "pre-wrap",
-					wordBreak: "break-word",
-				}}
-			>
+			<div className="terminal-renderer-output">
 				{output || (isRunning ? "Waiting for output..." : "No output")}
 			</div>
 
 			{exitStatus && (
 				<div
 					className="terminal-renderer-exit"
-					style={{
-						marginTop: "8px",
-						padding: "4px 8px",
-						color: "white",
-						borderRadius: "4px",
-						fontSize: "11px",
-						fontFamily: "var(--font-interface)",
-						backgroundColor:
-							exitStatus.exitCode === 0
-								? "var(--color-green)"
-								: "var(--color-red)",
-						display: "inline-block",
-					}}
+					data-status={exitStatus.exitCode === 0 ? "complete" : "failed"}
 				>
 					Exit Code: {exitStatus.exitCode}
 					{exitStatus.signal && ` | Signal: ${exitStatus.signal}`}

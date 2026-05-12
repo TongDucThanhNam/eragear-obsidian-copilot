@@ -28,7 +28,7 @@ function CollapsibleRoot({
 	disabled,
 	...props
 }: CollapsibleRootProps) {
-	const collapsibleClass = classNames("collapsible", className);
+	const collapsibleClass = classNames("cui-collapsible", className);
 
 	return (
 		<Collapsible.Root
@@ -53,10 +53,10 @@ interface CollapsibleTriggerProps {
 function CollapsibleTrigger({
 	className,
 	children,
-	asChild = true,
+	asChild: _asChild = true,
 	...props
 }: CollapsibleTriggerProps) {
-	const triggerClass = classNames("collapsible-trigger", className);
+	const triggerClass = classNames("cui-collapsible-trigger", className);
 
 	return (
 		<Collapsible.Trigger className={triggerClass} {...props}>
@@ -72,7 +72,7 @@ interface CollapsiblePanelProps {
 }
 
 function CollapsiblePanel({ className, children, hidden, ...props }: CollapsiblePanelProps) {
-	const panelClass = classNames("collapsible-panel", className);
+	const panelClass = classNames("cui-collapsible-panel", className);
 
 	return (
 		<Collapsible.Panel className={panelClass} hidden={hidden} {...props}>

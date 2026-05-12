@@ -72,7 +72,7 @@ export const OperationsTab: React.FC<OperationsTabProps> = ({
 		try {
 			const path = opsState.getContentsPath || selectedFile?.path;
 			if (!path?.trim()) {
-				onAddOutput("✗ getFileContents()", "Select a file first", "info");
+				onAddOutput("getFileContents()", "Select a file first", "info");
 				return;
 			}
 			await fileOps.getFileContents(path);
@@ -87,7 +87,7 @@ export const OperationsTab: React.FC<OperationsTabProps> = ({
 			const path = opsState.appendContentPath || selectedFile?.path;
 			if (!path?.trim() || !opsState.appendText.trim()) {
 				onAddOutput(
-					"✗ appendContent()",
+					"appendContent()",
 					"Select file and enter content",
 					"info",
 				);
@@ -105,7 +105,7 @@ export const OperationsTab: React.FC<OperationsTabProps> = ({
 		try {
 			const path = opsState.patchContentPath || selectedFile?.path;
 			if (!path?.trim()) {
-				onAddOutput("✗ patchContent()", "Select a file first", "info");
+				onAddOutput("patchContent()", "Select a file first", "info");
 				return;
 			}
 			await fileOps.patchContent(path);
@@ -119,7 +119,7 @@ export const OperationsTab: React.FC<OperationsTabProps> = ({
 		try {
 			const path = opsState.deleteFilePath || selectedFile?.path;
 			if (!path?.trim()) {
-				onAddOutput("✗ deleteFile()", "Select a file first", "info");
+				onAddOutput("deleteFile()", "Select a file first", "info");
 				return;
 			}
 			await fileOps.deleteFile(path);

@@ -77,7 +77,7 @@ export const ConsoleLogItem: React.FC<ConsoleLogItemProps> = ({
 			{/* Log Item Header */}
 			<CollapsibleTrigger>
 				<div className="log-header" aria-label={`${output.title}, ${status.label} result`}>
-					<span className="collapsible-icon">
+					<span className="cui-collapsible-icon">
 						<CaretRightIcon size={16} />
 					</span>
                         <span className="log-title">{output.title}</span>

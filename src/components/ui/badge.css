@@ -1,57 +1,82 @@
-[data-slot="badge"] {
+.eragear-copilot-root [data-slot="badge"] {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 0.25rem;
-	height: 1.25rem;
-	padding: 0.125rem 0.5rem;
-	border-radius: 0;
-	border: 1px solid transparent;
-	font-size: 0.75rem;
-	font-weight: 500;
-	white-space: nowrap;
+	gap: var(--size-4-1);
 	width: fit-content;
-	transition: all 0.2s ease;
-	outline: none;
+	min-height: var(--cui-size-xs);
+	padding: 0 var(--size-4-2);
 	overflow: hidden;
+	color: var(--cui-text);
+	background: transparent;
+	border: var(--border-width) solid transparent;
+	border-radius: var(--cui-radius-sm);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-medium);
+	white-space: nowrap;
+	outline: none;
 }
 
-[data-slot="badge"][data-variant="default"] {
-	background-color: var(--bg-primary);
-	color: var(--text-primary-foreground);
+.eragear-copilot-root [data-slot="badge"][data-variant="default"] {
+	color: var(--cui-accent-text);
+	background: var(--cui-accent);
 }
 
-[data-slot="badge"][data-variant="secondary"] {
-	background-color: var(--bg-secondary);
-	color: var(--text-secondary-foreground);
+.eragear-copilot-root [data-slot="badge"][data-variant="secondary"] {
+	color: var(--cui-text);
+	background: var(--cui-bg-2);
 }
 
-[data-slot="badge"][data-variant="destructive"] {
-	background-color: rgba(var(--destructive), 0.1);
-	color: var(--text-destructive);
-	border-color: var(--border-destructive);
+.eragear-copilot-root [data-slot="badge"][data-variant="destructive"] {
+	color: var(--cui-destructive);
+	background: var(--cui-destructive-bg);
+	border-color: var(--cui-destructive);
 }
 
-[data-slot="badge"][data-variant="outline"] {
-	background-color: transparent;
-	color: var(--text-foreground);
-	border-color: var(--border-border);
+.eragear-copilot-root [data-slot="badge"][data-variant="outline"] {
+	color: var(--cui-text);
+	border-color: var(--cui-border);
 }
 
-[data-slot="badge"][data-variant="ghost"] {
-	background-color: transparent;
-	color: var(--text-foreground);
+.eragear-copilot-root [data-slot="badge"][data-variant="ghost"] {
+	color: var(--cui-text-muted);
 }
 
-[data-slot="badge"][data-variant="link"] {
-	background-color: transparent;
-	color: var(--text-primary);
+.eragear-copilot-root [data-slot="badge"][data-variant="link"] {
+	color: var(--cui-accent);
 	text-decoration: underline;
+	text-decoration-offset: var(--size-4-1);
 }
 
-[data-slot="badge"] svg {
-	width: 0.75rem;
-	height: 0.75rem;
-	pointer-events: none;
+.eragear-copilot-root [data-slot="badge"] svg {
 	flex-shrink: 0;
+	width: var(--icon-size-xs);
+	height: var(--icon-size-xs);
+	pointer-events: none;
+}
+
+/* Neo-brutalist hardening */
+.eragear-copilot-root [data-slot="badge"] {
+	border: 2px solid transparent;
+	border-radius: 0;
+	font-family: var(--font-code);
+	font-weight: 700;
+	letter-spacing: 0.03em;
+}
+
+.eragear-copilot-root [data-slot="badge"][data-variant="default"] {
+	background: var(--nb-ink);
+	border-color: var(--nb-ink);
+	color: var(--nb-surface);
+}
+
+.eragear-copilot-root [data-slot="badge"][data-variant="secondary"] {
+	background: var(--nb-yellow);
+	border-color: var(--nb-ink);
+	color: var(--nb-ink);
+}
+
+.eragear-copilot-root [data-slot="badge"][data-variant="outline"] {
+	border-color: var(--nb-ink);
+	color: var(--nb-ink);
 }

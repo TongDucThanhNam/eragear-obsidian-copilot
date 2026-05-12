@@ -12,12 +12,12 @@
 	overflow: hidden;
 	box-shadow: none;
 	width: 100%;
-	--console-status-success: var(--text-success);
-	--console-status-error: var(--text-error);
-	--console-status-info: var(--interactive-accent);
-	--console-type-json: var(--interactive-accent);
-	--console-type-html: var(--text-warning, var(--text-muted));
-	--console-type-error: var(--text-error);
+	--console-status-success: var(--ink);
+	--console-status-error: var(--accent);
+	--console-status-info: var(--ink);
+	--console-type-json: var(--result);
+	--console-type-html: var(--accent);
+	--console-type-error: var(--accent);
 	--console-type-text: var(--text-muted);
 	--console-item-bg: var(--background-secondary);
 	--console-item-border: var(--background-modifier-border);
@@ -68,7 +68,7 @@
 }
 
 .console-title:focus-visible {
-	outline: 2px solid var(--interactive-accent);
+	outline: 2px solid var(--accent);
 	outline-offset: 1px;
 }
 
@@ -106,8 +106,8 @@
 	height: var(--size-4-5);
 	padding: 0 var(--size-4-1);
 	border-radius: var(--radius-l);
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background-color: var(--ink);
+	color: var(--paper);
 	font-size: 0.75rem;
 	font-weight: 600;
 	margin-left: var(--size-4-1);
@@ -143,7 +143,7 @@
 }
 
 .console-btn:focus-visible {
-	outline: 2px solid var(--interactive-accent);
+	outline: 2px solid var(--accent);
 	outline-offset: 1px;
 }
 
@@ -154,8 +154,8 @@
 }
 
 .console-btn-clear:hover {
-	color: var(--text-error);
-	border-color: var(--text-error);
+	color: var(--accent);
+	border-color: var(--accent);
 }
 
 .console-btn-text {
@@ -270,7 +270,7 @@
 }
 
 .log-header:focus-visible {
-	outline: 2px solid var(--interactive-accent);
+	outline: 2px solid var(--accent);
 	outline-offset: 2px;
 }
 
@@ -419,12 +419,12 @@
 
 .log-copy-btn:focus-visible {
 	opacity: 1;
-	outline: 2px solid var(--interactive-accent);
+	outline: 2px solid var(--accent);
 	outline-offset: 1px;
 }
 
 .log-copy-btn.is-copied {
-	color: var(--text-success);
+	color: var(--ink);
 }
 
 /* Log Content */
@@ -473,7 +473,7 @@
 }
 
 .log-copy-btn:focus-visible {
-	outline: 2px solid var(--interactive-accent);
+	outline: 2px solid var(--accent);
 	outline-offset: 1px;
 }
 
@@ -484,12 +484,12 @@
 }
 
 .log-copy-btn:focus-visible {
-	outline: 2px solid var(--interactive-accent);
+	outline: 2px solid var(--accent);
 	outline-offset: 1px;
 }
 
 .log-copy-btn.is-copied {
-	color: var(--text-success);
+	color: var(--ink);
 }
 
 .log-code {
@@ -511,7 +511,7 @@
 
 .log-code:focus {
 	outline: none;
-	box-shadow: 0 0 0 2px var(--interactive-accent);
+	box-shadow: var(--shadow);
 }
 
 /* Syntax highlighting for JSON/Error content */

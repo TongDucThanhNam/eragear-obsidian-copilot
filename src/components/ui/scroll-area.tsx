@@ -2,8 +2,8 @@
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area"
 import "./scroll-area.css"
 
-function classNames(...classes: (string | undefined | null | false)[]) {
-  return classes.filter(Boolean).join(" ")
+function classNames(...classes: unknown[]) {
+  return classes.filter((className): className is string => typeof className === "string" && className.length > 0).join(" ")
 }
 
 function ScrollArea({ className, children, ...props }: ScrollAreaPrimitive.Root.Props) {

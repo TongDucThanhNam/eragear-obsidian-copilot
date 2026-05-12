@@ -12,6 +12,12 @@ import {
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import "./SuggestionPopover.css";
+import {
+	IconFileText,
+	IconFolder,
+	IconTag,
+	IconWrench,
+} from "@/components/ui/Icons";
 
 export interface SuggestionItem {
 	type: "file" | "folder" | "action" | "category";
@@ -27,6 +33,19 @@ const TYPE_LABELS: Record<SuggestionItem["type"], string> = {
 	folder: "Folder",
 	action: "Action",
 	category: "Category",
+};
+
+const getDefaultIcon = (type: SuggestionItem["type"]) => {
+	switch (type) {
+		case "file":
+			return <IconFileText />;
+		case "folder":
+			return <IconFolder />;
+		case "action":
+			return <IconWrench />;
+		case "category":
+			return <IconTag />;
+	}
 };
 
 interface SuggestionPopoverProps {
@@ -111,7 +130,7 @@ export const SuggestionPopover: React.FC<SuggestionPopoverProps> = ({
 												className="suggestion-popover-icon"
 												aria-hidden="true"
 											>
-												{item.icon || (item.type === "file" ? "📄" : "•")}
+												{item.icon || getDefaultIcon(item.type)}
 											</span>
 											<div className="suggestion-popover-content">
 												<div className="suggestion-popover-content-row">

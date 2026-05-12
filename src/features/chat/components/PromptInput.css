@@ -6,8 +6,17 @@
 	width: 100%;
 }
 
+.eragear-input-section {
+	position: relative;
+	width: 100%;
+}
+
 .prompt-input-group {
 	overflow: hidden;
+	background: var(--paper);
+	border: 2px solid var(--ink);
+	border-radius: 0;
+	box-shadow: var(--shadow);
 }
 
 /* ============================================================================
@@ -23,9 +32,18 @@
    ============================================================================ */
 
 .prompt-input-textarea {
-	min-height: 64px;
-	max-height: 192px;
-    border-bottom: none;
+	min-height: calc(var(--size-4-8) * 3);
+	max-height: calc(var(--size-4-12) * 4);
+	padding: var(--size-4-4);
+	border-bottom: 2px solid var(--ink);
+	font-family: var(--font-ui-newsprint);
+	font-size: var(--font-ui-medium);
+	line-height: 1.45;
+}
+
+.prompt-input-textarea::placeholder {
+	color: var(--text-muted);
+	opacity: 1;
 }
 
 /* ============================================================================
@@ -43,7 +61,11 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: var(--size-4-1);
+	gap: var(--size-4-2);
+	min-height: calc(var(--size-4-10) + var(--size-4-2));
+	padding: var(--size-4-2);
+	background: var(--paper-dark);
+	border-top: 0;
 }
 
 /* ============================================================================
@@ -53,7 +75,26 @@
 .prompt-input-tools {
 	display: flex;
 	align-items: center;
-	gap: var(--size-4-1);
+	gap: var(--size-4-2);
+	min-width: 0;
+}
+
+.prompt-input-tools:last-child {
+	justify-content: flex-end;
+	flex: 1;
+}
+
+.prompt-input-button,
+.prompt-input-submit {
+	width: var(--cui-size-lg);
+	height: var(--cui-size-lg);
+	padding: 0;
+	border: 2px solid var(--ink);
+	border-radius: 0;
+	background: var(--paper);
+	color: var(--ink);
+	font-family: var(--font-ui-newsprint);
+	box-shadow: none;
 }
 
 /* ============================================================================
@@ -191,6 +232,17 @@
 
 .prompt-input-submit {
 	flex-shrink: 0;
+	background: var(--accent);
+	color: var(--paper);
+	border-color: var(--ink);
+	box-shadow: var(--shadow);
+}
+
+.prompt-input-submit:disabled {
+	background: var(--paper-dark);
+	color: color-mix(in srgb, var(--ink) 42%, var(--paper));
+	border-color: var(--line);
+	box-shadow: none;
 }
 
 .prompt-input-submit-loading {
@@ -218,8 +270,8 @@
 }
 
 .prompt-input-speech.listening {
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background-color: var(--accent);
+	color: var(--paper);
 	animation: prompt-input-pulse 1.5s ease-in-out infinite;
 }
 
@@ -237,22 +289,66 @@
    ============================================================================ */
 
 .prompt-input-select-trigger {
-	border: none;
-	background: transparent;
+	border: 2px solid var(--ink);
+	background: var(--paper);
 	font-weight: 500;
-	color: var(--text-muted);
+	color: var(--ink);
 	box-shadow: none;
 	transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .prompt-input-select-trigger:hover {
-	background-color: var(--background-modifier-hover);
-	color: var(--text-normal);
+	background-color: var(--paper-dark);
+	color: var(--ink);
 }
 
 .prompt-input-select-trigger[aria-expanded="true"] {
-	background-color: var(--background-modifier-hover);
-	color: var(--text-normal);
+	background-color: var(--ink);
+	color: var(--paper);
+}
+
+.eragear-input-section .model-selector {
+	flex: 0 1 calc(var(--size-4-12) * 6);
+	width: min(100%, calc(var(--size-4-12) * 6));
+	max-width: calc(var(--size-4-12) * 6);
+}
+
+.eragear-input-section .model-selector [data-slot="input-group"] {
+	height: var(--cui-size-lg);
+	background: var(--paper);
+	border: 2px solid var(--ink);
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.eragear-input-section .model-selector [data-slot="input-group"]:hover,
+.eragear-input-section .model-selector [data-slot="input-group"]:focus-within {
+	background: var(--paper-dark);
+	border-color: var(--ink);
+}
+
+.eragear-input-section .model-selector [data-slot="input-group-input"] {
+	height: var(--cui-size-lg);
+	min-width: 0;
+	padding: 0 var(--size-4-2);
+	color: var(--ink);
+	font-family: var(--font-ui-newsprint);
+	font-size: var(--font-ui-small);
+	text-overflow: ellipsis;
+}
+
+.eragear-input-section .model-selector [data-slot="input-group-addon"] {
+	padding: 0 var(--size-4-1);
+	border-left: none;
+}
+
+.eragear-input-section .model-selector [data-slot="input-group-button"] {
+	width: var(--cui-size-sm);
+	height: var(--cui-size-sm);
+}
+
+.eragear-input-section .model-selector-input {
+	min-width: 0;
 }
 
 /* ============================================================================

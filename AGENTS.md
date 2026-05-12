@@ -93,6 +93,8 @@ Repo dùng mô hình shadcn-like UI layer:
 - Feature layer không import trực tiếp `@base-ui/react/*`.
 - UI layer (`src/components/ui/**`) là nơi duy nhất được wrap Base UI.
 - UI wrappers expose API ổn định kiểu `Button`, `Popover`, `DropdownMenu`, `Tabs`, `Select`, `Combobox`.
+- Native-first cho primitive đơn giản: `Button`, `Badge`, `Card`, text/surface helpers nên là React/native DOM + CSS, không cần Base UI.
+- Chỉ dùng Base UI khi component cần behavior khó tự viết đúng: focus management, keyboard navigation, typeahead, aria state, popup positioning, dismiss/escape handling, hoặc portal.
 - Nếu wrapper support `asChild`, map sang Base UI `render` prop.
 - Component được đưa vào Base UI `render` phải `forwardRef` và spread toàn bộ props xuống DOM node.
 - Icon ưu tiên `@phosphor-icons/react`; import tên có hậu tố `Icon`, ví dụ `NetworkIcon`, `GearIcon`.

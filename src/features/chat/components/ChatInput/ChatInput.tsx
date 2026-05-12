@@ -8,7 +8,7 @@ import type {
 import { useMentions } from "@/features/chat/hooks/useMentions";
 import { useSlashCommands } from "@/features/chat/hooks/useSlashCommands";
 import { AgentPlan } from "../AgentPlan";
-import { IconCornerDownLeft, IconPlus, IconSquare } from "@/components/ui/Icons";
+import { IconPlus, IconSend, IconSquare } from "@/components/ui/Icons";
 import { type SuggestionItem, SuggestionPopover } from "../SuggestionPopover";
 import {
 	PromptInput,
@@ -228,7 +228,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 	const chatStatus = isSending ? "streaming" : "idle";
 
 	return (
-		<div className="eragear-input-section" style={{ position: "relative" }}>
+		<div className="eragear-input-section">
 			{/* Agent Plan Display */}
 			{planEntries.length > 0 && (
 				<AgentPlan entries={planEntries} onDismiss={onDismissPlan} />
@@ -274,7 +274,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 						{onTriggerContext && (
 							<PromptInputButton
 								onClick={onTriggerContext}
-								aria-label="Add Context (+)"
+								aria-label="Add context"
 							>
 								<IconPlus />
 							</PromptInputButton>
@@ -314,7 +314,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 								disabled={!input.trim()}
 								aria-label="Send message"
 							>
-								<IconCornerDownLeft />
+								<IconSend />
 							</PromptInputSubmit>
 						)}
 					</PromptInputTools>

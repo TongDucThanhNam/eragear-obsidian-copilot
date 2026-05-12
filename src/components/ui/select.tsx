@@ -4,9 +4,15 @@ import type * as React from "react";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { CaretDownIcon, CheckIcon, CaretUpIcon } from "@phosphor-icons/react";
 import "./select.css";
+import { usePortalContainer } from "./portal-provider";
 
-function classNames(...classes: (string | undefined | null | false)[]): string {
-	return classes.filter(Boolean).join(" ");
+function classNames(...classes: unknown[]): string {
+	return classes
+		.filter(
+			(className): className is string =>
+				typeof className === "string" && className.length > 0,
+		)
+		.join(" ");
 }
 
 const Select = SelectPrimitive.Root;
@@ -46,9 +52,7 @@ function SelectTrigger({
 		>
 			{children}
 			<SelectPrimitive.Icon
-				render={
-					<CaretDownIcon className="text-muted-foreground size-4 pointer-events-none" />
-				}
+				render={<CaretDownIcon className="cui-select-trigger-icon" />}
 			/>
 		</SelectPrimitive.Trigger>
 	);
@@ -68,15 +72,17 @@ function SelectContent({
 		SelectPrimitive.Positioner.Props,
 		"align" | "alignOffset" | "side" | "sideOffset" | "alignItemWithTrigger"
 	>) {
+	const portalContainer = usePortalContainer();
+
 	return (
-		<SelectPrimitive.Portal>
+		<SelectPrimitive.Portal container={portalContainer}>
 			<SelectPrimitive.Positioner
 				side={side}
 				sideOffset={sideOffset}
 				align={align}
 				alignOffset={alignOffset}
 				alignItemWithTrigger={alignItemWithTrigger}
-				className="isolate z-50"
+				className="cui-select-positioner"
 			>
 				<SelectPrimitive.Popup
 					data-slot="select-content"
@@ -116,13 +122,13 @@ function SelectItem({
 			className={classNames(className)}
 			{...props}
 		>
-			<SelectPrimitive.ItemText className="flex flex-1 gap-2 shrink-0 whitespace-nowrap">
+			<SelectPrimitive.ItemText className="cui-select-item-text">
 				{children}
 			</SelectPrimitive.ItemText>
 			<SelectPrimitive.ItemIndicator
 				render={
-					<span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center">
-						<CheckIcon className="pointer-events-none" />
+					<span className="cui-select-check">
+						<CheckIcon className="cui-select-check-icon" />
 					</span>
 				}
 			/>

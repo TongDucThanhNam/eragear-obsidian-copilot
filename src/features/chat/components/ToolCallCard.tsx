@@ -6,72 +6,63 @@ import type {
 } from "@/core/models/session-update";
 import { useAcpAdapter } from "@/features/chat/context/AcpContext";
 import { TerminalRenderer } from "@/features/chat/components/TerminalRenderer";
+import {
+	IconArchive,
+	IconBrain,
+	IconChevronRight,
+	IconCode,
+	IconFileText,
+	IconGlobe,
+	IconPen,
+	IconSearch,
+	IconTerminal,
+	IconTrash,
+	IconWrench,
+} from "@/components/ui/Icons";
 
-// Status icons
+function classNames(...classes: (string | undefined | null | false)[]): string {
+	return classes.filter(Boolean).join(" ");
+}
+
 const StatusIcon: React.FC<{
 	status: "pending" | "running" | "complete" | "failed";
 }> = ({ status }) => {
-	switch (status) {
-		case "pending":
-			return (
-				<span style={{ color: "var(--text-muted)" }} title="Pending">
-					○
-				</span>
-			);
-		case "running":
-			return (
-				<span
-					style={{
-						color: "var(--color-yellow)",
-						animation: "pulse 1s infinite",
-					}}
-					title="Running"
-				>
-					◉
-				</span>
-			);
-		case "complete":
-			return (
-				<span style={{ color: "var(--color-green)" }} title="Complete">
-					✓
-				</span>
-			);
-		case "failed":
-			return (
-				<span style={{ color: "var(--color-red)" }} title="Failed">
-					✗
-				</span>
-			);
-	}
+	return (
+		<span
+			className="tool-call-status-dot"
+			data-status={status}
+			title={status}
+			aria-label={status}
+		/>
+	);
 };
 
-// Tool kind icons
 const ToolKindIcon: React.FC<{ kind?: string }> = ({ kind }) => {
 	switch (kind) {
 		case "read":
-			return <span title="Read">📄</span>;
+			return <IconFileText />;
 		case "edit":
 		case "write":
-			return <span title="Edit">✏️</span>;
+			return <IconPen />;
 		case "delete":
-			return <span title="Delete">🗑️</span>;
+			return <IconTrash />;
 		case "move":
-			return <span title="Move">📦</span>;
+			return <IconArchive />;
 		case "search":
-			return <span title="Search">🔍</span>;
+			return <IconSearch />;
 		case "execute":
 		case "bash":
 		case "terminal":
-			return <span title="Execute">💻</span>;
+			return <IconTerminal />;
 		case "think":
-			return <span title="Think">💭</span>;
+			return <IconBrain />;
 		case "fetch":
-			return <span title="Fetch">📡</span>;
+			return <IconCode />;
 		case "browser":
 		case "web":
-			return <span title="Web">🌐</span>;
+			return <IconGlobe />;
 		default:
-			return <span title="Tool">🔧</span>;
+			return <IconWrench />;
 	}
 };
 
@@ -84,76 +75,28 @@ const ToolCallContentRenderer: React.FC<{ content: ToolCallContent[] }> = ({
 	if (!content || content.length === 0) return null;
 
 	return (
-		<div
-			className="tool-call-content"
-			style={{
-				marginTop: "8px",
-				fontSize: "0.8rem",
-				fontFamily: "var(--font-monospace)",
-			}}
-		>
+		<div className="tool-call-content">
 			{content.map((item, idx) => {
 				if (item.type === "text" && item.text) {
 					return (
-						<pre
-							key={`text-${idx}`}
-							style={{
-								margin: 0,
-								padding: "8px",
-								backgroundColor: "var(--background-primary)",
-								borderRadius: "4px",
-								overflow: "auto",
-								maxHeight: "200px",
-								whiteSpace: "pre-wrap",
-								wordBreak: "break-word",
-							}}
-						>
+						<pre key={`text-${idx}`} className="tool-call-pre">
 							{item.text}
 						</pre>
 					);
 				}
 				if (item.type === "diff") {
 					return (
-						<div
-							key={`diff-${idx}`}
-							style={{
-								padding: "8px",
-								backgroundColor: "var(--background-primary)",
-								borderRadius: "4px",
-							}}
-						>
-							<div
-								style={{
-									fontSize: "0.75rem",
-									color: "var(--text-muted)",
-									marginBottom: "4px",
-								}}
-							>
+						<div key={`diff-${idx}`} className="tool-call-diff">
+							<div className="tool-call-section-label">
 								{item.path}
 							</div>
 							{item.oldText && (
-								<pre
-									style={{
-										margin: 0,
-										color: "var(--color-red)",
-										backgroundColor: "rgba(255,0,0,0.1)",
-										padding: "2px 4px",
-										borderRadius: "2px",
-									}}
-								>
+								<pre className="tool-call-diff-line is-removed">
 									- {item.oldText}
 								</pre>
 							)}
 							{item.newText && (
-								<pre
-									style={{
-										margin: 0,
-										color: "var(--color-green)",
-										backgroundColor: "rgba(0,255,0,0.1)",
-										padding: "2px 4px",
-										borderRadius: "2px",
-									}}
-								>
+								<pre className="tool-call-diff-line is-added">
 									+ {item.newText}
 								</pre>
 							)}
@@ -171,31 +114,11 @@ const ToolCallContentRenderer: React.FC<{ content: ToolCallContent[] }> = ({
 				}
 				if (item.type === "call" && item.name) {
 					return (
-						<div key={`call-${idx}`} style={{ marginTop: "4px" }}>
-							<div
-								style={{
-									fontSize: "0.7rem",
-									color: "var(--text-muted)",
-									marginBottom: "2px",
-									fontWeight: 600,
-									textTransform: "uppercase",
-								}}
-							>
+						<div key={`call-${idx}`} className="tool-call-section">
+							<div className="tool-call-section-label">
 								Parameters
 							</div>
-							<pre
-								style={{
-									margin: 0,
-									padding: "8px",
-									backgroundColor: "var(--background-primary)",
-									borderRadius: "4px",
-									overflow: "auto",
-									maxHeight: "200px",
-									whiteSpace: "pre-wrap",
-									wordBreak: "break-word",
-									fontSize: "0.75rem",
-								}}
-							>
+							<pre className="tool-call-pre">
 								{item.arguments
 									? JSON.stringify(item.arguments, null, 2)
 									: "{}"}
@@ -280,7 +203,7 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
 	);
 	const [internalExpanded, setInternalExpanded] = useState(hasTerminalContent);
 	const isExpanded = controlledExpanded ?? internalExpanded;
-	const { toolCallId, title, status, kind, content, locations } = toolCall;
+	const { status, kind, content, locations } = toolCall;
 
 	// Auto-expand when terminal content is added
 	useEffect(() => {
@@ -299,65 +222,26 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
 
 	return (
 		<div
-			className={`tool-call-card tool-call-${status}`}
+			className={classNames("tool-call-card", `tool-call-${status}`)}
+			data-status={status}
 			onClick={handleClick}
-			style={{
-				display: "flex",
-				flexDirection: "column",
-				padding: "8px 12px",
-				borderRadius: "6px",
-				backgroundColor: "var(--background-secondary)",
-				border: `1px solid ${
-					status === "running"
-						? "var(--color-yellow)"
-						: status === "failed"
-							? "var(--color-red)"
-							: "var(--background-modifier-border)"
-				}`,
-				cursor: "pointer",
-				marginBottom: "4px",
-				transition: "border-color 0.2s",
-			}}
 		>
 			{/* Header */}
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					gap: "8px",
-				}}
-			>
+			<div className="tool-call-card-header">
 				<StatusIcon status={status} />
-				<ToolKindIcon kind={kind} />
-				<span
-					style={{
-						flex: 1,
-						fontSize: "0.85rem",
-						fontWeight: 500,
-						color: "var(--text-normal)",
-						overflow: "hidden",
-						textOverflow: "ellipsis",
-						whiteSpace: "nowrap",
-					}}
-				>
+				<span className="tool-call-kind" aria-hidden="true">
+					<ToolKindIcon kind={kind} />
+				</span>
+				<span className="tool-call-title">
 					{getToolCardTitle(toolCall)}
 				</span>
 				{locations && locations.length > 0 && (
-					<span
-						style={{
-							fontSize: "0.7rem",
-							color: "var(--text-muted)",
-							maxWidth: "150px",
-							overflow: "hidden",
-							textOverflow: "ellipsis",
-							whiteSpace: "nowrap",
-						}}
-					>
+					<span className="tool-call-location">
 						{locations[0]?.uri?.split("/").pop() || "unknown"}
 					</span>
 				)}
-				<span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
-					{isExpanded ? "▼" : "▶"}
+				<span className="tool-call-chevron" data-open={isExpanded ? "" : undefined}>
+					<IconChevronRight />
 				</span>
 			</div>
 
@@ -365,31 +249,11 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({
 			{isExpanded && (
 				<div className="tool-call-card-body">
 					{toolCall.rawInput && (
-						<div className="tool-call-section" style={{ marginTop: "4px" }}>
-							<div
-								style={{
-									fontSize: "0.7rem",
-									color: "var(--text-muted)",
-									marginBottom: "2px",
-									fontWeight: 600,
-									textTransform: "uppercase",
-								}}
-							>
+						<div className="tool-call-section">
+							<div className="tool-call-section-label">
 								Parameters
 							</div>
-							<pre
-								style={{
-									margin: 0,
-									padding: "8px",
-									backgroundColor: "var(--background-primary)",
-									borderRadius: "4px",
-									overflow: "auto",
-									maxHeight: "200px",
-									whiteSpace: "pre-wrap",
-									wordBreak: "break-word",
-									fontSize: "0.75rem",
-								}}
-							>
+							<pre className="tool-call-pre">
 								{JSON.stringify(toolCall.rawInput, null, 2)}
 							</pre>
 						</div>
@@ -414,15 +278,7 @@ export const ToolCallList: React.FC<ToolCallListProps> = ({ toolCalls }) => {
 	const toolCallArray = Array.from(toolCalls.values());
 
 	return (
-		<div
-			className="tool-call-list"
-			style={{
-				display: "flex",
-				flexDirection: "column",
-				gap: "4px",
-				padding: "8px 0",
-			}}
-		>
+		<div className="tool-call-list">
 			{toolCallArray.map((tc) => (
 				<ToolCallCard key={tc.toolCallId} toolCall={tc} />
 			))}

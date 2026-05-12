@@ -1,67 +1,40 @@
 import type React from "react";
 import type { OutputUpdate } from "@/core/models/session-update";
+import {
+	IconBug,
+	IconInfo,
+	IconNote,
+	IconWarning,
+} from "@/components/ui/Icons";
 
 export interface OutputMessageProps {
 	output: OutputUpdate;
 }
 
-const getOutputStyle = (type: OutputUpdate["outputType"]) => {
+const getOutputIcon = (type: OutputUpdate["outputType"]) => {
 	switch (type) {
 		case "error":
-			return {
-				bg: "rgba(255, 0, 0, 0.1)",
-				color: "var(--color-red)",
-				icon: "❌",
-			};
+			return <IconBug />;
 		case "warning":
-			return {
-				bg: "rgba(255, 200, 0, 0.1)",
-				color: "var(--color-yellow)",
-				icon: "⚠️",
-			};
+			return <IconWarning />;
 		case "info":
-			return {
-				bg: "rgba(0, 100, 255, 0.1)",
-				color: "var(--color-blue)",
-				icon: "ℹ️",
-			};
+			return <IconInfo />;
 		case "debug":
-			return {
-				bg: "rgba(128, 128, 128, 0.1)",
-				color: "var(--text-muted)",
-				icon: "🔍",
-			};
+			return <IconBug />;
 		default:
-			return {
-				bg: "var(--background-secondary)",
-				color: "var(--text-normal)",
-				icon: "📝",
-			};
+			return <IconNote />;
 	}
 };
 
 export const OutputMessage: React.FC<OutputMessageProps> = ({ output }) => {
 	const { outputType, text } = output;
-	const style = getOutputStyle(outputType);
 
 	return (
-		<div
-			className={`output-message output-${outputType}`}
-			style={{
-				display: "flex",
-				alignItems: "flex-start",
-				gap: "8px",
-				padding: "8px 12px",
-				borderRadius: "6px",
-				backgroundColor: style.bg,
-				marginBottom: "4px",
-				fontSize: "0.85rem",
-			}}
-		>
-			<span>{style.icon}</span>
-			<span style={{ color: style.color, flex: 1, wordBreak: "break-word" }}>
-				{text}
+		<div className={`output-message output-${outputType}`}>
+			<span className="output-message-icon" aria-hidden="true">
+				{getOutputIcon(outputType)}
 			</span>
+			<span className="output-message-text">{text}</span>
 		</div>
 	);
 };
@@ -80,10 +53,7 @@ export const OutputList: React.FC<OutputListProps> = ({
 	const displayOutputs = outputs.slice(-maxItems);
 
 	return (
-		<div
-			className="output-list"
-			style={{ display: "flex", flexDirection: "column", gap: "4px" }}
-		>
+		<div className="output-list">
 			{displayOutputs.map((output, idx) => (
 				<OutputMessage key={idx} output={output} />
 			))}

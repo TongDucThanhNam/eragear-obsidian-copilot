@@ -1,143 +1,148 @@
-/* ============================================================================
-   Input Group Component Styles
-   ============================================================================ */
-
-[data-slot="input-group"] {
+.eragear-copilot-root [data-slot="input-group"] {
 	position: relative;
 	display: flex;
 	flex-direction: row;
 	align-items: center;
 	width: 100%;
-	background-color: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
 	overflow: hidden;
-	transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+	background: var(--cui-bg-2);
+	border: var(--border-width) solid var(--cui-border);
+	border-radius: var(--cui-radius);
+	transition:
+		border-color var(--cui-transition),
+		box-shadow var(--cui-transition);
 }
 
-[data-slot="input-group"][data-orientation="vertical"] {
+.eragear-copilot-root [data-slot="input-group"][data-orientation="vertical"] {
 	flex-direction: column;
 	align-items: stretch;
 }
 
-/* Focus ring removed for cleaner look */
-
-/* ============================================================================
-   Input Group Addon
-   ============================================================================ */
-
-[data-slot="input-group-addon"] {
+.eragear-copilot-root [data-slot="input-group-addon"] {
 	display: flex;
 	align-items: center;
-	padding: var(--size-4-1) var(--size-4-2);
 	gap: var(--size-4-1);
+	padding: var(--size-4-1) var(--size-4-2);
 }
 
-[data-slot="input-group-addon"][data-align="inline-start"] {
+.eragear-copilot-root
+	[data-slot="input-group-addon"][data-align="inline-start"] {
 	order: -1;
-	border-right: 1px solid var(--background-modifier-border);
+	border-right: var(--border-width) solid var(--cui-border);
 }
 
-[data-slot="input-group-addon"][data-align="inline-end"] {
-	border-left: 1px solid var(--background-modifier-border);
+.eragear-copilot-root
+	[data-slot="input-group-addon"][data-align="inline-end"] {
+	border-left: var(--border-width) solid var(--cui-border);
 }
 
-[data-slot="input-group-addon"][data-align="block-start"] {
+.eragear-copilot-root
+	[data-slot="input-group-addon"][data-align="block-start"] {
 	order: -2;
-	border-bottom: 1px solid var(--background-modifier-border);
 	padding: var(--size-4-2) var(--size-4-3);
+	border-bottom: var(--border-width) solid var(--cui-border);
 }
 
-[data-slot="input-group-addon"][data-align="block-end"] {
+.eragear-copilot-root
+	[data-slot="input-group-addon"][data-align="block-end"] {
 	order: 2;
-	border-top: none;
 	padding: var(--size-4-2) var(--size-4-3);
+	border-top: none;
 }
 
-/* ============================================================================
-   Input Group Textarea
-   ============================================================================ */
-
-[data-slot="input-group-textarea"] {
+.eragear-copilot-root [data-slot="input-group-textarea"] {
 	flex: 1 1 auto;
 	width: 100%;
-	min-height: 64px;
-	max-height: 192px;
+	min-height: calc(var(--size-4-8) * 2);
+	max-height: calc(var(--size-4-12) * 4);
 	padding: var(--size-4-3);
+	overflow-y: auto;
+	color: var(--cui-text);
 	background: transparent;
 	border: none;
 	outline: none;
 	font-family: inherit;
 	font-size: var(--font-ui-small);
-	line-height: 1.5;
-	color: var(--text-normal);
+	line-height: var(--line-height-normal);
 	resize: none;
-	overflow-y: auto;
 }
 
-[data-slot="input-group-textarea"]::placeholder {
-	color: var(--text-muted);
+.eragear-copilot-root [data-slot="input-group-textarea"]::placeholder {
+	color: var(--cui-text-muted);
 }
 
-[data-slot="input-group-textarea"]:focus {
+.eragear-copilot-root [data-slot="input-group-textarea"]:focus,
+.eragear-copilot-root [data-slot="input-group-textarea"]:hover {
+	background: transparent;
+	border: none;
+	box-shadow: none;
 	outline: none;
-	box-shadow: none;
-	border: none;
-	background: transparent;
 }
 
-[data-slot="input-group-textarea"]:hover {
-	background: transparent;
-	border: none;
-	box-shadow: none;
-}
-
-/* Field sizing content for modern browsers */
 @supports (field-sizing: content) {
-	[data-slot="input-group-textarea"] {
+	.eragear-copilot-root [data-slot="input-group-textarea"] {
 		field-sizing: content;
 	}
 }
 
-/* ============================================================================
-   Input Group Input
-   ============================================================================ */
-
-[data-slot="input-group-input"] {
+.eragear-copilot-root [data-slot="input-group-input"] {
 	flex: 1 1 auto;
 	width: 100%;
-	height: 36px;
+	height: var(--cui-size-lg);
 	padding: var(--size-4-2) var(--size-4-3);
+	color: var(--cui-text);
 	background: transparent;
 	border: none;
 	outline: none;
 	font-family: inherit;
 	font-size: var(--font-ui-small);
-	line-height: 1.5;
-	color: var(--text-normal);
+	line-height: var(--line-height-normal);
 }
 
-[data-slot="input-group-input"]::placeholder {
-	color: var(--text-muted);
+.eragear-copilot-root [data-slot="input-group-input"]::placeholder {
+	color: var(--cui-text-muted);
 }
 
-[data-slot="input-group-input"]:focus {
+.eragear-copilot-root [data-slot="input-group-input"]:focus,
+.eragear-copilot-root [data-slot="input-group-input"]:hover {
+	background: transparent;
+	border: none;
+	box-shadow: none;
 	outline: none;
-	box-shadow: none;
-	border: none;
-	background: transparent;
 }
 
-[data-slot="input-group-input"]:hover {
-	background: transparent;
-	border: none;
-	box-shadow: none;
-}
-
-/* ============================================================================
-   Input Group Button
-   ============================================================================ */
-
-[data-slot="input-group-button"] {
+.eragear-copilot-root [data-slot="input-group-button"] {
 	flex-shrink: 0;
+}
+
+/* Neo-brutalist hardening */
+.eragear-copilot-root [data-slot="input-group"] {
+	background: var(--nb-surface);
+	border: 2px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow-sm);
+}
+
+.eragear-copilot-root [data-slot="input-group"]:focus-within {
+	box-shadow: var(--nb-shadow);
+}
+
+.eragear-copilot-root
+	[data-slot="input-group-addon"][data-align="inline-start"] {
+	border-right: 2px solid var(--nb-ink);
+}
+
+.eragear-copilot-root
+	[data-slot="input-group-addon"][data-align="inline-end"] {
+	border-left: 2px solid var(--nb-ink);
+}
+
+.eragear-copilot-root
+	[data-slot="input-group-addon"][data-align="block-start"] {
+	border-bottom: 2px solid var(--nb-ink);
+}
+
+.eragear-copilot-root [data-slot="input-group-textarea"],
+.eragear-copilot-root [data-slot="input-group-input"] {
+	font-family: var(--font-code);
 }

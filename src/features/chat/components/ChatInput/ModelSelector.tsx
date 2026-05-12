@@ -152,7 +152,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
 					className="model-selector-input"
 					placeholder="Select model..."
 					disabled={availableModels.length === 0 || isSending}
-					showClear
+					showClear={false}
 				/>
 				<ComboboxContent className="model-selector-content">
 					{allModels.length > 0 ? (

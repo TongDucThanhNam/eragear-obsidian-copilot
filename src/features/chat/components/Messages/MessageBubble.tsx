@@ -2,10 +2,22 @@ import type React from "react";
 import type { App } from "obsidian";
 import type { Message } from "@/features/chat/types";
 import { MarkdownTextRenderer } from "./MarkdownTextRenderer";
-import { IconCopy, IconPen, IconRotate, IconTrash } from "@/components/ui/Icons";
+import {
+	IconCheckCircle,
+	IconCopy,
+	IconMagic,
+	IconPen,
+	IconRotate,
+	IconTrash,
+	IconUser,
+} from "@/components/ui/Icons";
 import { OutputMessage } from "./OutputMessage";
 import { ToolCallCard } from "../ToolCallCard";
 import { ThinkingBlock } from "../ThinkingBlock";
+import {
+	getMessageTextContent,
+	hasRenderableMessageContent,
+} from "./message-rendering";
 
 interface MessageBubbleProps {
 	message: Message;
@@ -24,15 +36,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 }) => {
 	const isUser = message.role === "user";
 	const isSystem = message.role === "system" || message.role === "data";
+	const hasContent = hasRenderableMessageContent(message);
+
+	if (!hasContent) return null;
 
 	// Extract text content for copy/insert
-	const textContent = message.parts
-		.map((p) => {
-			if (p.type === "text") return p.text;
-			if (p.type === "thought") return `Reasoning:\n${p.text}\n`;
-			return "";
-		})
-		.join("\n");
+	const textContent = getMessageTextContent(message);
+	const messageLabel = isUser ? "You" : isSystem ? "System" : "Assistant";
 
 	// Check if this is a tool-call only message
 	const hasOnlyToolCalls = message.parts.every(
@@ -49,8 +59,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 	// Render tool-call or output messages without bubble wrapper
 	if (hasOnlyToolCalls || hasOnlyOutputs) {
 		return (
-			<div className="eragear-message-group system">
-				<div style={{ width: "100%" }}>
+			<div
+				className="eragear-message-group system"
+				data-message-role={message.role}
+			>
+				<div className="eragear-message-content">
 					{message.parts.map((part, index) => {
 						if (part.type === "tool-call") {
 							return <ToolCallCard key={index} toolCall={part.toolCall} />;
@@ -73,14 +86,32 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 	return (
 		<div
 			className={`eragear-message-group ${isUser ? "user" : isSystem ? "system" : "assistant"}`}
+			data-message-role={message.role}
 		>
-			<div style={{ width: "100%", overflow: "hidden" }}>
-				<div className="">
+			{!isUser && !isSystem && (
+				<div className="eragear-message-avatar assistant" aria-hidden="true">
+					<IconMagic />
+				</div>
+			)}
+			<div className="eragear-message-content">
+				<div className="eragear-message-meta">
+					<span>{messageLabel}</span>
+					{!isUser && !isSystem && (
+						<span className="eragear-message-verified" aria-hidden="true">
+							<IconCheckCircle />
+						</span>
+					)}
+				</div>
+				<div className="eragear-message-body">
 					{message.parts.map((part, index) => {
 						if (part.type === "text") {
-							return <MarkdownTextRenderer key={index} text={part.text} app={app} />;
+							if (part.text.trim().length === 0) return null;
+							return (
+								<MarkdownTextRenderer key={index} text={part.text} app={app} />
+							);
 						}
 						if (part.type === "thought") {
+							if (part.text.trim().length === 0) return null;
 							return <ThinkingBlock key={index} content={part.text} app={app} />;
 						}
 						if (part.type === "tool-call") {
@@ -105,6 +136,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 							type="button"
 							className="eragear-action-icon"
 							title="Copy"
+							aria-label="Copy"
 							onClick={handleCopy}
 						>
 							<IconCopy />
@@ -114,6 +146,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 								type="button"
 								className="eragear-action-icon"
 								title="Regenerate"
+								aria-label="Regenerate"
 								onClick={onRegenerate}
 							>
 								<IconRotate />
@@ -122,7 +155,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 						<button
 							type="button"
 							className="eragear-action-icon"
-							title="Insert to Editor"
+							title="Insert to editor"
+							aria-label="Insert to editor"
 							onClick={() => onInsert(textContent)}
 						>
 							<IconPen />
@@ -131,6 +165,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 							type="button"
 							className="eragear-action-icon"
 							title="Delete"
+							aria-label="Delete"
 							onClick={onDelete}
 						>
 							<IconTrash />
@@ -138,6 +173,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 					</div>
 				)}
 			</div>
+			{isUser && (
+				<div className="eragear-message-avatar user" aria-hidden="true">
+					<IconUser />
+				</div>
+			)}
 		</div>
 	);
 };

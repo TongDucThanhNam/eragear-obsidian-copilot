@@ -3,7 +3,7 @@
 import { forwardRef } from "react"
 import type * as React from "react"
 import { Command as CommandPrimitive } from "cmdk"
-import { MagnifyingGlass as MagnifyingGlassIcon, Check as CheckIcon } from "@phosphor-icons/react"
+import { MagnifyingGlass as MagnifyingGlassIcon } from "@phosphor-icons/react"
 import { InputGroup, InputGroupAddon } from "./input-group"
 import "./command.css"
 
@@ -25,7 +25,7 @@ function CommandInput({
       <InputGroup className="command-input-group">
         <CommandPrimitive.Input data-slot="command-input" className={classNames(className)} placeholder={placeholder} {...props} />
         <InputGroupAddon>
-          <MagnifyingGlassIcon className="size-4 shrink-0 opacity-50" />
+          <MagnifyingGlassIcon className="cui-command-input-icon" />
         </InputGroupAddon>
       </InputGroup>
     </div>

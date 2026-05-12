@@ -1,79 +1,87 @@
-/* Select Group */
-[data-slot="select-group"] {
-	scroll-margin-top: 0.25rem;
+.eragear-copilot-root [data-slot="select-group"] {
+	scroll-margin-top: var(--size-4-1);
 }
 
-/* Select Value */
-[data-slot="select-value"] {
+.eragear-copilot-root [data-slot="select-value"] {
 	display: flex;
 	flex: 1;
 	text-align: left;
 }
 
-/* Select Trigger */
-[data-slot="select-trigger"] {
+.eragear-copilot-root [data-slot="select-trigger"] {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	width: fit-content;
-	height: 2rem;
-	padding: 0.5rem 0.5rem 0.5rem 0.625rem;
-	font-size: 0.75rem;
-	border: 1px solid var(--background-modifier-border);
-	background-color: var(--background-primary);
-	color: var(--text-normal);
-	border-radius: var(--radius-s); /* Use Obsidian radius variable if available, else standard */
-	gap: 0.375rem;
+	height: var(--cui-size-md);
+	padding: 0 var(--size-4-2);
+	gap: var(--size-4-2);
+	color: var(--cui-text);
+	background: var(--cui-bg);
+	border: var(--border-width) solid var(--cui-border);
+	border-radius: var(--cui-radius-sm);
+	font-size: var(--font-ui-small);
 	white-space: nowrap;
 	outline: none;
-	transition: all 0.2s ease;
-	cursor: pointer;
+	cursor: var(--cui-cursor);
 	user-select: none;
-	line-height: 1.25;
+	line-height: var(--line-height-tight);
+	transition:
+		background-color var(--cui-transition),
+		border-color var(--cui-transition),
+		box-shadow var(--cui-transition);
 }
 
-[data-slot="select-trigger"][data-size="sm"] {
-	height: 1.75rem;
+.eragear-copilot-root [data-slot="select-trigger"][data-size="sm"] {
+	height: var(--cui-size-sm);
 }
 
-[data-slot="select-trigger"]:hover {
-	background-color: var(--background-modifier-hover);
-	border-color: var(--background-modifier-border-hover);
+.eragear-copilot-root [data-slot="select-trigger"]:hover {
+	background: var(--cui-bg-hover);
+	border-color: var(--cui-border-hover);
 }
 
-[data-slot="select-trigger"]:focus-visible {
-	border-color: var(--interactive-accent);
-	box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
+.eragear-copilot-root [data-slot="select-trigger"]:focus-visible {
+	border-color: var(--cui-accent);
+	box-shadow: var(--shadow);
 }
 
-[data-slot="select-trigger"]:disabled {
+.eragear-copilot-root [data-slot="select-trigger"]:disabled {
 	cursor: not-allowed;
 	opacity: 0.5;
 }
 
-[data-slot="select-trigger"][data-placeholder] {
-	color: var(--text-muted);
+.eragear-copilot-root [data-slot="select-trigger"][data-placeholder] {
+	color: var(--cui-text-muted);
 }
 
-/* Select Content */
-[data-slot="select-content"] {
+.eragear-copilot-root [data-slot="select-content"] {
 	position: relative;
-	z-index: 100; /* Increased z-index */
-	min-width: 9rem;
+	z-index: var(--cui-overlay-z-index);
+	min-width: calc(var(--size-4-8) * 4);
 	max-height: var(--available-height);
 	width: var(--anchor-width);
-	border-radius: var(--radius-m);
-	border: 1px solid var(--background-modifier-border);
-	background-color: var(--background-secondary); /* Better contrast for dropdown */
-	color: var(--text-normal);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Stronger shadow */
 	overflow-x: hidden;
 	overflow-y: auto;
-	animation: fadeIn 0.1s ease;
+	color: var(--cui-text);
+	background: var(--cui-bg);
+	border: var(--border-width) solid var(--cui-border);
+	border-radius: var(--cui-radius);
+	box-shadow: var(--cui-shadow-lg);
+	animation: cui-select-in var(--anim-duration-fast) ease-out;
 	transform-origin: var(--transform-origin);
 }
 
-@keyframes fadeIn {
+.eragear-copilot-root .cui-select-positioner {
+	z-index: var(--cui-overlay-z-index);
+	outline: none;
+}
+
+.eragear-copilot-root [data-slot="select-content"][data-ending-style] {
+	animation: cui-select-out var(--anim-duration-fast) ease-out;
+}
+
+@keyframes cui-select-in {
 	from {
 		opacity: 0;
 		transform: scale(0.98);
@@ -84,62 +92,150 @@
 	}
 }
 
-/* Select Label */
-[data-slot="select-label"] {
-	padding: 0.5rem 0.75rem;
-	font-size: 0.7rem;
-	color: var(--text-muted);
-	font-weight: 600;
+@keyframes cui-select-out {
+	from {
+		opacity: 1;
+		transform: scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: scale(0.98);
+	}
+}
+
+.eragear-copilot-root [data-slot="select-label"] {
+	padding: var(--size-4-2) var(--size-4-3);
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold, 600);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 }
 
-/* Select Item */
-[data-slot="select-item"] {
+.eragear-copilot-root [data-slot="select-item"] {
 	position: relative;
 	display: flex;
 	align-items: center;
 	width: 100%;
-	padding: 0.5rem 2rem 0.5rem 0.75rem;
-	font-size: 0.85rem;
-	border-radius: var(--radius-s);
+	padding: var(--size-4-2) var(--size-4-8) var(--size-4-2)
+		var(--size-4-3);
+	gap: var(--size-4-2);
+	color: var(--cui-text);
+	border-radius: var(--cui-radius-sm);
+	font-size: var(--font-ui-small);
 	white-space: nowrap;
 	outline: none;
 	cursor: default;
 	user-select: none;
-	gap: 0.5rem;
-	margin: 2px 0;
+	margin: var(--size-2-1) 0;
 }
 
-[data-slot="select-item"]:focus,
-[data-slot="select-item"][data-highlighted] {
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
+.eragear-copilot-root [data-slot="select-item"]:focus,
+.eragear-copilot-root [data-slot="select-item"][data-highlighted] {
+	color: var(--cui-accent-text);
+	background: var(--cui-accent);
 }
 
-[data-slot="select-item"]:disabled {
+.eragear-copilot-root [data-slot="select-item"]:disabled {
 	pointer-events: none;
 	opacity: 0.5;
 }
 
-/* Select Separator */
-[data-slot="select-separator"] {
-	height: 1px;
-	background-color: var(--background-modifier-border);
-	margin: 0.25rem 0;
+.eragear-copilot-root [data-slot="select-separator"] {
+	height: var(--border-width);
+	margin: var(--size-4-1) 0;
+	background: var(--cui-border);
 	pointer-events: none;
 }
 
-/* Select Scroll Buttons */
-[data-slot="select-scroll-up-button"],
-[data-slot="select-scroll-down-button"] {
-	background-color: var(--background-secondary);
+.eragear-copilot-root [data-slot="select-scroll-up-button"],
+.eragear-copilot-root [data-slot="select-scroll-down-button"] {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0.25rem;
-	cursor: default;
-	z-index: 10;
 	width: 100%;
-	color: var(--text-muted);
+	padding: var(--size-4-1);
+	color: var(--cui-text-muted);
+	background: var(--cui-bg);
+	cursor: default;
+	z-index: 1;
+}
+
+.eragear-copilot-root .cui-select-trigger-icon,
+.eragear-copilot-root .cui-select-check-icon,
+.eragear-copilot-root [data-slot="select-scroll-up-button"] svg,
+.eragear-copilot-root [data-slot="select-scroll-down-button"] svg {
+	flex-shrink: 0;
+	width: var(--icon-size-s);
+	height: var(--icon-size-s);
+	pointer-events: none;
+}
+
+.eragear-copilot-root .cui-select-check {
+	position: absolute;
+	right: var(--size-4-2);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--icon-size-s);
+	height: var(--icon-size-s);
+	pointer-events: none;
+}
+
+.eragear-copilot-root .cui-select-item-text {
+	display: flex;
+	flex: 1;
+	flex-shrink: 0;
+	gap: var(--size-4-2);
+	white-space: nowrap;
+}
+
+/* Neo-brutalist hardening */
+.eragear-copilot-root [data-slot="select-trigger"] {
+	background: var(--nb-surface);
+	border: 2px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow-sm);
+	font-family: var(--font-code);
+	font-weight: 700;
+}
+
+.eragear-copilot-root [data-slot="select-trigger"]:hover {
+	background: var(--nb-yellow);
+	border-color: var(--nb-ink);
+}
+
+.eragear-copilot-root [data-slot="select-trigger"]:focus-visible {
+	border-color: var(--nb-ink);
+	box-shadow: var(--nb-shadow);
+}
+
+.eragear-copilot-root [data-slot="select-content"] {
+	background: var(--nb-surface);
+	border: 4px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow-lg);
+}
+
+.eragear-copilot-root [data-slot="select-label"],
+.eragear-copilot-root [data-slot="select-item"] {
+	font-family: var(--font-code);
+}
+
+.eragear-copilot-root [data-slot="select-item"] {
+	border: 2px solid transparent;
+	border-radius: 0;
+	font-weight: 700;
+}
+
+.eragear-copilot-root [data-slot="select-item"]:focus,
+.eragear-copilot-root [data-slot="select-item"][data-highlighted] {
+	color: var(--nb-ink);
+	background: var(--nb-yellow);
+	border-color: var(--nb-ink);
+}
+
+.eragear-copilot-root [data-slot="select-separator"] {
+	height: 2px;
+	background: var(--nb-ink);
 }

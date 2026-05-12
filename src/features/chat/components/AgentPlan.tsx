@@ -7,22 +7,16 @@ interface AgentPlanProps {
 }
 
 const Loader = ({
-	size = 14, // Match default icon size roughly 0.8rem ~ 12.8px, maybe 14 is good
 	className = "",
 }: {
-	size?: number;
 	className?: string;
 }) => (
-	<div
-		className={`agent-plan-loader ${className}`}
-		style={{ width: size, height: size }}
-	>
+	<div className={`agent-plan-loader ${className}`}>
 		<svg
-			height={size}
+			height="14"
 			strokeLinejoin="round"
-			style={{ color: "currentColor" }}
 			viewBox="0 0 16 16"
-			width={size}
+			width="14"
 		>
 			<title>Loader</title>
 			<g clipPath="url(#loader-clip)">

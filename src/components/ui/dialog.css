@@ -34,8 +34,8 @@
 }
 
 .eragear-copilot-root .cui-dialog-content:focus-visible {
-	outline: 2px solid var(--cui-accent);
-	outline-offset: 2px;
+	outline: var(--size-4-1) solid var(--cui-accent);
+	outline-offset: var(--size-4-1);
 }
 
 .eragear-copilot-root .cui-dialog-title {
@@ -58,4 +58,26 @@
 	color: var(--cui-text-muted);
 	font-size: var(--font-ui-medium);
 	line-height: var(--line-height-normal);
+}
+
+/* Neo-brutalist hardening */
+.eragear-copilot-root .cui-dialog-backdrop {
+	backdrop-filter: none;
+}
+
+.eragear-copilot-root .cui-dialog-content {
+	background: var(--nb-surface);
+	border: 4px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow-lg);
+}
+
+.eragear-copilot-root .cui-dialog-content:focus-visible {
+	outline: 3px solid var(--nb-yellow);
+}
+
+.eragear-copilot-root .cui-dialog-title {
+	font-family: var(--font-brand);
+	font-size: 1.75rem;
+	font-weight: 400;
 }

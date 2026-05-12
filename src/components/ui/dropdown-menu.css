@@ -1,38 +1,39 @@
-/* Dropdown Menu Styles */
+.eragear-copilot-root .cui-menu-positioner {
+	z-index: var(--cui-overlay-z-index);
+	outline: none;
+}
 
-.dropdownMenuContent {
-	z-index: 50;
-	min-width: 128px;
-	background-color: var(--color-popover, #ffffff);
-	color: var(--color-popover-foreground, #000000);
-	border: 1px solid var(--color-border, #e5e7eb);
-	border-radius: 0;
-	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-	max-height: var(--available-height, 300px);
+.eragear-copilot-root .cui-menu-content {
+	min-width: calc(var(--size-4-8) * 4);
+	max-height: var(--available-height, calc(var(--size-4-8) * 10));
 	overflow-x: hidden;
 	overflow-y: auto;
+	padding: var(--size-4-1);
+	color: var(--cui-text);
+	background: var(--cui-bg);
+	border: var(--border-width) solid var(--cui-border);
+	border-radius: var(--cui-radius);
+	box-shadow: var(--cui-shadow-lg);
 	outline: none;
-	animation: fadeIn 0.1s ease-out;
 	pointer-events: auto;
+	animation: cui-menu-in var(--anim-duration-fast) ease-out;
 }
 
-/* New Chat dropdown - ensure it doesn't overflow to the right */
-.dropdownMenuContent.new-chat-dropdown {
+.eragear-copilot-root .cui-menu-content.new-chat-dropdown {
 	width: auto;
-	min-width: 180px;
-	max-width: calc(100vw - 16px);
-	right: 0;
+	min-width: calc(var(--size-4-8) * 6);
+	max-width: calc(100vw - var(--size-4-4));
 }
 
-.dropdownMenuContent[data-closed="true"] {
-	animation: fadeOut 0.1s ease-out;
+.eragear-copilot-root .cui-menu-content[data-ending-style] {
 	overflow: hidden;
+	animation: cui-menu-out var(--anim-duration-fast) ease-out;
 }
 
-@keyframes fadeIn {
+@keyframes cui-menu-in {
 	from {
 		opacity: 0;
-		transform: scale(0.95);
+		transform: scale(0.98);
 	}
 	to {
 		opacity: 1;
@@ -40,163 +41,173 @@
 	}
 }
 
-@keyframes fadeOut {
+@keyframes cui-menu-out {
 	from {
 		opacity: 1;
 		transform: scale(1);
 	}
 	to {
 		opacity: 0;
-		transform: scale(0.95);
+		transform: scale(0.98);
 	}
 }
 
-/* Menu Item Styles */
-.menuItem {
+.eragear-copilot-root .cui-menu-item,
+.eragear-copilot-root .cui-menu-checkbox-item,
+.eragear-copilot-root .cui-menu-radio-item,
+.eragear-copilot-root .cui-menu-sub-trigger {
+	position: relative;
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	padding: 8px 8px;
-	border-radius: 0;
-	font-size: 12px;
-	cursor: default;
+	gap: var(--size-4-2);
+	min-height: var(--cui-size-md);
+	padding: var(--size-4-2);
+	color: var(--cui-text);
+	border-radius: var(--cui-radius-sm);
+	font-size: var(--font-ui-small);
+	cursor: var(--cui-cursor);
 	user-select: none;
 	outline: none;
-	position: relative;
 }
 
-.menuItem:focus,
-.menuItem:hover {
-	background-color: var(--color-accent, #f3f4f6);
-	color: var(--color-accent-foreground, #000000);
+.eragear-copilot-root .cui-menu-checkbox-item,
+.eragear-copilot-root .cui-menu-radio-item {
+	padding-right: var(--size-4-8);
 }
 
-.menuItem[data-disabled="true"] {
+.eragear-copilot-root .cui-menu-item:hover,
+.eragear-copilot-root .cui-menu-item:focus,
+.eragear-copilot-root .cui-menu-item[data-highlighted],
+.eragear-copilot-root .cui-menu-checkbox-item:hover,
+.eragear-copilot-root .cui-menu-checkbox-item:focus,
+.eragear-copilot-root .cui-menu-checkbox-item[data-highlighted],
+.eragear-copilot-root .cui-menu-radio-item:hover,
+.eragear-copilot-root .cui-menu-radio-item:focus,
+.eragear-copilot-root .cui-menu-radio-item[data-highlighted],
+.eragear-copilot-root .cui-menu-sub-trigger:hover,
+.eragear-copilot-root .cui-menu-sub-trigger:focus,
+.eragear-copilot-root .cui-menu-sub-trigger[data-highlighted],
+.eragear-copilot-root .cui-menu-sub-trigger[data-open] {
+	color: var(--cui-text);
+	background: var(--cui-bg-hover);
+}
+
+.eragear-copilot-root .cui-menu-item[data-disabled],
+.eragear-copilot-root .cui-menu-checkbox-item[data-disabled],
+.eragear-copilot-root .cui-menu-radio-item[data-disabled] {
 	pointer-events: none;
 	opacity: 0.5;
 }
 
-.menuItem[data-inset="true"] {
-	padding-left: 32px;
+.eragear-copilot-root .cui-menu-item[data-inset],
+.eragear-copilot-root .cui-menu-label[data-inset],
+.eragear-copilot-root .cui-menu-sub-trigger[data-inset] {
+	padding-left: var(--size-4-8);
 }
 
-.menuItem[data-variant="destructive"] {
-	color: var(--color-destructive, #dc2626);
+.eragear-copilot-root .cui-menu-item[data-variant="destructive"] {
+	color: var(--cui-destructive);
 }
 
-.menuItem[data-variant="destructive"]:focus,
-.menuItem[data-variant="destructive"]:hover {
-	background-color: rgba(220, 38, 38, 0.1);
-	color: var(--color-destructive, #dc2626);
+.eragear-copilot-root .cui-menu-item[data-variant="destructive"]:hover,
+.eragear-copilot-root .cui-menu-item[data-variant="destructive"]:focus,
+.eragear-copilot-root .cui-menu-item[data-variant="destructive"][data-highlighted] {
+	color: var(--cui-destructive);
+	background: var(--cui-destructive-bg);
 }
 
-/* Menu Label Styles */
-.menuLabel {
-	color: var(--color-muted-foreground, #6b7280);
-	padding: 8px 8px;
-	font-size: 12px;
+.eragear-copilot-root .cui-menu-label {
+	padding: var(--size-4-2);
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-bold);
 }
 
-.menuLabel[data-inset="true"] {
-	padding-left: 32px;
+.eragear-copilot-root .cui-menu-separator {
+	height: var(--border-width);
+	margin: var(--size-4-1) calc(var(--size-4-1) * -1);
+	background: var(--cui-border);
 }
 
-/* Separator Styles */
-.separator {
-	height: 1px;
-	background-color: var(--color-border, #e5e7eb);
-	margin: -4px -4px;
-}
-
-/* Shortcut Styles */
-.shortcut {
-	color: var(--color-muted-foreground, #6b7280);
+.eragear-copilot-root .cui-menu-shortcut {
 	margin-left: auto;
-	font-size: 12px;
-	letter-spacing: 0.1em;
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
 }
 
-.menuItem:focus .shortcut,
-.menuItem:hover .shortcut {
-	color: var(--color-accent-foreground, #000000);
+.eragear-copilot-root .cui-menu-item:hover .cui-menu-shortcut,
+.eragear-copilot-root .cui-menu-item:focus .cui-menu-shortcut,
+.eragear-copilot-root .cui-menu-item[data-highlighted] .cui-menu-shortcut {
+	color: var(--cui-text);
 }
 
-/* Checkbox & Radio Item Styles */
-.checkboxItem,
-.radioItem {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 8px 8px;
-	padding-right: 32px;
-	border-radius: 0;
-	font-size: 12px;
-	cursor: default;
-	user-select: none;
-	outline: none;
-	position: relative;
-}
-
-.checkboxItem:focus,
-.checkboxItem:hover,
-.radioItem:focus,
-.radioItem:hover {
-	background-color: var(--color-accent, #f3f4f6);
-	color: var(--color-accent-foreground, #000000);
-}
-
-.checkboxItem[data-disabled="true"],
-.radioItem[data-disabled="true"] {
-	pointer-events: none;
-	opacity: 0.5;
-}
-
-/* Indicator Styles */
-.itemIndicator {
-	pointer-events: none;
+.eragear-copilot-root .cui-menu-item-indicator {
 	position: absolute;
-	right: 8px;
+	right: var(--size-4-2);
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	pointer-events: none;
 }
 
-/* Sub-trigger Styles */
-.subTrigger {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 8px 8px;
-	border-radius: 0;
-	font-size: 12px;
-	cursor: default;
-	user-select: none;
-	outline: none;
-	position: relative;
-}
-
-.subTrigger:focus,
-.subTrigger:hover,
-.subTrigger[data-open="true"] {
-	background-color: var(--color-accent, #f3f4f6);
-	color: var(--color-accent-foreground, #000000);
-}
-
-.subTrigger[data-inset="true"] {
-	padding-left: 32px;
-}
-
-.caretIcon {
+.eragear-copilot-root .cui-menu-caret {
 	margin-left: auto;
 }
 
-/* SVG Icon Default Styles */
-.menuItem svg,
-.checkboxItem svg,
-.radioItem svg,
-.subTrigger svg {
-	pointer-events: none;
+.eragear-copilot-root .cui-menu-item svg,
+.eragear-copilot-root .cui-menu-checkbox-item svg,
+.eragear-copilot-root .cui-menu-radio-item svg,
+.eragear-copilot-root .cui-menu-sub-trigger svg {
 	flex-shrink: 0;
-	width: 16px;
-	height: 16px;
+	width: var(--icon-size-s);
+	height: var(--icon-size-s);
+	pointer-events: none;
+}
+
+/* Neo-brutalist hardening */
+.eragear-copilot-root .cui-menu-content {
+	background: var(--nb-surface);
+	border: 4px solid var(--nb-ink);
+	border-radius: 0;
+	box-shadow: var(--nb-shadow-lg);
+}
+
+.eragear-copilot-root .cui-menu-item,
+.eragear-copilot-root .cui-menu-checkbox-item,
+.eragear-copilot-root .cui-menu-radio-item,
+.eragear-copilot-root .cui-menu-sub-trigger {
+	border: 2px solid transparent;
+	border-radius: 0;
+	font-family: var(--font-code);
+	font-weight: 700;
+}
+
+.eragear-copilot-root .cui-menu-item:hover,
+.eragear-copilot-root .cui-menu-item:focus,
+.eragear-copilot-root .cui-menu-item[data-highlighted],
+.eragear-copilot-root .cui-menu-checkbox-item:hover,
+.eragear-copilot-root .cui-menu-checkbox-item:focus,
+.eragear-copilot-root .cui-menu-checkbox-item[data-highlighted],
+.eragear-copilot-root .cui-menu-radio-item:hover,
+.eragear-copilot-root .cui-menu-radio-item:focus,
+.eragear-copilot-root .cui-menu-radio-item[data-highlighted],
+.eragear-copilot-root .cui-menu-sub-trigger:hover,
+.eragear-copilot-root .cui-menu-sub-trigger:focus,
+.eragear-copilot-root .cui-menu-sub-trigger[data-highlighted],
+.eragear-copilot-root .cui-menu-sub-trigger[data-open] {
+	color: var(--nb-ink);
+	background: var(--nb-yellow);
+	border-color: var(--nb-ink);
+}
+
+.eragear-copilot-root .cui-menu-label {
+	color: var(--nb-ink);
+	font-family: var(--font-code);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.eragear-copilot-root .cui-menu-separator {
+	height: 2px;
+	background: var(--nb-ink);
 }

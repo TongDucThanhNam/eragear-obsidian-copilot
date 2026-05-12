@@ -58,9 +58,14 @@ const webWorkerPlugin = {
 	setup(build) {
 		build.onResolve({ filter: /\.worker(\.ts)?$/ }, (args) => {
 			// Resolve to absolute path so nested builds can find the entrypoint
-			let resolvedPath = path.isAbsolute(args.path)
-				? args.path
-				: path.join(args.resolveDir, args.path);
+			let resolvedPath;
+			if (args.path.startsWith("@/")) {
+				resolvedPath = path.join(__dirname, "src", args.path.slice(2));
+			} else {
+				resolvedPath = path.isAbsolute(args.path)
+					? args.path
+					: path.join(args.resolveDir, args.path);
+			}
 
 			if (!resolvedPath.endsWith(".ts")) {
 				resolvedPath += ".ts";

@@ -49,7 +49,7 @@
 }
 
 .hero-search-wrapper:focus-within {
-	border-color: var(--interactive-accent);
+	border-color: var(--accent);
 }
 
 .hero-search-icon {
@@ -79,10 +79,10 @@
 }
 
 .hero-search-btn {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
-	border: none;
-	border-radius: var(--radius-s);
+	background: var(--accent);
+	color: var(--paper);
+	border: 2px solid var(--accent);
+	border-radius: 0;
 	padding: var(--size-4-2) var(--size-4-3);
 	font-weight: 500;
 	font-size: 13px;
@@ -155,7 +155,7 @@
 
 .search-input:focus {
 	outline: none;
-	border-color: var(--interactive-accent);
+	border-color: var(--accent);
 }
 
 .search-input::placeholder {
@@ -190,7 +190,7 @@
 
 .search-btn-secondary:hover:not(:disabled) {
 	background-color: var(--background-modifier-hover);
-	border-color: var(--interactive-accent);
+	border-color: var(--accent);
 }
 
 /* Loading Spinner */
@@ -332,12 +332,9 @@
 	justify-content: center;
 	width: 32px;
 	height: 32px;
-	background: linear-gradient(
-		135deg,
-		var(--interactive-accent) 0%,
-		rgba(var(--interactive-accent-rgb), 0.7) 100%
-	);
-	border-radius: var(--radius-s);
+	background: var(--accent);
+	border: 2px solid var(--ink);
+	border-radius: 0;
 	color: var(--text-on-accent);
 	flex-shrink: 0;
 }
@@ -414,8 +411,8 @@
 
 .search-input:focus {
 	outline: none;
-	border-color: var(--interactive-accent);
-	box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.15);
+	border-color: var(--accent);
+	box-shadow: var(--shadow);
 }
 
 .search-input::placeholder {
@@ -450,14 +447,14 @@
 }
 
 .search-btn-primary {
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
-	border-color: var(--interactive-accent);
+	background-color: var(--ink);
+	color: var(--paper);
+	border-color: var(--ink);
 }
 
 .search-btn-primary:hover:not(:disabled) {
-	background-color: var(--interactive-accent-hover);
-	border-color: var(--interactive-accent-hover);
+	background-color: var(--accent);
+	border-color: var(--accent);
 }
 
 .search-btn-secondary {
@@ -468,7 +465,7 @@
 
 .search-btn-secondary:hover:not(:disabled) {
 	background-color: var(--background-tertiary);
-	border-color: var(--interactive-accent);
+	border-color: var(--accent);
 }
 
 /* Loading Spinner */
@@ -590,4 +587,3 @@
 	flex-shrink: 0;
 	opacity: 0.7;
 }
-

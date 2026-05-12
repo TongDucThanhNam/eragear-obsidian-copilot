@@ -31,10 +31,10 @@
 	align-items: center;
 	gap: var(--size-2-1);
 	padding: var(--size-4-2) var(--size-4-3);
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
-	border: none;
-	border-radius: var(--radius-s);
+	background-color: var(--ink);
+	color: var(--paper);
+	border: 2px solid var(--ink);
+	border-radius: 0;
 	cursor: var(--cursor);
 	font-size: var(--font-ui-small);
 	font-weight: 500;
@@ -42,7 +42,8 @@
 }
 
 .session-selector-new-btn:hover {
-	background-color: var(--interactive-accent-hover);
+	background-color: var(--accent);
+	border-color: var(--accent);
 }
 
 .session-selector-new-btn:active {
@@ -94,7 +95,7 @@
 
 .session-selector-item:hover {
 	background-color: var(--background-modifier-hover);
-	border-color: var(--interactive-accent);
+	border-color: var(--accent);
 }
 
 .session-selector-item:active {
@@ -141,9 +142,9 @@
 
 .session-item-tag {
 	padding: 2px var(--size-2-1);
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
-	border-radius: var(--radius-s);
+	background-color: var(--accent);
+	color: var(--paper);
+	border-radius: 0;
 	font-size: var(--font-ui-smaller);
 }
 

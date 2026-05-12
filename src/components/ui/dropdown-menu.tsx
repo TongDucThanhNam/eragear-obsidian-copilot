@@ -14,8 +14,18 @@ function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
 	return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
 }
 
-function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
-	return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />;
+function DropdownMenuPortal({
+	...props
+}: Omit<MenuPrimitive.Portal.Props, "container">) {
+	const portalContainer = usePortalContainer();
+
+	return (
+		<MenuPrimitive.Portal
+			data-slot="dropdown-menu-portal"
+			container={portalContainer}
+			{...props}
+		/>
+	);
 }
 
 function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {

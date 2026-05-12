@@ -3,16 +3,16 @@
    ============================================ */
 
 .agent-plan-container {
-	background-color: var(--background-secondary-alt); /* Darker card background */
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 12px;
+	background-color: var(--paper);
+	border: 2px solid var(--ink);
+	border-radius: 0;
 	margin-bottom: 12px;
 	overflow: hidden;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Stronger shadow */
+	box-shadow: var(--shadow);
 	display: flex;
 	flex-direction: column;
 	max-height: 400px; /* Limit height */
-	font-family: var(--font-interface);
+	font-family: var(--font-ui-newsprint);
 }
 
 .agent-plan-header {
@@ -24,7 +24,6 @@
 	font-size: 0.85rem;
 	font-weight: 500;
 	border-bottom: 1px solid var(--background-modifier-border);
-	/* background-color: rgba(255, 255, 255, 0.02); Optional subtle header bg */
 }
 
 .agent-plan-progress-info {
@@ -125,11 +124,11 @@
 }
 
 .agent-plan-status-running .agent-plan-loader {
-	color: var(--interactive-accent);
+	color: var(--accent);
 }
 
 .agent-plan-status-failed {
-	color: var(--text-error);
+	color: var(--accent);
 }
 
 .agent-plan-entry-content {
@@ -158,7 +157,7 @@
 	justify-content: space-between;
 	font-size: 0.8rem;
 	color: var(--text-muted);
-	background-color: rgba(0, 0, 0, 0.1); /* Subtle dark footer bg */
+	background-color: var(--paper-dark);
 }
 
 .agent-plan-review-btn {
@@ -206,11 +205,11 @@
 	display: flex;
 	flex-direction: column;
 	gap: 0.5rem;
-	border-radius: 0.75rem;
-	border: 1px solid var(--background-modifier-border);
-	background-color: var(--background-primary);
+	border-radius: 0;
+	border: 2px solid var(--ink);
+	background-color: var(--paper);
 	padding: 0.5rem 0.75rem;
-	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-xs */
+	box-shadow: var(--shadow);
 }
 
 .agent-plan-group {
@@ -308,16 +307,16 @@
 
 /* Status Colors */
 .agent-plan-status-complete {
-	color: var(--text-success);
+	color: var(--ink);
 }
 .agent-plan-status-running {
-	color: var(--interactive-accent);
+	color: var(--accent);
 }
 .agent-plan-status-failed {
-	color: var(--text-error);
+	color: var(--accent);
 }
 .agent-plan-status-blocked {
-	color: var(--text-warning);
+	color: var(--accent);
 }
 .agent-plan-status-pending {
 	color: var(--text-muted);

@@ -3,22 +3,28 @@
  */
 
 import type { Tab } from "@/features/test-panel/types";
-import { MagnifyingGlass, Wrench, Info, Folders, Lightning } from "@phosphor-icons/react";
+import {
+	IconBrain,
+	IconFolder,
+	IconInfo,
+	IconSearch,
+	IconWrench,
+} from "@/components/ui/Icons";
 
 export const TABS: Tab[] = [
 	{
 		id: "search",
-		icon: <MagnifyingGlass />,
+		icon: <IconSearch />,
 		label: "Search",
 		tooltip: "Search notes and files",
 	},
-	{ id: "ops", icon: <Wrench />, label: "Utils", tooltip: "Note operations" },
-	{ id: "info", icon: <Info />, label: "Info", tooltip: "Metadata & Information" },
+	{ id: "ops", icon: <IconWrench />, label: "Utils", tooltip: "Note operations" },
+	{ id: "info", icon: <IconInfo />, label: "Info", tooltip: "Metadata and information" },
 	{
 		id: "files",
-		icon: <Folders />,
+		icon: <IconFolder />,
 		label: "Files",
-		tooltip: "File & Folder organization",
+		tooltip: "File and folder organization",
 	},
-	{ id: "labs", icon: <Lightning />, label: "Labs", tooltip: "Advanced features" },
+	{ id: "labs", icon: <IconBrain />, label: "Labs", tooltip: "Advanced features" },
 ];

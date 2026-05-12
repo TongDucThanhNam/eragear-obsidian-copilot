@@ -9,6 +9,14 @@ import { useState } from "react";
 import { ActionCard } from "@/features/test-panel/components/ActionCard";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupInput, InputGroupButton } from "@/components/ui/input-group";
+import {
+	IconArchive,
+	IconFileText,
+	IconInfo,
+	IconPen,
+	IconTag,
+	IconWarning,
+} from "@/components/ui/Icons";
 import { useFileOperations } from "@/features/test-panel/hooks/useFileOperations";
 import type { InfoState } from "@/features/test-panel/types";
 import "./info-tab.css";
@@ -49,7 +57,7 @@ export const InfoTab: React.FC<InfoTabProps> = ({
 		try {
 			const path = infoState.updateFrontmatterPath || selectedFile?.path;
 			if (!path?.trim()) {
-				onAddOutput("✗ updateFrontmatter()", "Select a file first", "info");
+				onAddOutput("updateFrontmatter()", "Select a file first", "info");
 				return;
 			}
 			await fileOps.updateFrontmatter(path);
@@ -79,10 +87,14 @@ export const InfoTab: React.FC<InfoTabProps> = ({
 	return (
 		<div className="info-tab">
 			<div className="info-tab-header">
-				<h3 className="info-tab-title">ℹ️ Metadata & Information</h3>
+				<h3 className="info-tab-title">
+					<IconInfo />
+					Metadata and information
+				</h3>
 				{selectedFile && (
 					<span className="info-tab-file-badge" title={selectedFile.path}>
-						📄 {selectedFile.name}
+						<IconFileText />
+						{selectedFile.name}
 					</span>
 				)}
 			</div>
@@ -91,7 +103,7 @@ export const InfoTab: React.FC<InfoTabProps> = ({
 				<ActionCard
 					title="Get Metadata"
 					description="Retrieve active file metadata"
-					icon="🏷️"
+					icon={<IconTag />}
 					variant="safe"
 				>
 					<div className="info-card-action">
@@ -104,7 +116,7 @@ export const InfoTab: React.FC<InfoTabProps> = ({
 							{loadingAction === "metadata" ? (
 								<span className="loading-spinner" />
 							) : (
-								"📊"
+								<IconInfo />
 							)}
 							{loadingAction === "metadata" ? "Loading..." : "Get Metadata"}
 						</Button>
@@ -114,7 +126,7 @@ export const InfoTab: React.FC<InfoTabProps> = ({
 				<ActionCard
 					title="Update Frontmatter"
 					description="Modify YAML frontmatter (writes to file)"
-					icon="✏️"
+					icon={<IconPen />}
 				>
 					<div className="info-card-action">
 						<InputGroup>
@@ -139,7 +151,7 @@ export const InfoTab: React.FC<InfoTabProps> = ({
 									disabled={loadingAction !== null}
 									title="Use selected file"
 								>
-									📎
+									<IconArchive />
 								</InputGroupButton>
 							)}
 							<InputGroupButton
@@ -155,7 +167,7 @@ export const InfoTab: React.FC<InfoTabProps> = ({
 								{loadingAction === "frontmatter" ? (
 									<span className="loading-spinner" />
 								) : (
-									"⚠️"
+									<IconWarning />
 								)}
 								{loadingAction === "frontmatter" ? "Writing..." : "Update"}
 							</InputGroupButton>
@@ -166,7 +178,7 @@ export const InfoTab: React.FC<InfoTabProps> = ({
 				<ActionCard
 					title="Active File"
 					description="Get currently active file info"
-					icon="📌"
+					icon={<IconFileText />}
 					variant="safe"
 				>
 					<div className="info-card-action">
@@ -179,7 +191,7 @@ export const InfoTab: React.FC<InfoTabProps> = ({
 							{loadingAction === "activeFile" ? (
 								<span className="loading-spinner" />
 							) : (
-								"📌"
+								<IconFileText />
 							)}
 							{loadingAction === "activeFile" ? "Loading..." : "Get Active File"}
 						</Button>

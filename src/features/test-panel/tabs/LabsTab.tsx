@@ -7,6 +7,15 @@ import type { App, TFile } from "obsidian";
 import type React from "react";
 import { useState } from "react";
 import { ActionCard, ActionCardGroup } from "@/features/test-panel/components/ActionCard";
+import {
+	IconBrain,
+	IconBranch,
+	IconCode,
+	IconFileText,
+	IconLink,
+	IconList,
+	IconRotate,
+} from "@/components/ui/Icons";
 import { useFileOperations } from "@/features/test-panel/hooks/useFileOperations";
 import type { LabsState } from "@/features/test-panel/types";
 
@@ -84,7 +93,7 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 			const path = labsState.readSectionPath || selectedFile?.path;
 			if (!path?.trim() || !labsState.subpath.trim()) {
 				onAddOutput(
-					"✗ readSpecificSection()",
+					"readSpecificSection()",
 					"Enter file path and subpath",
 					"info",
 				);
@@ -101,7 +110,7 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 		try {
 			const path = labsState.readCanvasPath || selectedFile?.path;
 			if (!path?.trim()) {
-				onAddOutput("✗ readCanvas()", "Select a .canvas file", "info");
+				onAddOutput("readCanvas()", "Select a .canvas file", "info");
 				return;
 			}
 			await fileOps.readCanvas(path);
@@ -112,13 +121,16 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 
 	return (
 		<div className="test-section">
-			<h3>⚡ Advanced Features</h3>
+			<h3>
+				<IconBrain />
+				Advanced features
+			</h3>
 
 			<ActionCardGroup title="Graph Intelligence">
 				<ActionCard
 					title="Related Files"
 					description="Backlinks & outlinks"
-					icon="🔗"
+					icon={<IconLink />}
 					variant="safe"
 				>
 					<button
@@ -135,7 +147,7 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 				<ActionCard
 					title="Smart Context (Worker)"
 					description="Snapshot & compute (BFS)"
-					icon="🧠"
+					icon={<IconBrain />}
 					variant="safe"
 				>
 					<div className="test-input-group">
@@ -166,7 +178,8 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 							disabled={isLoading}
 							aria-label="Analyze smart context"
 						>
-							{isLoading ? "⏳" : "🧠"} Analyze
+							{isLoading ? <IconRotate /> : <IconBrain />}
+							Analyze
 						</button>
 					</div>
 				</ActionCard>
@@ -174,7 +187,7 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 				<ActionCard
 					title="Neighborhood"
 					description="1-hop graph context"
-					icon="🕸️"
+					icon={<IconBranch />}
 					variant="safe"
 				>
 					<button
@@ -191,7 +204,7 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 				<ActionCard
 					title="Link Density"
 					description="Connectivity analysis"
-					icon="📊"
+					icon={<IconList />}
 					variant="safe"
 				>
 					<button
@@ -210,7 +223,7 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 				<ActionCard
 					title="Read Section"
 					description="Specific heading/block"
-					icon="🎯"
+					icon={<IconFileText />}
 					variant="safe"
 				>
 					<input
@@ -256,7 +269,7 @@ export const LabsTab: React.FC<LabsTabProps> = ({
 				<ActionCard
 					title="Read Canvas"
 					description="Parse .canvas files"
-					icon="🎨"
+					icon={<IconCode />}
 				>
 					<input
 						type="text"

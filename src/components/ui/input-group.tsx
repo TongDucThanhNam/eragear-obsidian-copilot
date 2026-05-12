@@ -96,6 +96,8 @@ export type InputGroupButtonProps = {
 	onClick?: React.MouseEventHandler<HTMLButtonElement>;
 	"aria-label"?: string;
 	title?: string;
+	asChild?: boolean;
+	render?: React.ReactNode;
 };
 
 const InputGroupButtonComponent = forwardRef<HTMLButtonElement, InputGroupButtonProps>(

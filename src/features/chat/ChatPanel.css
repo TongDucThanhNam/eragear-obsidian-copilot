@@ -15,35 +15,74 @@
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	padding: 12px 16px;
+	gap: var(--size-4-3);
+	padding: var(--size-4-3) var(--size-4-4);
 	margin: 0;
 	flex-shrink: 0;
-	border-bottom: 1px solid var(--eragear-border-color);
+	background: var(--background-primary);
+	border-bottom: var(--border-width) solid var(--background-modifier-border);
+}
+
+.eragear-chat-heading {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	min-width: 0;
 }
 
 .eragear-chat-title {
-	font-size: 14px;
-	font-weight: 700;
-	color: var(--eragear-text-main);
+	color: var(--text-normal);
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold, 600);
+	line-height: var(--line-height-tight);
+}
+
+.eragear-chat-status {
+	min-width: 0;
+	overflow: hidden;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.eragear-agent-name {
+	min-width: 0;
+	overflow: hidden;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .eragear-add-btn {
-	background: var(--eragear-bg-secondary);
-	border: 1px solid var(--eragear-border-color);
-	width: 28px;
-	height: 28px;
-	border-radius: 50%;
-	display: flex;
+	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	cursor: pointer;
-	color: var(--eragear-text-muted);
-	transition: all 0.2s;
+	flex-shrink: 0;
+	width: var(--cui-size-lg);
+	height: var(--cui-size-lg);
+	padding: 0;
+	color: var(--text-muted);
+	background: transparent;
+	border: var(--border-width) solid var(--background-modifier-border);
+	border-radius: 50%;
+	cursor: var(--cursor);
+	transition:
+		background-color var(--anim-duration-fast) ease,
+		border-color var(--anim-duration-fast) ease,
+		color var(--anim-duration-fast) ease;
 }
 
 .eragear-add-btn:hover {
-	color: var(--eragear-text-main);
-	border-color: var(--eragear-text-muted);
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+	border-color: var(--background-modifier-border-hover);
+}
+
+.eragear-add-btn:focus-visible {
+	outline: var(--size-4-1) solid var(--accent);
+	outline-offset: var(--size-4-1);
 }
 
 /* New Chat Dropdown Menu */
@@ -55,7 +94,7 @@
 	background: var(--eragear-bg-secondary);
 	border: 1px solid var(--eragear-border-color);
 	border-radius: 8px;
-	box-shadow: var(--eragear-shadow-lg);
+	box-shadow: var(--shadow);
 	min-width: 200px;
 	z-index: 1000;
 	overflow: hidden;
@@ -94,8 +133,8 @@
 }
 
 .eragear-dropdown-item:active {
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background-color: var(--accent);
+	color: var(--paper);
 }
 
 .eragear-dropdown-backdrop {
@@ -115,4 +154,32 @@
 	overflow: hidden;
 	display: flex;
 	flex-direction: column;
+}
+
+.eragear-empty-state {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: var(--size-4-2);
+	min-height: calc(var(--size-4-12) * 4);
+	color: var(--text-muted);
+	text-align: center;
+}
+
+.eragear-empty-state p {
+	margin: 0;
+	font-size: var(--font-ui-small);
+}
+
+.eragear-empty-state-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--size-4-8);
+	height: var(--size-4-8);
+	color: var(--text-faint);
+	border: var(--border-width) solid var(--background-modifier-border);
+	border-radius: 50%;
 }

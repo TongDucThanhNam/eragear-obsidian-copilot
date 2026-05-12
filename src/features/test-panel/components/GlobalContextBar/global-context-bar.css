@@ -7,10 +7,10 @@
 	--gcb-text: var(--text-normal);
 	--gcb-text-muted: var(--text-muted);
 	--gcb-border: var(--background-modifier-border);
-	--gcb-accent: var(--interactive-accent);
-	--gcb-accent-hover: var(--interactive-accent-hover);
-	--gcb-radius: var(--radius-m);
-	--gcb-shadow: var(--shadow-s);
+	--gcb-accent: var(--accent);
+	--gcb-accent-hover: var(--accent);
+	--gcb-radius: 0;
+	--gcb-shadow: var(--shadow);
 
 	/* Spacing via Obsidian size grid */
 	--gcb-px: var(--size-4-2);  /* 8px */
@@ -19,11 +19,7 @@
 	display: flex;
 	flex-direction: column;
 	padding: var(--size-4-2);
-	background: linear-gradient(
-		to bottom,
-		var(--background-secondary),
-		var(--background-primary)
-	);
+	background: var(--paper-dark);
 	border-bottom: 2px solid var(--background-modifier-border);
 	flex-shrink: 0;
 }
@@ -156,7 +152,7 @@
 }
 
 .gcb-combobox-item[data-selected] {
-	background-color: rgba(var(--interactive-accent-rgb), 0.1);
+	background-color: var(--paper-dark);
 }
 
 .gcb-combobox-item-icon {

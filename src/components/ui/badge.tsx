@@ -1,49 +1,39 @@
-import { mergeProps } from "@base-ui/react/merge-props";
-import { useRender } from "@base-ui/react/use-render";
+import React from "react";
 import "./badge.css";
 
 function classNames(...classes: (string | undefined | null | false)[]): string {
 	return classes.filter(Boolean).join(" ");
 }
 
-function Badge({
-	className,
-	variant = "default",
-	render,
-	...props
-}: useRender.ComponentProps<"span"> & {
-	variant?:
-		| "default"
-		| "secondary"
-		| "destructive"
-		| "outline"
-		| "ghost"
-		| "link";
-}) {
-	return useRender({
-		defaultTagName: "span",
-		props: mergeProps<"span">(
-			{
-				className: classNames(className),
-				"data-slot": "badge",
-				"data-variant": variant,
-			},
-			props,
-		),
-		render,
-	});
+type BadgeVariant =
+	| "default"
+	| "secondary"
+	| "destructive"
+	| "outline"
+	| "ghost"
+	| "link";
+
+interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+	variant?: BadgeVariant;
 }
 
-function badgeVariants(
-	variant:
-		| "default"
-		| "secondary"
-		| "destructive"
-		| "outline"
-		| "ghost"
-		| "link" = "default",
-) {
+const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
+	({ className, variant = "default", ...props }, ref) => (
+		<span
+			ref={ref}
+			data-slot="badge"
+			data-variant={variant}
+			className={classNames(className)}
+			{...props}
+		/>
+	),
+);
+
+Badge.displayName = "Badge";
+
+function badgeVariants(variant: BadgeVariant = "default") {
 	return `badge badge-${variant}`;
 }
 
 export { Badge, badgeVariants };
+export type { BadgeProps, BadgeVariant };

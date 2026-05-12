@@ -1,4 +1,3 @@
-import { PlusIcon } from "@phosphor-icons/react";
 import { type App, MarkdownView, type TFile } from "obsidian";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -27,8 +26,10 @@ import {
 import { prepareMessage } from "@/infra/obsidian/message-service";
 
 import {
+	IconBrain,
 	IconFileText,
 	IconFolder,
+	IconPlus,
 } from "@/components/ui/Icons";
 
 import {
@@ -57,6 +58,82 @@ const generateMessageId = (prefix = "msg") => {
 	return `${prefix}-${Date.now()}-${messageIdCounter}`;
 };
 
+const mergeAccumulatedChunk = (currentText: string, newChunk: string): string => {
+	const isAccumulated =
+		currentText.length > 0 &&
+		newChunk.length > currentText.length &&
+		newChunk.startsWith(currentText);
+
+	return isAccumulated ? newChunk : currentText + newChunk;
+};
+
+const upsertAssistantChunk = (
+	messages: Message[],
+	assistantMessageId: string,
+	partType: "text" | "thought",
+	text: string,
+): Message[] => {
+	const targetIndex = messages.findIndex(
+		(message) => message.id === assistantMessageId,
+	);
+
+	if (targetIndex === -1) {
+		return [
+			...messages,
+			{
+				id: assistantMessageId,
+				role: "assistant",
+				parts: [{ type: partType, text }],
+			},
+		];
+	}
+
+	return messages.map((message, index) => {
+		if (index !== targetIndex) return message;
+
+		const parts = [...message.parts];
+		const lastPart = parts[parts.length - 1];
+
+		if (lastPart && lastPart.type === partType) {
+			parts[parts.length - 1] = {
+				...lastPart,
+				text: mergeAccumulatedChunk(lastPart.text, text),
+			};
+		} else {
+			parts.push({ type: partType, text });
+		}
+
+		return { ...message, parts };
+	});
+};
+
+const setAssistantText = (
+	messages: Message[],
+	assistantMessageId: string,
+	text: string,
+): Message[] => {
+	if (!messages.some((message) => message.id === assistantMessageId)) {
+		return [
+			...messages,
+			{
+				id: assistantMessageId,
+				role: "assistant",
+				parts: [{ type: "text", text }],
+			},
+		];
+	}
+
+	return messages.map((message) =>
+		message.id === assistantMessageId
+			? {
+					...message,
+					role: "assistant",
+					parts: [{ type: "text", text }],
+				}
+			: message,
+	);
+};
+
 interface CurrentChatContext {
 	mode: ChatMode;
 	modelId?: string; // For API mode
@@ -78,6 +155,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	const [activeMode, setActiveMode] = useState<PanelMode>("chat");
 
 	const [messages, setMessages] = useState<Message[]>([]);
+	const activeAssistantMessageIdRef = useRef<string | null>(null);
 	const [input, setInput] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [showCommands, setShowCommands] = useState(false);
@@ -216,6 +294,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 		setSelectedModel(modelId);
 		setChatContext({ mode: "api", modelId });
 		setMessages([]);
+		activeAssistantMessageIdRef.current = null;
 		setInput("");
 		setSelectedFiles([]);
 		setAgentSessionId(null);
@@ -278,6 +357,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 
 		// Clear previous session - useAgentClient will create new one
 		setAgentSessionId(null);
+		activeAssistantMessageIdRef.current = null;
 		setPlanEntries([]); // Clear any existing plan
 
 		// Reset messages
@@ -305,70 +385,31 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 				console.log("[ChatPanel] User message chunk:", update.text);
 				// Optionally could append to user messages if needed for session loading
 			} else if (update.type === "agent_message_chunk") {
-				setMessages((prev) => {
-					const lastMsg = prev[prev.length - 1];
-					if (lastMsg && lastMsg.role === "assistant") {
-						// Append to last message
-						const newParts = [...lastMsg.parts];
-						const lastPart = newParts[newParts.length - 1];
-						if (lastPart && lastPart.type === "text") {
-							// Check for accumulated text (fix for agents sending full history)
-							const currentText = lastPart.text;
-							const newChunk = update.text || "";
-							const isAccumulated =
-								currentText &&
-								newChunk.length > currentText.length &&
-								newChunk.startsWith(currentText);
+				const assistantMessageId =
+					activeAssistantMessageIdRef.current ?? generateMessageId();
+				activeAssistantMessageIdRef.current = assistantMessageId;
 
-							newParts[newParts.length - 1] = {
-								...lastPart,
-								text: isAccumulated ? newChunk : currentText + newChunk,
-							};
-						} else {
-							newParts.push({ type: "text", text: update.text || "" });
-						}
-						return [...prev.slice(0, -1), { ...lastMsg, parts: newParts }];
-					}
-					// If no assistant message found (rare, maybe started with tool call?), create one?
-					// Usually we create a placeholder before sending.
-					return prev;
+				setMessages((prev) => {
+					return upsertAssistantChunk(
+						prev,
+						assistantMessageId,
+						"text",
+						update.text || "",
+					);
 				});
 			} else if (update.type === "agent_thought_chunk") {
 				// Stream thoughts to UI - append to last assistant message as thought part
-				setMessages((prev) => {
-					const lastMsg = prev[prev.length - 1];
-					if (lastMsg && lastMsg.role === "assistant") {
-						const newParts = [...lastMsg.parts];
-						const lastPart = newParts[newParts.length - 1];
-						if (lastPart && lastPart.type === "thought") {
-							// Check for accumulated text (fix for agents sending full history)
-							const currentText = lastPart.text;
-							const newChunk = update.text || "";
-							const isAccumulated =
-								currentText &&
-								newChunk.length > currentText.length &&
-								newChunk.startsWith(currentText);
+				const assistantMessageId =
+					activeAssistantMessageIdRef.current ?? generateMessageId();
+				activeAssistantMessageIdRef.current = assistantMessageId;
 
-							// Append thought text
-							newParts[newParts.length - 1] = {
-								...lastPart,
-								text: isAccumulated ? newChunk : currentText + newChunk,
-							};
-						} else {
-							// New thought part
-							newParts.push({ type: "thought", text: update.text || "" });
-						}
-						return [...prev.slice(0, -1), { ...lastMsg, parts: newParts }];
-					}
-					// If no active assistant message, create one
-					return [
-						...prev,
-						{
-							id: generateMessageId(),
-							role: "assistant",
-							parts: [{ type: "thought", text: update.text || "" }],
-						},
-					];
+				setMessages((prev) => {
+					return upsertAssistantChunk(
+						prev,
+						assistantMessageId,
+						"thought",
+						update.text || "",
+					);
 				});
 			} else if (update.type === "available_commands_update") {
 				console.log(
@@ -484,6 +525,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 				setPermissionRequest(null);
 				setIsLoading(false);
 				setLastUserMessage(null); // Clear saved message on successful completion
+				activeAssistantMessageIdRef.current = null;
 			} else if (update.type === "output") {
 				// Handle agent output - add as message in chat
 				console.log(`[ChatPanel] Agent ${update.outputType}:`, update.text);
@@ -628,7 +670,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 								type: "action",
 								label: "Active Note",
 								id: "action_active_note",
-								icon: <IconFileText />, // We should import this or use emoji
+								icon: <IconFileText />,
 								desc: activeFile.basename,
 								data: activeFile,
 							});
@@ -986,6 +1028,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 
 					// Append placeholder
 					const assistantMsgId = generateMessageId();
+					activeAssistantMessageIdRef.current = assistantMsgId;
 					setMessages((prev) => [
 						...prev,
 						{
@@ -1003,20 +1046,30 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 					setLastUserMessage(null);
 				} catch (e: any) {
 					console.error(e);
-					const errorMsg: Message = {
-						id: generateMessageId(),
-						role: "assistant",
-						parts: [{ type: "text", text: `Agent Error: ${e.message}` }],
-					};
-					setMessages((prev) => [...prev, errorMsg]);
+					const errorText = `Agent Error: ${e.message}`;
+					const assistantMsgId = activeAssistantMessageIdRef.current;
+					setMessages((prev) =>
+						assistantMsgId
+							? setAssistantText(prev, assistantMsgId, errorText)
+							: [
+									...prev,
+									{
+										id: generateMessageId(),
+										role: "assistant",
+										parts: [{ type: "text", text: errorText }],
+									},
+								],
+					);
 				} finally {
 					setIsLoading(false);
+					activeAssistantMessageIdRef.current = null;
 				}
 				return;
 			}
 			// --- END ACP LOCAL HANDLING ---
 
 			const aiService = new AIService(settings);
+			let assistantMsgId: string | null = null;
 
 			try {
 				const history = [...messages, userMsg];
@@ -1038,7 +1091,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 
 				// 3. Stream Response
 				let fullResponse = "";
-				const assistantMsgId = generateMessageId();
+				assistantMsgId = generateMessageId();
 				setMessages((prev) => [
 					...prev,
 					{
@@ -1058,18 +1111,26 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 						),
 					);
 				}
+
+				if (fullResponse.trim().length === 0) {
+					setMessages((prev) =>
+						prev.filter((message) => message.id !== assistantMsgId),
+					);
+				}
 			} catch (e: any) {
-				const errorMsg: Message = {
-					id: generateMessageId(),
-					role: "assistant",
-					parts: [
-						{
-							type: "text",
-							text: `Error: ${e.message || "Unknown error occurred"}`,
-						},
-					],
-				};
-				setMessages((prev) => [...prev, errorMsg]);
+				const errorText = `Error: ${e.message || "Unknown error occurred"}`;
+				setMessages((prev) =>
+					assistantMsgId
+						? setAssistantText(prev, assistantMsgId, errorText)
+						: [
+								...prev,
+								{
+									id: generateMessageId(),
+									role: "assistant",
+									parts: [{ type: "text", text: errorText }],
+								},
+							],
+				);
 			} finally {
 				setIsLoading(false);
 				setLastUserMessage(null);
@@ -1123,6 +1184,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 								? { ...msg, parts: [{ type: "text", text: fullResponse }] }
 								: msg,
 						),
+					);
+				}
+
+				if (fullResponse.trim().length === 0) {
+					setMessages((prev) =>
+						prev.filter((message) => message.id !== assistantMsgId),
 					);
 				}
 			} catch (e: any) {
@@ -1185,6 +1252,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 								? { ...msg, parts: [{ type: "text", text: fullResponse }] }
 								: msg,
 						),
+					);
+				}
+
+				if (fullResponse.trim().length === 0) {
+					setMessages((prev) =>
+						prev.filter((message) => message.id !== assistantMsgId),
 					);
 				}
 			} catch (e: any) {
@@ -1274,6 +1347,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 
 		// Reset loading state
 		setIsLoading(false);
+		activeAssistantMessageIdRef.current = null;
 
 		// Restore the last user message to input field
 		if (savedMessage) {
@@ -1362,60 +1436,54 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 				{/* Chat Area - Header + Scrollable Messages */}
 				<div className="eragear-chat-area">
 					<div className="eragear-chat-header">
-						<div
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "8px",
-							}}
-						>
+						<div className="eragear-chat-heading">
 							<span className="eragear-chat-title">
 								{activeMode === "chat" ? "Chat" : "Playground"}
 							</span>
-							{settings && (
+							{settings && settings.provider === AIProviderType.ACP_LOCAL && (
 								<Badge
 									variant={
-										settings.provider === AIProviderType.ACP_LOCAL
-											? agentError
-												? "destructive"
-												: isInitializing
-													? "default"
-													: agentClient
-														? "secondary"
-														: "default"
-													: "default"
-										}
-								>
-									{settings.provider === AIProviderType.ACP_LOCAL
-										? agentError
-											? "Agent Error"
+										agentError
+											? "destructive"
 											: isInitializing
-												? "Connecting..."
+												? "default"
 												: agentClient
-													? "Connected"
-													: "Disconnected"
-										: `Model: ${selectedModel || "Loading..."}`}
+													? "secondary"
+													: "default"
+									}
+								>
+									{agentError
+										? "Agent error"
+										: isInitializing
+											? "Connecting..."
+											: agentClient
+												? "Connected"
+												: "Disconnected"}
 								</Badge>
+							)}
+							{settings && settings.provider !== AIProviderType.ACP_LOCAL && (
+								<span className="eragear-chat-status">
+									Model: <strong>{selectedModel || "Loading..."}</strong>
+								</span>
 							)}
 
 							{/* Mode Selector for ACP - Shows current agent name and mode */}
 							{chatContext.mode === "agent" && chatContext.agentName && (
-								<span
-									style={{
-										fontSize: "0.75rem",
-										color: "var(--text-muted)",
-										marginLeft: "4px",
-									}}
-								>
-									• {chatContext.agentName}
+								<span className="eragear-agent-name">
+									Agent: {chatContext.agentName}
 								</span>
 							)}
 						</div>
 
 						{/* New Chat Button with Dropdown */}
 						<DropdownMenu highlightItemOnHover={true}>
-							<DropdownMenuTrigger title="New Chat" aria-label="Create new chat">
-								<PlusIcon />
+							<DropdownMenuTrigger
+								className="eragear-add-btn"
+								title="New chat"
+								aria-label="Create new chat"
+							>
+								<IconPlus />
+								<span className="eragear-add-label">New chat</span>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent
 								align="end"
@@ -1425,17 +1493,17 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 								className="new-chat-dropdown"
 							>
 								<DropdownMenuItem onClick={handleNewAPIChat}>
-									New Chat (API Models)
+									New chat with API model
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuGroup>
-									<DropdownMenuLabel>External Agents</DropdownMenuLabel>
+									<DropdownMenuLabel>External agents</DropdownMenuLabel>
 									{getAvailableAgents().map((agent) => (
 										<DropdownMenuItem
 											key={agent.id}
 											onClick={() => handleNewAgentChat(agent)}
 										>
-											<span>🤖</span>
+											<IconBrain />
 											<span>{agent.name}</span>
 										</DropdownMenuItem>
 									))}

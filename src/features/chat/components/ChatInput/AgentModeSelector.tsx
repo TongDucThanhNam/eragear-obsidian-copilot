@@ -47,7 +47,7 @@ export const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
 					className="model-selector-input"
 					placeholder="Select mode..."
 					disabled={isSending}
-					showClear
+					showClear={false}
 				/>
 				<ComboboxContent className="model-selector-content">
 					<ComboboxList>
@@ -67,4 +67,3 @@ export const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
 		</div>
 	);
 };
-

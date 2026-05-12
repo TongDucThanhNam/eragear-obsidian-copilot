@@ -9,44 +9,76 @@
 .eragear-copilot-root {
 	position: relative;
 
+	/* Neo-brutalist design system */
+	--nb-bg: #f4f1ea;
+	--nb-bg-dot: #d8d8d8;
+	--nb-surface: #ffffff;
+	--nb-surface-muted: #eae8e3;
+	--nb-ink: #000000;
+	--nb-muted: #5f5f5f;
+	--nb-line: #000000;
+	--nb-yellow: #ffe066;
+	--nb-blue: #2563eb;
+	--nb-lime: #a6fa75;
+	--nb-pink: #f43f5e;
+	--nb-red: #ef4444;
+	--nb-code: #eae8e3;
+	--nb-shadow-sm: 2px 2px 0 var(--nb-ink);
+	--nb-shadow: 4px 4px 0 var(--nb-ink);
+	--nb-shadow-lg: 6px 6px 0 var(--nb-ink);
+	--nb-shadow-xl: 8px 8px 0 var(--nb-ink);
+
+	--paper: var(--nb-bg);
+	--paper-dark: var(--nb-surface-muted);
+	--ink: var(--nb-ink);
+	--accent: var(--nb-yellow);
+	--line: var(--nb-line);
+	--shadow: var(--nb-shadow);
+	--result: var(--nb-blue);
+
+	--font-brand: "DM Serif Display", Georgia, serif;
+	--font-body: "Work Sans", var(--font-interface), sans-serif;
+	--font-ui-newsprint: "Space Mono", "Courier New", monospace;
+	--font-code: "Space Mono", "Courier New", monospace;
+
 	/* Background colors */
-	--cui-bg: var(--background-primary);
-	--cui-bg-2: var(--background-secondary);
-	--cui-bg-3: var(--background-tertiary);
-	--cui-bg-hover: var(--background-modifier-hover);
-	--cui-backdrop: var(--background-modifier-cover);
+	--cui-bg: var(--paper);
+	--cui-bg-2: var(--nb-surface);
+	--cui-bg-3: var(--paper-dark);
+	--cui-bg-hover: var(--nb-yellow);
+	--cui-backdrop: color-mix(in srgb, var(--ink) 42%, transparent);
 
 	/* Text colors */
-	--cui-text: var(--text-normal);
-	--cui-text-muted: var(--text-muted);
-	--cui-text-faint: var(--text-faint);
+	--cui-text: var(--ink);
+	--cui-text-muted: var(--nb-muted);
+	--cui-text-faint: color-mix(in srgb, var(--nb-muted) 72%, var(--paper));
 
 	/* Border colors */
-	--cui-border: var(--background-modifier-border);
-	--cui-border-hover: var(--background-modifier-border-hover);
+	--cui-border: var(--ink);
+	--cui-border-hover: var(--ink);
 
 	/* Accent colors */
-	--cui-accent: var(--interactive-accent);
-	--cui-accent-hover: var(--interactive-accent-hover);
-	--cui-accent-text: var(--text-on-accent);
+	--cui-accent: var(--nb-ink);
+	--cui-accent-hover: var(--nb-yellow);
+	--cui-accent-text: var(--nb-surface);
 
 	/* Destructive colors */
-	--cui-destructive: var(--text-error);
-	--cui-destructive-bg: var(--background-modifier-error);
+	--cui-destructive: var(--nb-red);
+	--cui-destructive-bg: var(--nb-surface);
 
 	/* Muted colors */
-	--cui-muted: var(--background-modifier-form-field);
+	--cui-muted: var(--paper-dark);
 
 	/* Spacing based on 4px grid */
-	--cui-px: var(--size-4-2); /* 8px */
-	--cui-py: var(--size-4-2); /* 8px */
-	--cui-gap: var(--size-4-1); /* 4px */
-	--cui-gap-lg: var(--size-4-2); /* 8px */
-	--cui-size-xs: var(--size-4-6); /* 24px */
-	--cui-size-sm: var(--size-4-7); /* 28px */
-	--cui-size-md: var(--size-4-8); /* 32px */
-	--cui-size-lg: var(--size-4-9); /* 36px */
-	--cui-touch-target: 44px;
+	--cui-px: var(--size-4-2, 8px); /* 8px */
+	--cui-py: var(--size-4-2, 8px); /* 8px */
+	--cui-gap: var(--size-4-1, 4px); /* 4px */
+	--cui-gap-lg: var(--size-4-2, 8px); /* 8px */
+	--cui-size-xs: var(--size-4-6, 24px); /* 24px */
+	--cui-size-sm: calc(var(--size-4-1, 4px) * 7); /* 28px */
+	--cui-size-md: var(--size-4-8, 32px); /* 32px */
+	--cui-size-lg: var(--size-4-9, 36px); /* 36px */
+	--cui-touch-target: calc(var(--size-4-10, 40px) + var(--size-4-1, 4px));
 
 	/* Typography */
 	--cui-font-size: var(--font-ui-medium);
@@ -55,17 +87,17 @@
 	--cui-line-height: 1.5;
 
 	/* Radius */
-	--cui-radius: var(--radius-m);
-	--cui-radius-sm: var(--radius-s);
-	--cui-radius-lg: var(--radius-l);
+	--cui-radius: 10px;
+	--cui-radius-sm: 6px;
+	--cui-radius-lg: 14px;
 
 	/* Shadow */
-	--cui-shadow: var(--shadow-s);
-	--cui-shadow-lg: var(--shadow-m);
+	--cui-shadow: var(--nb-shadow);
+	--cui-shadow-lg: var(--nb-shadow-lg);
 
 	/* Overlays */
 	--cui-overlay-z-index: 50;
-	--cui-dialog-max-width: calc(var(--size-4-8) * 14);
+	--cui-dialog-max-width: calc(var(--size-4-8, 32px) * 14);
 
 	/* Transitions */
 	--cui-transition: 0.2s ease;

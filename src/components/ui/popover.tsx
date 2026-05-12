@@ -15,8 +15,18 @@ function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
 	return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
 }
 
-function PopoverPortal({ ...props }: PopoverPrimitive.Portal.Props) {
-	return <PopoverPrimitive.Portal data-slot="popover-portal" {...props} />;
+function PopoverPortal({
+	...props
+}: Omit<PopoverPrimitive.Portal.Props, "container">) {
+	const portalContainer = usePortalContainer();
+
+	return (
+		<PopoverPrimitive.Portal
+			data-slot="popover-portal"
+			container={portalContainer}
+			{...props}
+		/>
+	);
 }
 
 function PopoverPositioner({
@@ -85,7 +95,7 @@ function PopoverContent({
 				side={side}
 				sideOffset={sideOffset}
 				anchor={anchor}
-				className="isolate z-50"
+				className="cui-popover-positioner"
 			>
 				<PopoverPrimitive.Popup
 					data-slot="popover-content"

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import type { App } from "obsidian";
 import { MarkdownTextRenderer } from "./Messages/MarkdownTextRenderer";
 import { IconChevronDown } from "@/components/ui/Icons";
@@ -10,31 +10,31 @@ interface ThinkingBlockProps {
 
 export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ content, app }) => {
 	const [isOpen, setIsOpen] = useState(false);
+	const contentId = useId();
 
 	return (
-		<div className="reasoning-block">
+		<div className="reasoning-block" data-open={isOpen ? "" : undefined}>
 			<button
-				className=""
+				aria-controls={contentId}
+				aria-expanded={isOpen}
+				aria-label={isOpen ? "Hide reasoning" : "Show reasoning"}
+				className="reasoning-trigger"
 				onClick={() => setIsOpen(!isOpen)}
 				type="button"
 			>
-				<span className="">Show reasoning</span>
-				<div
-					className={`reasoning-icon transform transition-transform ${isOpen ? "rotate-180" : ""}`}
-				>
+				<span className="reasoning-title">Reasoning</span>
+				<span className="reasoning-state">{isOpen ? "Hide" : "Show"}</span>
+				<span className="reasoning-icon" aria-hidden="true">
 					<IconChevronDown />
-				</div>
+				</span>
 			</button>
-			<div
-				className={`reasoning-content overflow-hidden transition-[max-height] duration-150 ease-out ${isOpen ? "open" : ""}`}
-				style={{ maxHeight: isOpen ? "1000px" : "0px" }}
-			>
-				<div className="reasoning-inner ml-2 border-l-2 border-l-slate-200 px-2 pb-1 dark:border-l-slate-700">
-					<div className="text-muted-foreground prose prose-sm dark:prose-invert">
+			{isOpen && (
+				<div className="reasoning-content" id={contentId}>
+					<div className="reasoning-inner">
 						<MarkdownTextRenderer text={content} app={app} />
 					</div>
 				</div>
-			</div>
+			)}
 		</div>
 	);
 };

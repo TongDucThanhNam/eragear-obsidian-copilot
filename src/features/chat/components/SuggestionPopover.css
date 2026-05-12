@@ -3,10 +3,10 @@
 }
 
 .suggestion-popover {
-	background-color: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
-	box-shadow: 0 12px 26px rgba(0, 0, 0, 0.12);
+	background-color: var(--paper);
+	border: 2px solid var(--ink);
+	border-radius: 0;
+	box-shadow: var(--shadow);
 	width: min(360px, 100%);
 	padding: 0;
 }
@@ -87,11 +87,11 @@
 
 .suggestion-command-item[data-type="file"] .suggestion-popover-icon,
 .suggestion-command-item[data-type="folder"] .suggestion-popover-icon {
-	color: var(--interactive-accent);
+	color: var(--accent);
 }
 
 .suggestion-command-item[data-type="action"] .suggestion-popover-icon {
-	color: var(--interactive-cta);
+	color: var(--ink);
 }
 
 .suggestion-command-item[data-type="category"] .suggestion-popover-icon {
