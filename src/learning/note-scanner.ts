@@ -2,14 +2,25 @@ import type { App, TFile } from "obsidian";
 import {
 	detectMissingFields,
 	formatLearningDate,
+	hasLearningFrontmatter,
 	isReviewDue,
 	parseLearningFrontmatter,
 } from "@/learning/frontmatter";
+import { ARTIFACT_FOLDERS } from "@/learning/constants";
 import type { LearningNote, LearningScanResult } from "@/learning/types";
 
 export function scanVaultLearningNotes(app: App): LearningScanResult {
 	const today = formatLearningDate();
-	const notes = app.vault.getMarkdownFiles().map((file) => scanLearningNote(app, file));
+	const notes = app.vault
+		.getMarkdownFiles()
+		.filter((file) => {
+			if (isLearningSystemArtifactPath(file.path)) return false;
+			const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter as
+				| Record<string, unknown>
+				| undefined;
+			return isLearningNoteFrontmatter(frontmatter);
+		})
+		.map((file) => scanLearningNote(app, file));
 	const weakNotes = notes.filter(isWeakLearningNote);
 	const missingArtifacts = notes.filter(
 		(note) => note.status === "visualize" && !note.artifactHtml,
@@ -36,6 +47,17 @@ export function scanVaultLearningNotes(app: App): LearningScanResult {
 		},
 		scannedAt: new Date().toISOString(),
 	};
+}
+
+function isLearningNoteFrontmatter(
+	frontmatter: Record<string, unknown> | undefined,
+): boolean {
+	if (frontmatter?.type === "agent-task") return false;
+	return hasLearningFrontmatter(frontmatter);
+}
+
+function isLearningSystemArtifactPath(path: string): boolean {
+	return path.startsWith(`${ARTIFACT_FOLDERS.commandCenter}/`);
 }
 
 export function scanLearningNote(
@@ -67,8 +89,8 @@ export function isWeakLearningNote(note: LearningNote): boolean {
 	if (note.missingFields.length > 0) return true;
 	if ((note.maturity ?? 0) <= 2 && note.status !== "mastered") return true;
 	if ((note.priority ?? 0) >= 80 && note.status !== "mastered") return true;
-	if (note.status === "test" && (note.quizScore ?? 0) > 0) {
-		return (note.quizScore ?? 0) < 7;
+	if (note.status === "test" && typeof note.quizScore === "number") {
+		return note.quizScore < 7;
 	}
 	return note.status === "review" && isReviewDue(note.reviewDue, formatLearningDate());
 }

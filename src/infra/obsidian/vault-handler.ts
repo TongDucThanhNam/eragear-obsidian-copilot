@@ -561,7 +561,7 @@ export class VaultHandler {
         // 1. Dùng API Native để định vị (resolveSubpath không có trong public types)
         // Hàm này trả về { start: { line, col, offset }, end: ... }
         // Nó tự xử lý heading trùng tên, block ref, range heading con...
-        // @ts-ignore - resolveSubpath exists but not in public API types
+        // @ts-expect-error - resolveSubpath exists but not in public API types
         const context = this.app.metadataCache.resolveSubpath(cache, subpath);
 
         if (!context) {

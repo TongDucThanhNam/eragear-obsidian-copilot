@@ -33,8 +33,18 @@
 	gap: var(--size-4-2);
 }
 
+.eragear-copilot-root .eragear-learning-header {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	padding-block-end: var(--size-4-2);
+	border-bottom: var(--border-width) solid var(--cui-border);
+	background: var(--cui-bg);
+}
+
 .eragear-copilot-root .eragear-learning-header h2,
-.eragear-copilot-root .eragear-learning-panel h3 {
+.eragear-copilot-root .eragear-learning-panel h3,
+.eragear-copilot-root .eragear-next-action-hero h3 {
 	margin: 0;
 	color: var(--cui-text);
 	font-size: var(--font-ui-medium);
@@ -49,6 +59,179 @@
 	line-height: var(--line-height-normal);
 }
 
+.eragear-copilot-root .eragear-learning-overview {
+	display: grid;
+	grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+	gap: var(--size-4-3);
+	align-items: stretch;
+}
+
+.eragear-copilot-root .eragear-next-action-hero,
+.eragear-copilot-root .eragear-module-tile,
+.eragear-copilot-root .eragear-learning-panel {
+	border: var(--border-width) solid var(--cui-border);
+	border-radius: var(--radius-s);
+	background: var(--cui-bg-2);
+}
+
+.eragear-copilot-root .eragear-next-action-hero {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	gap: var(--size-4-3);
+	padding: var(--size-4-4);
+}
+
+.eragear-copilot-root .eragear-learning-eyebrow {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-4-1);
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	text-transform: uppercase;
+}
+
+.eragear-copilot-root .eragear-next-action-title-row,
+.eragear-copilot-root .eragear-action-row-main {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--size-4-3);
+	min-width: 0;
+}
+
+.eragear-copilot-root .eragear-next-action-title-row > div,
+.eragear-copilot-root .eragear-action-row-main > div:first-child {
+	min-width: 0;
+}
+
+.eragear-copilot-root .eragear-next-action-title-row h3 {
+	margin-block-end: var(--size-4-1);
+	font-size: var(--font-ui-large);
+}
+
+.eragear-copilot-root .eragear-next-action-meta,
+.eragear-copilot-root .eragear-action-row-chips,
+.eragear-copilot-root .eragear-row-actions,
+.eragear-copilot-root .eragear-primary-action-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+.eragear-copilot-root .eragear-primary-action-row button[data-slot="button"] {
+	flex: 1 1 12rem;
+	min-width: 0;
+}
+
+.eragear-copilot-root .eragear-acp-lane .eragear-action-row-main strong {
+	display: block;
+	margin-block: var(--size-4-1);
+	color: var(--cui-text);
+	font-size: var(--font-ui-medium);
+	line-height: var(--line-height-normal);
+}
+
+.eragear-copilot-root .eragear-acp-lane-actions {
+	display: flex;
+	flex: 0 0 11rem;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	align-items: stretch;
+}
+
+.eragear-copilot-root .eragear-acp-runtime-state {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding: var(--size-4-3);
+	border: var(--border-width) solid var(--cui-border);
+	border-radius: var(--radius-s);
+	background: var(--cui-bg);
+}
+
+.eragear-copilot-root .eragear-acp-runtime-state strong {
+	color: var(--cui-text);
+	font-size: var(--font-ui-small);
+	line-height: var(--line-height-normal);
+}
+
+.eragear-copilot-root .eragear-acp-runtime-state p {
+	margin: 0;
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.eragear-copilot-root .eragear-acp-runtime-state button[data-slot="button"] {
+	align-self: flex-start;
+}
+
+.eragear-copilot-root .eragear-primary-action-button {
+	min-height: var(--cui-touch-target);
+}
+
+.eragear-copilot-root .eragear-inline-fix {
+	padding-block-start: var(--size-4-3);
+	border-top: var(--border-width) solid var(--cui-border);
+}
+
+.eragear-copilot-root .eragear-learning-module-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--size-4-2);
+	min-width: 0;
+}
+
+.eragear-copilot-root .eragear-module-tile {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	gap: var(--size-4-1);
+	padding: var(--size-4-3);
+}
+
+.eragear-copilot-root .eragear-module-tile > div {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-1);
+	min-width: 0;
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+}
+
+.eragear-copilot-root .eragear-module-tile strong {
+	color: var(--cui-text);
+	font-size: var(--font-ui-large);
+	line-height: var(--line-height-tight);
+}
+
+.eragear-copilot-root .eragear-module-tile p {
+	margin: 0;
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+	line-height: var(--line-height-tight);
+}
+
+.eragear-copilot-root .eragear-status-chip {
+	display: inline-flex;
+	align-items: center;
+	max-width: 100%;
+	min-height: var(--size-4-5);
+	padding: 0 var(--size-4-2);
+	border: var(--border-width) solid var(--cui-border);
+	border-radius: var(--radius-s);
+	background: var(--cui-bg);
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+	line-height: var(--line-height-tight);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 .eragear-copilot-root .eragear-learning-summary,
 .eragear-copilot-root .eragear-learning-grid {
 	display: grid;
@@ -56,11 +239,10 @@
 	gap: var(--size-4-2);
 }
 
-.eragear-copilot-root .eragear-learning-metric,
-.eragear-copilot-root .eragear-learning-panel {
+.eragear-copilot-root .eragear-learning-metric {
 	border: var(--border-width) solid var(--cui-border);
 	border-radius: var(--radius-s);
-	background: var(--cui-bg-2);
+	background: var(--cui-bg);
 }
 
 .eragear-copilot-root .eragear-learning-metric {
@@ -92,7 +274,85 @@
 .eragear-copilot-root .eragear-next-action {
 	display: flex;
 	flex-direction: column;
+	gap: var(--size-4-3);
+}
+
+.eragear-copilot-root .eragear-learning-metadata-form {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: var(--size-4-2);
+	padding-block-start: var(--size-4-2);
+	border-top: var(--border-width) solid var(--cui-border);
+}
+
+.eragear-copilot-root .eragear-learning-metadata-form label {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	gap: var(--size-4-1);
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.eragear-copilot-root .eragear-learning-metadata-form input,
+.eragear-copilot-root .eragear-learning-metadata-form select {
+	width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+.eragear-copilot-root .eragear-learning-metadata-form button {
+	grid-column: 1 / -1;
+}
+
+.eragear-copilot-root .eragear-progress-controls {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding-block-start: var(--size-4-2);
+	border-top: var(--border-width) solid var(--cui-border);
+}
+
+.eragear-copilot-root .eragear-progress-controls-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+}
+
+.eragear-copilot-root .eragear-progress-controls-header strong {
+	color: var(--cui-text);
+	font-size: var(--font-ui-small);
+}
+
+.eragear-copilot-root .eragear-progress-controls-header span,
+.eragear-copilot-root .eragear-progress-quiz label {
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.eragear-copilot-root .eragear-progress-quiz,
+.eragear-copilot-root .eragear-progress-actions {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--size-4-2);
+}
+
+.eragear-copilot-root .eragear-progress-quiz label {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	gap: var(--size-4-1);
+}
+
+.eragear-copilot-root .eragear-progress-quiz input {
+	width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+.eragear-copilot-root .eragear-progress-actions {
+	grid-template-columns: 1fr;
 }
 
 .eragear-copilot-root .eragear-next-action strong {
@@ -103,16 +363,111 @@
 }
 
 .eragear-copilot-root .eragear-next-action ul,
+.eragear-copilot-root .eragear-action-queue,
+.eragear-copilot-root .eragear-agent-task-list,
+.eragear-copilot-root .eragear-write-proposal-list,
 .eragear-copilot-root .eragear-learning-note-list {
 	margin: 0;
-	padding-left: var(--size-4-4);
+	padding-left: 0;
+	list-style: none;
+}
+
+.eragear-copilot-root .eragear-action-queue,
+.eragear-copilot-root .eragear-agent-task-list,
+.eragear-copilot-root .eragear-write-proposal-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
 }
 
 .eragear-copilot-root .eragear-next-action li,
+.eragear-copilot-root .eragear-action-queue li,
+.eragear-copilot-root .eragear-agent-task-list li,
+.eragear-copilot-root .eragear-write-proposal-list li,
 .eragear-copilot-root .eragear-learning-note-list li {
 	color: var(--cui-text-muted);
 	font-size: var(--font-ui-small);
 	line-height: var(--line-height-normal);
+}
+
+.eragear-copilot-root .eragear-reason-list {
+	display: grid;
+	gap: var(--size-4-1);
+	padding-inline-start: var(--size-4-4);
+	list-style: disc;
+}
+
+.eragear-copilot-root .eragear-action-queue strong {
+	display: block;
+	color: var(--cui-text);
+	font-size: var(--font-ui-small);
+	line-height: var(--line-height-normal);
+}
+
+.eragear-copilot-root .eragear-action-queue span,
+.eragear-copilot-root .eragear-action-queue p {
+	display: block;
+	margin-block-start: var(--size-4-1);
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.eragear-copilot-root .eragear-action-queue li,
+.eragear-copilot-root .eragear-agent-task-list li {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2);
+	border: var(--border-width) solid var(--cui-border);
+	border-radius: var(--radius-s);
+	background: var(--cui-bg);
+}
+
+.eragear-copilot-root .eragear-agent-task-list span {
+	display: block;
+	margin-block-start: var(--size-4-1);
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.eragear-copilot-root .eragear-agent-task-controls {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+.eragear-copilot-root .eragear-agent-task-list label {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: center;
+	gap: var(--size-4-2);
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.eragear-copilot-root .eragear-agent-task-list select {
+	width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+.eragear-copilot-root .eragear-write-proposal-list li {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2);
+	border: var(--border-width) solid var(--cui-border);
+	border-radius: var(--radius-s);
+	background: var(--cui-bg);
+}
+
+.eragear-copilot-root .eragear-write-proposal-list span,
+.eragear-copilot-root .eragear-write-proposal-list p {
+	display: block;
+	margin-block-start: var(--size-4-1);
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
 }
 
 .eragear-copilot-root .eragear-learning-note-list {
@@ -133,6 +488,7 @@
 
 .eragear-copilot-root .eragear-learning-link {
 	display: inline;
+	max-width: 100%;
 	padding: 0;
 	border: 0;
 	background: transparent;
@@ -143,9 +499,60 @@
 	text-decoration: underline;
 	text-decoration-thickness: var(--border-width);
 	text-underline-offset: var(--size-4-1);
+	overflow-wrap: anywhere;
+}
+
+.eragear-copilot-root .eragear-learning-path-link {
+	display: block;
+	margin-block-start: var(--size-4-1);
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+	text-decoration: none;
 }
 
 .eragear-copilot-root .eragear-learning-link:focus-visible {
 	outline: var(--border-width) solid var(--cui-accent);
 	outline-offset: var(--size-4-1);
+}
+
+.eragear-copilot-root .eragear-empty-state {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	color: var(--cui-text-muted);
+}
+
+.eragear-copilot-root .eragear-empty-state p {
+	margin: 0;
+}
+
+@media (max-width: 1100px) {
+	.eragear-copilot-root .eragear-learning-overview {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 560px) {
+	.eragear-copilot-root .eragear-learning-center {
+		padding: var(--size-4-2);
+	}
+
+	.eragear-copilot-root .eragear-learning-module-grid,
+	.eragear-copilot-root .eragear-learning-summary,
+	.eragear-copilot-root .eragear-learning-grid,
+	.eragear-copilot-root .eragear-learning-metadata-form,
+	.eragear-copilot-root .eragear-progress-quiz,
+	.eragear-copilot-root .eragear-agent-task-controls {
+		grid-template-columns: 1fr;
+	}
+
+	.eragear-copilot-root .eragear-next-action-title-row,
+	.eragear-copilot-root .eragear-action-row-main {
+		flex-direction: column;
+	}
+
+	.eragear-copilot-root .eragear-acp-lane-actions {
+		flex: 1 1 auto;
+		width: 100%;
+	}
 }

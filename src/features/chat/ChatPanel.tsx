@@ -152,14 +152,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	// Retrieve plugin settings directly from prop
 	const settings = plugin.settings;
 
-	const [activeMode, setActiveMode] = useState<PanelMode>("chat");
+	const [activeMode] = useState<PanelMode>("chat");
 
 	const [messages, setMessages] = useState<Message[]>([]);
 	const activeAssistantMessageIdRef = useRef<string | null>(null);
 	const [input, setInput] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
-	const [showCommands, setShowCommands] = useState(false);
-	const [shouldFocusInput, setShouldFocusInput] = useState(false);
+	const [, setShowCommands] = useState(false);
+	const [, setShouldFocusInput] = useState(false);
 	const [selectedModel, setSelectedModel] = useState<string>("");
 	// Current chat context - determines if using API or ACP agent
 	const [chatContext, setChatContext] = useState<CurrentChatContext>({
@@ -172,15 +172,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	const newChatButtonRef = useRef<HTMLButtonElement>(null);
 	// Dropdown ref for click outside detection
 	const dropdownRef = useRef<HTMLDivElement>(null);
-	// Dropdown position state
-	const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
-
 	// Context & Suggestion State
 	const [selectedFiles, setSelectedFiles] = useState<TFile[]>([]);
-	const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
 	const [suggestionQuery, setSuggestionQuery] = useState<string | null>(null);
-	const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
-	const [suggestionIndex, setSuggestionIndex] = useState(0);
+	const [, setSuggestions] = useState<SuggestionItem[]>([]);
+	const [, setSuggestionIndex] = useState(0);
 	// Mode for context picker: null (root), 'notes', 'folders'
 	const [contextPickerMode, setContextPickerMode] = useState<
 		"root" | "notes" | "folders"
@@ -230,9 +226,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	// Agent plan state - stores the current execution plan from ACP agent
 	const [planEntries, setPlanEntries] = useState<PlanEntry[]>([]);
 	// Tool calls state - track active tool calls
-	const [toolCalls, setToolCalls] = useState<Map<string, ToolCall>>(new Map());
+	const [, setToolCalls] = useState<Map<string, ToolCall>>(new Map());
 	// Agent outputs state - store agent output messages
-	const [agentOutputs, setAgentOutputs] = useState<OutputUpdate[]>([]);
+	const [, setAgentOutputs] = useState<OutputUpdate[]>([]);
 	// Permission request state
 	const [permissionRequest, setPermissionRequest] =
 		useState<PermissionRequest | null>(null);
@@ -775,9 +771,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	const handleInputChange = (val: string) => {
 		setInput(val);
 
-		// Simple @ detection: Last word starts with @
-		const match = val.match(/@(.*)$/); // Match until end to capture spaces if we want multi-word search?
-		// Actually, existing regex was /@(\w*)$/. This implies SINGLE WORD.
+		// Existing regex was /@(\w*)$/. This implies SINGLE WORD.
 		// If we want "Notes" -> sub menu, we need to handle state machine.
 		// If user Backspaces, we might want to go back to root?
 		// For now, let's keep simple trigger.
@@ -792,52 +786,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 		}
 
 		setShouldFocusInput(false);
-	};
-
-	const handleSelectSuggestion = (item: SuggestionItem) => {
-		if (item.type === "action") {
-			if (item.id === "action_active_note") {
-				// Add active note
-				const file = item.data as TFile;
-				if (!selectedFiles.find((f) => f.path === file.path)) {
-					setSelectedFiles((prev) => [...prev, file]);
-				}
-				closeIdsAndCleanInput();
-			}
-		} else if (item.type === "category") {
-			if (item.id === "category_notes") {
-				setContextPickerMode("notes");
-				// Don't close, just update list. The query is still "".
-				// We rely on the useEffect dependency on contextPickerMode to refresh suggestions.
-			} else if (item.id === "category_folders") {
-				setContextPickerMode("folders");
-			}
-		} else if (item.type === "file") {
-			const file = item.data as TFile;
-			if (!selectedFiles.find((f) => f.path === file.path)) {
-				setSelectedFiles((prev) => [...prev, file]);
-			}
-			closeIdsAndCleanInput();
-		} else if (item.type === "folder") {
-			const path = item.id;
-			if (!selectedFolders.includes(path)) {
-				setSelectedFolders((prev) => [...prev, path]);
-			}
-			closeIdsAndCleanInput();
-		}
-	};
-
-	const closeIdsAndCleanInput = () => {
-		// Remove the Trigger from input
-		const match = input.match(/@([^@]*)$/);
-		if (match) {
-			const prefix = input.substring(0, match.index);
-			setInput(prefix);
-		}
-
-		setSuggestionQuery(null);
-		setContextPickerMode("root");
-		setShouldFocusInput(true);
 	};
 
 	const handleSendMessage = async (text?: string) => {
@@ -1269,20 +1217,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 	};
 
 	const handleInsert = (content: string) => {
-		const success = editorCtrl.current.insertText(content);
-	};
-
-	const handleNewChat = () => {
-		// Calculate dropdown position relative to button
-		if (newChatButtonRef.current) {
-			const rect = newChatButtonRef.current.getBoundingClientRect();
-			setDropdownPos({
-				top: rect.bottom + 4,
-				right: window.innerWidth - rect.right,
-			});
-		}
-		// Toggle the new chat menu
-		setShowNewChatMenu((prev) => !prev);
+		editorCtrl.current.insertText(content);
 	};
 
 	const handleTriggerContext = () => {
@@ -1374,57 +1309,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ app, plugin }) => {
 		() => getAvailableModels(),
 		[settings?.chatModels],
 	);
-
-	const handleCommandClick = (cmd: string) => {
-		const newValue = cmd + " ";
-		setInput(newValue);
-		setShowCommands(false);
-		setShouldFocusInput(true);
-	};
-
-	const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-		// Handle Suggestion Navigation
-		if (suggestionQuery !== null && suggestions.length > 0) {
-			if (e.key === "ArrowDown") {
-				e.preventDefault();
-				setSuggestionIndex((prev) => (prev + 1) % suggestions.length);
-				return;
-			}
-			if (e.key === "ArrowUp") {
-				e.preventDefault();
-				setSuggestionIndex(
-					(prev) => (prev - 1 + suggestions.length) % suggestions.length,
-				);
-				return;
-			}
-			if (e.key === "Enter" || e.key === "Tab") {
-				e.preventDefault();
-				const selected = suggestions[suggestionIndex];
-				if (selected) {
-					handleSelectSuggestion(selected);
-				}
-				return;
-			}
-			if (e.key === "Escape") {
-				// If in submenu, go back to root?
-				if (contextPickerMode !== "root") {
-					setContextPickerMode("root");
-					return;
-				}
-				setSuggestionQuery(null);
-				return;
-			}
-		}
-
-		if (e.key === "Enter" && !e.shiftKey) {
-			e.preventDefault();
-			handleSendMessage();
-		}
-		if (e.key === "Escape") {
-			setShowCommands(false);
-			setSuggestionQuery(null);
-		}
-	};
 
 	const handleAutoMentionToggle = (disabled: boolean) => {
 		setIsAutoMentionEnabled(!disabled);

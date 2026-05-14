@@ -5,7 +5,6 @@ import type {
 	PromptResponse,
 	SessionModelState,
 	SessionUpdate,
-	StopReason,
 } from "../models/session-update";
 
 // ============================================================================

@@ -7,6 +7,7 @@ import type {
 } from "@/learning/types";
 
 export function inferNextAction(note: LearningNote): string {
+	if (note.missingFields.length > 1) return "Add missing learning metadata";
 	if (!note.type) return "Add note type";
 	if (!note.area) return "Add learning area";
 	if (!note.status) return "Set learning status";
@@ -27,7 +28,9 @@ export function inferNextAction(note: LearningNote): string {
 			}
 			return "Validate connections and move to test stage";
 		case "test":
-			if (!note.quizScore) return "Generate quiz and test understanding";
+			if (typeof note.quizScore !== "number") {
+				return "Generate quiz and test understanding";
+			}
 			if (note.quizScore < 7) return "Review weak points from quiz";
 			return "Move to apply stage";
 		case "apply":
@@ -115,8 +118,26 @@ function buildReasons(note: LearningNote, activeSprint?: string): string[] {
 }
 
 function expectedOutput(note: LearningNote): string | undefined {
+	if (note.status === "seed") {
+		return "00_Command_Center/learning-drafts/<note-slug>-structure.md and status = explain";
+	}
+	if (note.status === "explain") {
+		return "00_Command_Center/learning-drafts/<note-slug>-explanation.md and status = visualize";
+	}
 	if (note.status === "visualize" && !note.artifactHtml) {
 		return "_explainers/<note-slug>.html and status = connect";
+	}
+	if (note.status === "test" && typeof note.quizScore !== "number") {
+		return "_quizzes/<note-slug>.md and next_action = complete quiz";
+	}
+	if (note.status === "connect" && note.links.length < 5) {
+		return "03_Bridge_Notes/<note-slug>-bridge.md and next_action = review bridge note";
+	}
+	if (note.status === "apply") {
+		return "05_Case_Studies/<note-slug>-case-study.md and next_action = complete case study";
+	}
+	if (note.status === "review") {
+		return "_reviews/<note-slug>-review.md and next_action = complete review";
 	}
 	if (!note.type || !note.area || !note.status) {
 		return "Updated learning frontmatter";
@@ -129,7 +150,16 @@ function suggestedAgent(
 ): "deterministic" | "reasoning-model" | "coding-agent" {
 	if (!note.type || !note.area || !note.status) return "deterministic";
 	if (note.status === "visualize" && !note.artifactHtml) return "coding-agent";
-	if (note.status === "connect") return "reasoning-model";
+	if (
+		note.status === "seed" ||
+		note.status === "explain" ||
+		note.status === "connect" ||
+		note.status === "test" ||
+		note.status === "apply" ||
+		note.status === "review"
+	) {
+		return "reasoning-model";
+	}
 	return "deterministic";
 }
 

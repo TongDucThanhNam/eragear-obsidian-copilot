@@ -36,10 +36,10 @@ export class RelayRoom extends DurableObject {
 	}
 
 	async webSocketClose(
-		ws: WebSocket,
-		code: number,
-		reason: string,
-		wasClean: boolean,
+		_ws: WebSocket,
+		_code: number,
+		_reason: string,
+		_wasClean: boolean,
 	) {
 		// Optional: Notify others of disconnection
 		const peers = this.ctx.getWebSockets();

@@ -40,6 +40,8 @@ export const LEARNING_NOTE_TYPES = [
 
 export const ARTIFACT_FOLDERS = {
 	explainers: "_explainers",
+	quizzes: "_quizzes",
+	reviews: "_reviews",
 	bridgeNotes: "03_Bridge_Notes",
 	caseStudies: "05_Case_Studies",
 	commandCenter: "00_Command_Center",
@@ -47,6 +49,8 @@ export const ARTIFACT_FOLDERS = {
 
 export const ALLOWED_WRITE_ZONES = [
 	ARTIFACT_FOLDERS.explainers,
+	ARTIFACT_FOLDERS.quizzes,
+	ARTIFACT_FOLDERS.reviews,
 	ARTIFACT_FOLDERS.bridgeNotes,
 	ARTIFACT_FOLDERS.caseStudies,
 	ARTIFACT_FOLDERS.commandCenter,

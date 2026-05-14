@@ -105,7 +105,13 @@ const ExpandIcon = () => (
 	</svg>
 );
 
-const PlanEntryItem = ({ entry, index }: { entry: PlanEntry; index: number }) => {
+const PlanEntryItem = ({
+	entry,
+	index: _index,
+}: {
+	entry: PlanEntry;
+	index: number;
+}) => {
 	const getIcon = (
 		status: PlanEntry["status"],
 	): { icon: React.ReactNode; className: string } => {

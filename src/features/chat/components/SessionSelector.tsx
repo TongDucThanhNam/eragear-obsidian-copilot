@@ -4,7 +4,6 @@
 
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import { useAcpAdapter } from "@/features/chat/context/AcpContext";
 import type { SessionSummary } from "@/core/models/session-persistence";
 import { useSessions } from "@/features/chat/hooks/useSessions";
 import "./SessionSelector.css";

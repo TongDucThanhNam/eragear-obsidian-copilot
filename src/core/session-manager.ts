@@ -175,7 +175,7 @@ export class SessionManager {
 	 */
 	private updatesToMessages(
 		updates: SessionUpdate[],
-		sessionId: string,
+		_sessionId: string,
 	): SessionMessage[] {
 		const messages: SessionMessage[] = [];
 		let currentMessage: Partial<SessionMessage> | null = null;

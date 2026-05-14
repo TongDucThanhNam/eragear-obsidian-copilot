@@ -47,6 +47,15 @@ export function parseLearningFrontmatter(
 	};
 }
 
+export function hasLearningFrontmatter(
+	frontmatter: Record<string, unknown> | undefined,
+): boolean {
+	if (!frontmatter) return false;
+	return Object.values(LEARNING_FRONTMATTER_KEYS).some(
+		(key) => frontmatter[key] !== undefined,
+	);
+}
+
 export function detectMissingFields(
 	frontmatter: LearningFrontmatter,
 ): LearningField[] {

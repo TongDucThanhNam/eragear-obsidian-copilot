@@ -9,7 +9,6 @@
 
 import type {
 	ContextPayload,
-	GraphStructure,
 	SearchContentPayload,
 } from "./types";
 import type { VaultManager } from "@/infra/obsidian/vault-manager";
@@ -31,8 +30,6 @@ export const DEFAULT_ASSEMBLER_CONFIG: AssemblerConfig = {
 };
 
 export class ContextAssembler {
-	private debounceTimers: Map<string, NodeJS.Timeout> = new Map();
-
 	constructor(
 		private vaultManager: VaultManager,
 		private graphService: GraphService,
@@ -127,8 +124,8 @@ export class ContextAssembler {
 	 * NOTE: GraphService now handles graph state, but we facilitate UI triggers.
 	 */
 	async rebuildGraphDebounced(
-		rootFilePath: string,
-		delay: number = this.config.debounceDelay,
+		_rootFilePath: string,
+		_delay: number = this.config.debounceDelay,
 	): Promise<void> {
 		// Since GraphService manages the graph, maybe we just re-init?
 		// Or we assume it's always up-to-date.

@@ -69,7 +69,7 @@ export const useSlashCommands = ({
 	}, [onAutoMentionToggle]);
 
 	const updateSuggestions = useCallback(
-		(input: string, cursorIndex: number) => {
+		(input: string, _cursorIndex: number) => {
 			// Slash command must be at the start of the line or input
 			if (!input.startsWith("/")) {
 				if (isOpen) close();

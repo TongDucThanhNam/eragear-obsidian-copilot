@@ -75,7 +75,6 @@ export class CloudflareService {
 				throw new Error("No response body");
 			}
 
-			const decoder = new TextDecoder();
 			const lines = response.text.split("\n");
 			let buffer = "";
 
@@ -104,7 +103,7 @@ export class CloudflareService {
 								this.activeStreams.delete(requestId);
 								return;
 							}
-						} catch (e) {
+						} catch {
 							// Failed to parse SSE chunk, continue
 						}
 					}

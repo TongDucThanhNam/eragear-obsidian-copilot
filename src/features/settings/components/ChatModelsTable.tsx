@@ -383,9 +383,6 @@ export const ChatModelsTable: React.FC<ChatModelsTableProps> = ({
 	const handleRefreshBuiltIns = async () => {
 		// Merge built-in models with user models
 		const userModels = chatModels.filter((m) => !m.isBuiltIn);
-		const existingBuiltInIds = chatModels
-			.filter((m) => m.isBuiltIn)
-			.map((m) => m.id);
 
 		// Keep user's enabled state for existing built-ins
 		const refreshedBuiltIns = BUILTIN_CHAT_MODELS.map((builtIn) => {

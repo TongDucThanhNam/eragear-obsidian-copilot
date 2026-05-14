@@ -17,11 +17,7 @@ import React, {
 	useContext,
 	useState,
 } from "react";
-import type {
-	ChatMessage,
-	ContextPayload,
-	StreamChunk,
-} from "@/core/types";
+import type { ChatMessage } from "@/core/types";
 
 export interface AppContextValue {
 	// State

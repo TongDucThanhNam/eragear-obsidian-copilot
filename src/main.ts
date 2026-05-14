@@ -11,8 +11,20 @@
  * All business logic is delegated to Core and Services layers.
  */
 
-import { Notice, Plugin } from "obsidian";
+import { Notice, Plugin, TFile } from "obsidian";
 import { createContextAssembler } from "@/core/context-assembler";
+import {
+	scanLearningAgentTasks,
+	updateLearningAgentTaskStatus,
+	type LearningAgentTaskSummary,
+} from "@/agent/task-store";
+import { runLearningAgentTaskWithAcp } from "@/agent/learning-agent-executor";
+import { createLearningAgentTaskFile } from "@/agent/task-writer";
+import {
+	applyAgentWriteProposal,
+	scanAgentWriteProposals,
+	type AgentWriteProposalSummary,
+} from "@/agent/write-proposal";
 import { createGraphService } from "@/infra/obsidian/graph-service";
 import { createVaultManager } from "@/infra/obsidian/vault-manager";
 import { getWorkerClient } from "@/infra/workers/worker-client";
@@ -30,11 +42,24 @@ import {
 } from "@/app/settings/plugin-settings";
 import { ERAGEAR_VIEW_TYPE, EragearView } from "@/app/views/eragear-view";
 import { CopilotSettingTab } from "@/app/views/settings/CopilotSettingTab";
-import { generateHtmlExplainerForNote } from "@/learning/artifact-manager";
+import { runLearningAction } from "@/learning/action-runner";
+import { appendLearningActionLog } from "@/learning/action-log";
+import {
+	generateHtmlExplainerForNote,
+	type HtmlExplainerRelatedNote,
+} from "@/learning/artifact-manager";
+import {
+	patchLearningFrontmatter,
+	type LearningFrontmatterPatch,
+} from "@/learning/frontmatter-writer";
+import { formatLearningDate } from "@/learning/frontmatter";
 import { generateNextActionQueue } from "@/learning/next-action-engine";
-import { scanVaultLearningNotes } from "@/learning/note-scanner";
+import { scanLearningNote, scanVaultLearningNotes } from "@/learning/note-scanner";
+import type { AgentTaskFileResult } from "@/agent/agent-task";
+import type { AgentTaskStatus } from "@/agent/agent-task";
 import type {
 	GeneratedArtifact,
+	LearningNote,
 	LearningScanResult,
 	NextActionCandidate,
 } from "@/learning/types";
@@ -55,6 +80,7 @@ export default class EragearPlugin extends Plugin {
 	// UI state
 	private statusBar: HTMLElement | null = null;
 	private lastLearningScan: LearningScanResult | null = null;
+	private learningStateListeners = new Set<() => void>();
 
 	async onload() {
 		try {
@@ -264,6 +290,49 @@ export default class EragearPlugin extends Plugin {
 				}
 			},
 		});
+
+		this.addCommand({
+			id: "run-next-learning-action",
+			name: "Run next learning action",
+			callback: async () => {
+				await this.runNextLearningAction();
+			},
+		});
+
+		this.addCommand({
+			id: "create-next-learning-agent-task",
+			name: "Create next learning agent task",
+			callback: async () => {
+				const next = this.getNextLearningAction();
+				if (!next) {
+					new Notice("No learning action found.");
+					return;
+				}
+				if (next.suggestedAgent === "deterministic") {
+					new Notice("Run suggested action for this learning action.");
+					return;
+				}
+				await this.createLearningAgentTask(next);
+			},
+		});
+
+		this.addCommand({
+			id: "run-next-learning-agent-task",
+			name: "Run next learning agent task",
+			callback: async () => {
+				const task = this.getLearningAgentTasks().find(
+					(candidate) =>
+						(candidate.status === "queued" ||
+							candidate.status === "blocked") &&
+						candidate.suggestedAgent !== "deterministic",
+				);
+				if (!task) {
+					new Notice("No queued agent task found.");
+					return;
+				}
+				await this.runLearningAgentTask(task.path);
+			},
+		});
 	}
 
 	/**
@@ -392,6 +461,187 @@ export default class EragearPlugin extends Plugin {
 		);
 	}
 
+	subscribeLearningState(listener: () => void): () => void {
+		this.learningStateListeners.add(listener);
+		return () => {
+			this.learningStateListeners.delete(listener);
+		};
+	}
+
+	getLearningAgentTasks(): LearningAgentTaskSummary[] {
+		return scanLearningAgentTasks(this.app);
+	}
+
+	async getAgentWriteProposals(): Promise<AgentWriteProposalSummary[]> {
+		return scanAgentWriteProposals(this.app, this.getLearningAgentTasks());
+	}
+
+	getActiveLearningNote(): LearningNote | null {
+		const activeFile = this.app.workspace.getActiveFile();
+		if (!activeFile) return null;
+		return scanLearningNote(this.app, activeFile);
+	}
+
+	async runNextLearningAction(): Promise<void> {
+		const next = this.getNextLearningAction();
+
+		if (!next) {
+			new Notice("No learning action found.");
+			return;
+		}
+
+		await this.runLearningActionCandidate(next);
+	}
+
+	async runLearningActionCandidate(
+		candidate: NextActionCandidate,
+	): Promise<void> {
+		const relatedNotes = await this.getLearningRelatedNotes(candidate);
+		const result = await runLearningAction(this.app, candidate, {
+			relatedNotes,
+			defaultArea: this.settings.activeLearningSprint || undefined,
+		});
+		await appendLearningActionLog(this.app, candidate, result);
+		await this.completeMatchingAgentTasks(candidate);
+		this.lastLearningScan = scanVaultLearningNotes(this.app);
+		this.notifyLearningStateChanged();
+
+		if (result.type === "artifact") {
+			new Notice(`Created: ${result.artifact.artifactPath}`);
+			return;
+		}
+
+		if (result.type === "transition") {
+			new Notice(result.message);
+			return;
+		}
+
+		new Notice(result.message);
+	}
+
+	async createLearningAgentTask(
+		candidate: NextActionCandidate,
+	): Promise<AgentTaskFileResult | null> {
+		if (candidate.suggestedAgent === "deterministic") {
+			new Notice("Run suggested action for this learning action.");
+			return null;
+		}
+
+		const file = this.app.vault.getAbstractFileByPath(candidate.note.path);
+		if (!(file instanceof TFile) || file.extension !== "md") {
+			new Notice("Learning note not found.");
+			return null;
+		}
+
+		const relatedNotes = await this.getLearningRelatedNotes(candidate);
+		const source = await this.app.vault.cachedRead(file);
+		const result = await createLearningAgentTaskFile(
+			this.app,
+			candidate,
+			source,
+			relatedNotes,
+		);
+		new Notice(`Created agent task: ${result.taskPath}`);
+		this.notifyLearningStateChanged();
+		return result;
+	}
+
+	async updateLearningAgentTaskStatus(
+		taskPath: string,
+		status: AgentTaskStatus,
+	): Promise<void> {
+		await updateLearningAgentTaskStatus(this.app, taskPath, status);
+		this.notifyLearningStateChanged();
+		new Notice(`Agent task marked ${status}.`);
+	}
+
+	async runLearningAgentTask(taskPath: string): Promise<void> {
+		const task = this.getLearningAgentTasks().find(
+			(candidate) => candidate.path === taskPath,
+		);
+		if (!task) {
+			new Notice("Agent task not found.");
+			return;
+		}
+		if (task.suggestedAgent === "deterministic") {
+			new Notice("Run suggested action for this learning action.");
+			return;
+		}
+
+		await updateLearningAgentTaskStatus(this.app, task.path, "running");
+		this.updateStatusBar("processing");
+		this.notifyLearningStateChanged();
+		new Notice("ACP agent started. Watch the Learning OS ACP lane.");
+
+		try {
+			const result = await runLearningAgentTaskWithAcp(
+				this.app,
+				this.settings,
+				task,
+			);
+			if (result.proposalCount > 0) {
+				this.notifyLearningStateChanged();
+				new Notice(`Agent proposal created: ${result.proposalCount}`);
+				return;
+			}
+			this.notifyLearningStateChanged();
+			new Notice("Agent task blocked. No proposal created.");
+		} catch (error) {
+			this.notifyLearningStateChanged();
+			const message = error instanceof Error ? error.message : String(error);
+			new Notice(`Agent task failed: ${message}`);
+		} finally {
+			this.updateStatusBar("ready");
+		}
+	}
+
+	async applyAgentWriteProposal(
+		proposal: AgentWriteProposalSummary,
+	): Promise<void> {
+		const task = this.getLearningAgentTasks().find(
+			(candidate) => candidate.path === proposal.taskPath,
+		);
+		if (!task) {
+			new Notice("Agent task not found for proposal.");
+			return;
+		}
+
+		await applyAgentWriteProposal(this.app, proposal, task);
+		this.lastLearningScan = scanVaultLearningNotes(this.app);
+		this.notifyLearningStateChanged();
+		new Notice("Agent proposal applied.");
+	}
+
+	async patchLearningMetadataForNote(
+		notePath: string,
+		patch: LearningFrontmatterPatch,
+	): Promise<void> {
+		const file = this.app.vault.getAbstractFileByPath(notePath);
+		if (!(file instanceof TFile) || file.extension !== "md") {
+			throw new Error(`Learning note not found: ${notePath}`);
+		}
+
+		await patchLearningFrontmatter(this.app, file, {
+			...patch,
+			lastTouched: patch.lastTouched ?? formatLearningDate(),
+		});
+		this.lastLearningScan = scanVaultLearningNotes(this.app);
+		this.notifyLearningStateChanged();
+		new Notice("Learning metadata updated.");
+	}
+
+	async patchLearningMetadataForActiveNote(
+		patch: LearningFrontmatterPatch,
+	): Promise<void> {
+		const activeFile = this.app.workspace.getActiveFile();
+		if (!activeFile) {
+			new Notice("Open a note first.");
+			return;
+		}
+
+		await this.patchLearningMetadataForNote(activeFile.path, patch);
+	}
+
 	async generateHtmlExplainerForActiveNote(): Promise<GeneratedArtifact | null> {
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile) {
@@ -399,9 +649,58 @@ export default class EragearPlugin extends Plugin {
 			return null;
 		}
 
-		const artifact = await generateHtmlExplainerForNote(this.app, activeFile);
+		const relatedNotes = await this.getLearningRelatedNotes({
+			note: scanLearningNote(this.app, activeFile),
+			action: "Generate HTML explorable explanation",
+			reason: [],
+			suggestedAgent: "coding-agent",
+			score: 0,
+		});
+		const artifact = await generateHtmlExplainerForNote(this.app, activeFile, {
+			relatedNotes,
+		});
 		this.lastLearningScan = scanVaultLearningNotes(this.app);
+		this.notifyLearningStateChanged();
 		return artifact;
+	}
+
+	private async getLearningRelatedNotes(
+		candidate: Pick<NextActionCandidate, "note" | "action">,
+	): Promise<HtmlExplainerRelatedNote[]> {
+		if (!this.contextAssembler) return [];
+
+		const context = await this.contextAssembler.assembleContext(
+			candidate.note.path,
+			candidate.action,
+		);
+		if (!context) return [];
+
+		return context.relatedNotes.map((note) => ({
+			title: note.title,
+			path: note.path,
+			excerpt: note.excerpt,
+		}));
+	}
+
+	private async completeMatchingAgentTasks(
+		candidate: NextActionCandidate,
+	): Promise<void> {
+		const matchingTasks = this.getLearningAgentTasks().filter(
+			(task) =>
+				task.notePath === candidate.note.path &&
+				task.action === candidate.action &&
+				task.status !== "done",
+		);
+
+		for (const task of matchingTasks) {
+			await updateLearningAgentTaskStatus(this.app, task.path, "done");
+		}
+	}
+
+	private notifyLearningStateChanged(): void {
+		for (const listener of this.learningStateListeners) {
+			listener();
+		}
 	}
 
 	/**

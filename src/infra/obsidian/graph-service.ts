@@ -84,7 +84,7 @@ export class GraphService {
 	 */
 	public async getSmartContext(
 		activeFile: TFile,
-		maxDepth?: number,
+		_maxDepth?: number,
 	): Promise<GraphAnalysisResult> {
 		if (!this.initialized) {
 			await this.initializeGraph();

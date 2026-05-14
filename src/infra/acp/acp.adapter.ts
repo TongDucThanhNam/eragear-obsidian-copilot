@@ -13,7 +13,8 @@
 
 import * as acp from "@agentclientprotocol/sdk";
 import { type ChildProcess, spawn } from "child_process";
-import type { App } from "obsidian";
+import { normalizePath, type App } from "obsidian";
+import { AgentError } from "@/core/models/agent-error";
 import { SessionManager } from "@/core/session-manager";
 import { TerminalManager } from "@/core/terminal-manager";
 import { VaultManager } from "@/infra/obsidian/vault-manager";
@@ -86,6 +87,21 @@ interface AcpSessionUpdatePayload {
 // AcpAdapter Implementation
 // ============================================================================
 
+export interface AcpWriteGuardResult {
+	allowed: boolean;
+	message?: string;
+}
+
+export type AcpWriteGuard = (path: string) => AcpWriteGuardResult;
+
+export interface AcpReadGuardResult {
+	allowed: boolean;
+	content?: string;
+	message?: string;
+}
+
+export type AcpReadGuard = (path: string) => AcpReadGuardResult;
+
 export class AcpAdapter implements IAgentClient {
 	// ========================================================================
 	// Private State
@@ -118,6 +134,18 @@ export class AcpAdapter implements IAgentClient {
 	/** Terminal manager for process execution */
 	private terminalManager = new TerminalManager();
 
+	/** Optional write guard used by bounded execution flows such as Learning OS */
+	private writeGuard: AcpWriteGuard | null = null;
+
+	/** Optional read guard used by bounded execution flows such as Learning OS */
+	private readGuard: AcpReadGuard | null = null;
+
+	/** Terminal tools are enabled for chat, but can be disabled for bounded tasks */
+	private terminalAccessEnabled = true;
+
+	/** Bounded task execution can auto-approve writes that pass writeGuard */
+	private autoApproveSafeFilePermissions = false;
+
 	// ========================================================================
 	// Constructor
 	// ========================================================================
@@ -128,6 +156,22 @@ export class AcpAdapter implements IAgentClient {
 			this.vaultManager = new VaultManager(app);
 			this.sessionManager = new SessionManager(app);
 		}
+	}
+
+	setWriteGuard(guard: AcpWriteGuard | null): void {
+		this.writeGuard = guard;
+	}
+
+	setReadGuard(guard: AcpReadGuard | null): void {
+		this.readGuard = guard;
+	}
+
+	setTerminalAccess(enabled: boolean): void {
+		this.terminalAccessEnabled = enabled;
+	}
+
+	setAutoApproveSafeFilePermissions(enabled: boolean): void {
+		this.autoApproveSafeFilePermissions = enabled;
 	}
 
 	// ========================================================================
@@ -206,6 +250,23 @@ export class AcpAdapter implements IAgentClient {
 			optionsRaw: p.options,
 		});
 
+		const autoPermission = this.getAutoApprovedPermission(p);
+		if (autoPermission) {
+			console.log("[AcpAdapter] Auto-approved bounded file permission:", {
+				requestId,
+				path: autoPermission.path,
+				optionId: autoPermission.outcome.optionId,
+			});
+			return { outcome: autoPermission.outcome };
+		}
+		if (this.autoApproveSafeFilePermissions) {
+			console.log("[AcpAdapter] Auto-denied bounded permission:", {
+				requestId,
+				title: p.title || p.toolCall?.title,
+			});
+			return { outcome: { outcome: "cancelled" } };
+		}
+
 		// Create a promise that will be resolved when user responds
 		const responsePromise = new Promise<{
 			outcome: "selected" | "cancelled";
@@ -280,6 +341,7 @@ export class AcpAdapter implements IAgentClient {
 				stdio: ["pipe", "pipe", "pipe"],
 				cwd: config.workingDirectory,
 				env: { ...process.env, ...config.env },
+				detached: process.platform !== "win32",
 				shell: true, // Required for some environments (e.g., npx commands)
 			});
 
@@ -299,7 +361,7 @@ export class AcpAdapter implements IAgentClient {
 			// Step 2: Validate stdio streams exist
 			// IMPORTANT: Check BEFORE attaching listeners
 			// ================================================================
-			const { stdin, stdout, stderr } = this.agentProcess;
+			const { stdin, stdout } = this.agentProcess;
 
 			if (!stdin || !stdout) {
 				throw new AgentError(
@@ -529,24 +591,73 @@ export class AcpAdapter implements IAgentClient {
 		}
 
 		// Terminate process if still running
-		if (this.agentProcess && !this.agentProcess.killed) {
+		if (this.agentProcess) {
+			const processToKill = this.agentProcess;
 			console.log("[AcpAdapter] Terminating agent process...");
 
 			// Try graceful shutdown first
-			this.agentProcess.kill("SIGTERM");
+			this.killAgentProcess(processToKill, "SIGTERM");
 
 			// Wait briefly for graceful shutdown
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			const exited = await this.waitForProcessExit(processToKill, 1000);
 
 			// Force kill if still running
-			if (this.agentProcess && !this.agentProcess.killed) {
+			if (!exited) {
 				console.log("[AcpAdapter] Force killing agent process...");
-				this.agentProcess.kill("SIGKILL");
+				this.killAgentProcess(processToKill, "SIGKILL");
+				await this.waitForProcessExit(processToKill, 500);
 			}
 		}
 
 		// Final cleanup
 		await this.cleanup();
+	}
+
+	private killAgentProcess(
+		processToKill: ChildProcess,
+		signal: NodeJS.Signals,
+	): void {
+		const pid = processToKill.pid;
+
+		if (process.platform !== "win32" && pid) {
+			try {
+				process.kill(-pid, signal);
+				return;
+			} catch (error) {
+				const code =
+					error instanceof Error && "code" in error
+						? String((error as NodeJS.ErrnoException).code)
+						: "";
+				if (code !== "ESRCH") {
+					console.warn("[AcpAdapter] Failed to kill process group:", error);
+				}
+			}
+		}
+
+		if (pid && !processToKill.killed) {
+			processToKill.kill(signal);
+		}
+	}
+
+	private waitForProcessExit(
+		processToWatch: ChildProcess,
+		timeoutMs: number,
+	): Promise<boolean> {
+		if (processToWatch.exitCode !== null || processToWatch.signalCode !== null) {
+			return Promise.resolve(true);
+		}
+
+		return new Promise((resolve) => {
+			const timeoutId = setTimeout(() => {
+				processToWatch.removeListener("exit", onExit);
+				resolve(false);
+			}, timeoutMs);
+			const onExit = () => {
+				clearTimeout(timeoutId);
+				resolve(true);
+			};
+			processToWatch.once("exit", onExit);
+		});
 	}
 
 	// ========================================================================
@@ -753,7 +864,10 @@ export class AcpAdapter implements IAgentClient {
 		message: string,
 	): Promise<PromptResponse> {
 		const connection = this.ensureReady();
-		// console.log("[AcpAdapter] sendMessage:", sessionId, message);
+		console.log("[AcpAdapter] Sending prompt", {
+			sessionId,
+			chars: message.length,
+		});
 
 		try {
 			const result = await connection.prompt({
@@ -761,7 +875,7 @@ export class AcpAdapter implements IAgentClient {
 				prompt: [{ type: "text", text: message }],
 			});
 
-			// console.log("[AcpAdapter] connection.prompt result:", result);
+			console.log("[AcpAdapter] Prompt completed", result);
 
 			return {
 				stopReason: (result.stopReason as StopReason) || "end_turn",
@@ -1301,6 +1415,12 @@ export class AcpAdapter implements IAgentClient {
 		params: acp.CreateTerminalRequest,
 	): Promise<acp.CreateTerminalResponse> {
 		console.log("[AcpAdapter] createTerminal called with params:", params);
+		if (!this.terminalAccessEnabled) {
+			throw new AgentError(
+				"Terminal access is disabled for this bounded task.",
+				"TERMINAL_DISABLED",
+			);
+		}
 
 		// Use current config's working directory if cwd is not provided
 		const modifiedParams = {
@@ -1379,10 +1499,22 @@ export class AcpAdapter implements IAgentClient {
 		}
 
 		try {
-			// Normalize path - remove leading slash if present
-			const normalizedPath = params.path.startsWith("/")
-				? params.path.slice(1)
-				: params.path;
+			const normalizedPath = this.normalizeVaultPath(params.path);
+			const guardResult = this.readGuard?.(normalizedPath);
+			if (guardResult) {
+				if (guardResult.content !== undefined) {
+					console.log("[AcpAdapter] Read file served by guard:", normalizedPath);
+					return { content: guardResult.content };
+				}
+				if (!guardResult.allowed) {
+					console.log("[AcpAdapter] Read file blocked by guard:", normalizedPath);
+					return {
+						content:
+							guardResult.message ??
+							`Read blocked for bounded task: ${normalizedPath}`,
+					};
+				}
+			}
 
 			const file = this.vaultManager.getFileByPath(normalizedPath);
 			if (!file) {
@@ -1418,10 +1550,15 @@ export class AcpAdapter implements IAgentClient {
 		}
 
 		try {
-			// Normalize path - remove leading slash if present
-			const normalizedPath = params.path.startsWith("/")
-				? params.path.slice(1)
-				: params.path;
+			const normalizedPath = this.normalizeVaultPath(params.path);
+
+			const guardResult = this.writeGuard?.(normalizedPath);
+			if (guardResult && !guardResult.allowed) {
+				throw new AgentError(
+					guardResult.message ?? `Write rejected: ${normalizedPath}`,
+					"WRITE_GUARD_REJECTED",
+				);
+			}
 
 			const existingFile = this.vaultManager.getFileByPath(normalizedPath);
 
@@ -1440,5 +1577,72 @@ export class AcpAdapter implements IAgentClient {
 			console.error("[AcpAdapter] Error writing file:", error);
 			throw error;
 		}
+	}
+
+	private getAutoApprovedPermission(params: {
+		toolCall?: { title?: string };
+		options?: Array<{ optionId: string; name: string; kind?: string }>;
+		title?: string;
+		description?: string;
+	}):
+		| {
+				path: string;
+				outcome: { outcome: "selected"; optionId: string };
+		  }
+		| undefined {
+		if (!this.autoApproveSafeFilePermissions || !this.writeGuard) {
+			return undefined;
+		}
+
+		const text = [params.title, params.toolCall?.title, params.description]
+			.filter((item): item is string => typeof item === "string")
+			.join("\n");
+		const permissionPath = this.extractPermissionPath(text);
+		if (!permissionPath) return undefined;
+
+		const normalizedPath = this.normalizeVaultPath(permissionPath);
+		const guardResult = this.writeGuard(normalizedPath);
+		if (!guardResult.allowed) return undefined;
+
+		const option = params.options?.find(
+			(candidate) =>
+				candidate.kind === "allow_once" ||
+				candidate.kind === "allow_session" ||
+				candidate.name.toLowerCase().includes("allow"),
+		);
+		if (!option) return undefined;
+
+		return {
+			path: normalizedPath,
+			outcome: { outcome: "selected", optionId: option.optionId },
+		};
+	}
+
+	private extractPermissionPath(text: string): string | undefined {
+		const match = text.match(/\b(?:write|modify|create)\s+([^\n]+)/i);
+		const path = match?.[1]?.trim();
+		return path ? path.replace(/^["'`]|["'`]$/g, "") : undefined;
+	}
+
+	private normalizeVaultPath(path: string): string {
+		let normalized = path.trim().replace(/^file:\/\//, "");
+		const basePath = (this.app?.vault.adapter as { basePath?: string } | undefined)
+			?.basePath;
+
+		if (basePath) {
+			const normalizedBase = normalizePath(basePath);
+			const normalizedInput = normalizePath(normalized);
+			if (normalizedInput === normalizedBase) {
+				normalized = "";
+			} else if (normalizedInput.startsWith(`${normalizedBase}/`)) {
+				normalized = normalizedInput.slice(normalizedBase.length + 1);
+			}
+		}
+
+		if (normalized.startsWith("/")) {
+			normalized = normalized.slice(1);
+		}
+
+		return normalizePath(normalized);
 	}
 }

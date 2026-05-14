@@ -13,10 +13,10 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
 }) => {
 	return (
 		<div className="eragear-settings-section">
-			<h3>General Configuration</h3>
+			<h3>Runtime configuration</h3>
 
 			<SettingItem
-				name="Enable Debug Mode"
+				name="Enable debug mode"
 				description="Enable verbose logging to the console."
 			>
 				<div className="checkbox-container">
@@ -31,7 +31,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
 			</SettingItem>
 
 			<SettingItem
-				name="API Endpoint"
+				name="API endpoint"
 				description="The custom API endpoint for Eragear services."
 			>
 				<input
@@ -39,6 +39,20 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
 					value={settings.apiEndpoint}
 					onChange={(e) => updateSettings({ apiEndpoint: e.target.value })}
 					placeholder="https://eragear.app"
+				/>
+			</SettingItem>
+
+			<SettingItem
+				name="Active learning sprint"
+				description="Prioritize notes that belong to this sprint."
+			>
+				<input
+					type="text"
+					value={settings.activeLearningSprint}
+					onChange={(e) =>
+						updateSettings({ activeLearningSprint: e.target.value })
+					}
+					placeholder="systems-bridge"
 				/>
 			</SettingItem>
 		</div>
