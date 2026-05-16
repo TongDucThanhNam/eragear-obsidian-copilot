@@ -1,6 +1,12 @@
 import type { App, TFile } from "obsidian";
 import { LEARNING_FRONTMATTER_KEYS } from "@/learning/constants";
-import type { LearningNoteType, LearningStatus } from "@/learning/types";
+import type {
+	LearningArtifacts,
+	LearningDefinitionOfDone,
+	LearningMastery,
+	LearningNoteType,
+	LearningStatus,
+} from "@/learning/types";
 
 export interface LearningFrontmatterPatch {
 	type?: LearningNoteType;
@@ -13,6 +19,11 @@ export interface LearningFrontmatterPatch {
 	quizScore?: number;
 	reviewDue?: string;
 	lastTouched?: string;
+	prerequisites?: string[];
+	unlocks?: string[];
+	mastery?: LearningMastery;
+	artifacts?: LearningArtifacts;
+	dod?: LearningDefinitionOfDone;
 }
 
 export async function patchLearningFrontmatter(

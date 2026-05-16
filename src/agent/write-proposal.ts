@@ -2,6 +2,7 @@ import { type App, normalizePath, TFile, TFolder } from "obsidian";
 import { ARTIFACT_FOLDERS } from "@/learning/constants";
 import { updateLearningAgentTaskStatus } from "@/agent/task-store";
 import { validateAgentWritePlan } from "@/agent/task-guard";
+import { evaluateArtifactQualityForPath } from "@/learning/artifact-quality";
 import type { LearningAgentTaskSummary } from "@/agent/task-frontmatter";
 import {
 	parseAgentWriteProposal,
@@ -62,13 +63,43 @@ export async function applyAgentWriteProposal(
 	if (!validation.isValid) {
 		throw new Error(`Rejected write paths: ${validation.rejected.join(", ")}`);
 	}
+	const qualityResults = proposal.writes
+		.map((write) => ({
+			path: write.path,
+			result: evaluateArtifactQualityForPath(write.path, write.content),
+		}))
+		.filter((item) => item.result !== null);
+	const failingQuality = qualityResults.filter(
+		(item) => item.result !== null && !item.result.passed,
+	);
+	if (failingQuality.length > 0) {
+		await updateProposalStatus(app, proposal.path, "rejected");
+		await updateLearningAgentTaskStatus(app, task.path, "blocked");
+		throw new Error(
+			`Rejected artifact quality: ${failingQuality
+				.map((item) => `${item.path} (${item.result?.issues.join("; ")})`)
+				.join(", ")}`,
+		);
+	}
 
 	for (const write of proposal.writes) {
 		await writeVaultFile(app, write.path, write.content);
 	}
 
+	await updateSourceArtifactMetadata(app, task.notePath, qualityResults);
 	await updateProposalStatus(app, proposal.path, "applied");
 	await updateLearningAgentTaskStatus(app, task.path, "done");
+}
+
+export async function rejectAgentWriteProposal(
+	app: App,
+	proposal: AgentWriteProposal,
+	task?: LearningAgentTaskSummary,
+): Promise<void> {
+	await updateProposalStatus(app, proposal.path, "rejected");
+	if (task) {
+		await updateLearningAgentTaskStatus(app, task.path, "blocked");
+	}
 }
 
 async function writeVaultFile(
@@ -110,6 +141,42 @@ async function updateProposalStatus(
 	await app.vault.process(file, () =>
 		`${JSON.stringify({ ...proposal, status }, null, 2)}\n`,
 	);
+}
+
+async function updateSourceArtifactMetadata(
+	app: App,
+	notePath: string,
+	qualityResults: Array<{
+		path: string;
+		result: NonNullable<ReturnType<typeof evaluateArtifactQualityForPath>>;
+	}>,
+): Promise<void> {
+	if (qualityResults.length === 0) return;
+	const file = app.vault.getAbstractFileByPath(normalizePath(notePath));
+	if (!(file instanceof TFile) || file.extension !== "md") return;
+
+	await app.fileManager.processFrontMatter(file, (frontmatter) => {
+		const artifacts = isRecord(frontmatter.artifacts)
+			? frontmatter.artifacts
+			: {};
+		for (const item of qualityResults) {
+			const key = item.result.type;
+			artifacts[key] = {
+				...(isRecord(artifacts[key]) ? artifacts[key] : {}),
+				path: item.path,
+				quality_score: item.result.score,
+				quality_issues: item.result.issues,
+			};
+			if (key === "html_explainer") {
+				frontmatter.artifact_html = item.path;
+			}
+		}
+		frontmatter.artifacts = artifacts;
+	});
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 async function ensureParentFolder(app: App, filePath: string): Promise<void> {

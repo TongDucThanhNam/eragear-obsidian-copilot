@@ -101,6 +101,54 @@ describe("note scanner", () => {
 		expect(scan.summary.weakNotes).toBe(1);
 		expect(scan.weakNotes[0]?.path).toBe("Learning/quiz.md");
 	});
+
+	it("scans schema v2 notes and summarizes blockers and quality gaps", () => {
+		const app = createApp([
+			createFile("Learning/advanced.md", "advanced", {
+				type: "concept",
+				area: "systems",
+				status: "done",
+				prerequisites: ["[[Basics]]"],
+				mastery: {
+					recall_score: 4,
+					mechanism_score: 8,
+					transfer_score: 8,
+					application_score: 8,
+				},
+				artifacts: {
+					html_explainer: {
+						path: "_explainers/advanced.html",
+						quality_score: 40,
+					},
+				},
+			}),
+		]);
+
+		const scan = scanVaultLearningNotes(app);
+
+		expect(scan.notes[0]?.prerequisites).toEqual(["[[Basics]]"]);
+		expect(scan.summary.blockedNotes).toBeGreaterThan(0);
+		expect(scan.summary.masteryGaps).toBe(1);
+		expect(scan.summary.artifactQualityIssues).toBe(1);
+	});
+
+	it("keeps old schema notes scannable without migration", () => {
+		const app = createApp([
+			createFile("Learning/legacy.md", "legacy", {
+				type: "concept",
+				area: "systems",
+				status: "visualize",
+				artifact_html: "_explainers/legacy.html",
+			}),
+		]);
+
+		const scan = scanVaultLearningNotes(app);
+
+		expect(scan.summary.totalNotes).toBe(1);
+		expect(scan.notes[0]?.artifacts?.html_explainer?.path).toBe(
+			"_explainers/legacy.html",
+		);
+	});
 });
 
 interface FileFixture {

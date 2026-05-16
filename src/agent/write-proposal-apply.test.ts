@@ -3,6 +3,7 @@ import type { App } from "obsidian";
 import { TFile, TFolder, normalizePath } from "obsidian";
 import {
 	applyAgentWriteProposal,
+	rejectAgentWriteProposal,
 	scanAgentWriteProposals,
 } from "@/agent/write-proposal";
 import type { LearningAgentTaskSummary } from "@/agent/task-frontmatter";
@@ -15,11 +16,12 @@ describe("agent write proposal apply flow", () => {
 				writes: [
 					{
 						path: "_explainers/cache.html",
-						content: "<!doctype html>",
+						content: validHtmlExplainer(),
 					},
 				],
 			}),
 			"00_Command_Center/agent-tasks/task.md": "---\ntype: agent-task\nstatus: proposed\n---\n",
+			"Learning/cache.md": "---\ntype: concept\narea: systems\nstatus: visualize\n---\n",
 		});
 		const task = taskSummary();
 		const proposals = await scanAgentWriteProposals(app, [task]);
@@ -27,14 +29,76 @@ describe("agent write proposal apply flow", () => {
 		expect(proposals[0]?.isValid).toBe(true);
 		await applyAgentWriteProposal(app, proposals[0]!, task);
 
-		expect(app.read("_explainers/cache.html")).toBe("<!doctype html>");
+		expect(app.read("_explainers/cache.html")).toBe(validHtmlExplainer());
 		expect(app.frontmatter("00_Command_Center/agent-tasks/task.md").status).toBe(
 			"done",
+		);
+		expect(app.frontmatter("Learning/cache.md").artifact_html).toBe(
+			"_explainers/cache.html",
 		);
 		expect(
 			JSON.parse(app.read("00_Command_Center/agent-proposals/task.json"))
 				.status,
 		).toBe("applied");
+	});
+
+	it("rejects low-quality artifact content and blocks the task", async () => {
+		const app = createApp({
+			"00_Command_Center/agent-proposals/task.json": JSON.stringify({
+				taskPath: "00_Command_Center/agent-tasks/task.md",
+				writes: [
+					{
+						path: "_explainers/cache.html",
+						content: "<!doctype html>\n<p>Replace this section.</p>",
+					},
+				],
+			}),
+			"00_Command_Center/agent-tasks/task.md": "---\ntype: agent-task\nstatus: proposed\n---\n",
+			"Learning/cache.md": "---\ntype: concept\narea: systems\nstatus: visualize\n---\n",
+		});
+		const task = taskSummary();
+		const proposals = await scanAgentWriteProposals(app, [task]);
+
+		await expect(applyAgentWriteProposal(app, proposals[0]!, task)).rejects.toThrow(
+			"Rejected artifact quality",
+		);
+		expect(app.frontmatter("00_Command_Center/agent-tasks/task.md").status).toBe(
+			"blocked",
+		);
+		expect(
+			JSON.parse(app.read("00_Command_Center/agent-proposals/task.json"))
+				.status,
+		).toBe("rejected");
+		expect(app.has("_explainers/cache.html")).toBe(false);
+	});
+
+	it("allows the user to reject a pending proposal", async () => {
+		const app = createApp({
+			"00_Command_Center/agent-proposals/task.json": JSON.stringify({
+				taskPath: "00_Command_Center/agent-tasks/task.md",
+				writes: [
+					{
+						path: "_explainers/cache.html",
+						content: validHtmlExplainer(),
+					},
+				],
+			}),
+			"00_Command_Center/agent-tasks/task.md": "---\ntype: agent-task\nstatus: proposed\n---\n",
+			"Learning/cache.md": "---\ntype: concept\narea: systems\nstatus: visualize\n---\n",
+		});
+		const task = taskSummary();
+		const proposals = await scanAgentWriteProposals(app, [task]);
+
+		await rejectAgentWriteProposal(app, proposals[0]!, task);
+
+		expect(
+			JSON.parse(app.read("00_Command_Center/agent-proposals/task.json"))
+				.status,
+		).toBe("rejected");
+		expect(app.frontmatter("00_Command_Center/agent-tasks/task.md").status).toBe(
+			"blocked",
+		);
+		expect(app.has("_explainers/cache.html")).toBe(false);
 	});
 
 	it("rejects writes outside the task allowed zones", async () => {
@@ -65,6 +129,26 @@ interface MockApp extends App {
 	read: (path: string) => string;
 	has: (path: string) => boolean;
 	frontmatter: (path: string) => Record<string, unknown>;
+}
+
+function validHtmlExplainer(): string {
+	return `<!doctype html>
+<html>
+<head>
+<title>Cache explainer</title>
+<style>body { font-family: sans-serif; }</style>
+</head>
+<body>
+<h1>Cache explainer</h1>
+<section><h2>Core idea</h2><p>${"Caching keeps reusable results close to readers. ".repeat(8)}</p></section>
+<section><h2>Mental model</h2><p>${"Think of a shelf between the worker and storage. ".repeat(8)}</p></section>
+<section><h2>Interactive example</h2><button type="button">Run</button><p>${"Toggle hits and misses to compare latency. ".repeat(8)}</p></section>
+<section><h2>Common misconceptions</h2><p>${"A cache is not the source of truth. ".repeat(8)}</p></section>
+<section><h2>Tradeoffs</h2><p>${"Freshness, memory, and invalidation shape the design. ".repeat(8)}</p></section>
+<section><h2>Self-test</h2><p>${"Explain when a write-through cache is useful. ".repeat(8)}</p></section>
+<script>document.querySelector("button")?.addEventListener("click", () => {});</script>
+</body>
+</html>`;
 }
 
 function createApp(initialFiles: Record<string, string>): MockApp {

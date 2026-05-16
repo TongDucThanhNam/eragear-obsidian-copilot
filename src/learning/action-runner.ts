@@ -83,7 +83,8 @@ export async function runLearningAction(
 
 	if (
 		candidate.note.status === "visualize" &&
-		!candidate.note.artifactHtml
+		!candidate.note.artifactHtml &&
+		!candidate.note.artifacts?.html_explainer?.path
 	) {
 		const artifact = await generateHtmlExplainerForNote(app, file, {
 			relatedNotes: options.relatedNotes ?? [],

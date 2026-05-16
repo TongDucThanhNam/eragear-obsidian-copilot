@@ -124,6 +124,12 @@ npm run test
 npm run build
 ```
 
+## Learning OS roadmap
+
+- [Learning OS maturity spec](docs/learning-os/README.md)
+- [Learning OS implementation plan](docs/learning-os/PLAN.md)
+- [Learning OS todo checklist](docs/learning-os/TODO.md)
+
 For runtime verification in the development vault:
 
 ```bash

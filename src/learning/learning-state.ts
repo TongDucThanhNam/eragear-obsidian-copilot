@@ -1,4 +1,5 @@
 import { formatLearningDate } from "@/learning/frontmatter";
+import { canPromoteStatus } from "@/learning/definition-of-done";
 import type { LearningFrontmatterPatch } from "@/learning/frontmatter-writer";
 import type {
 	LearningNote,
@@ -30,20 +31,41 @@ export function inferDeterministicTransition(
 	}
 
 	switch (note.status) {
+		case "seed":
+			return canPromoteStatus(note, "explain")
+				? transitionTo(note, "explain", "Moved seed to explain.")
+				: null;
+		case "explain":
+			return canPromoteStatus(note, "visualize")
+				? transitionTo(note, "visualize", "Moved explanation to visualize.")
+				: null;
 		case "visualize":
-			return note.artifactHtml
+			return canPromoteStatus(note, "connect")
 				? transitionTo(note, "connect", "Moved visualization to connect.")
 				: null;
 		case "connect":
-			return note.links.length >= 5
+			return canPromoteStatus(note, "test")
 				? transitionTo(note, "test", "Connections validated. Moved to test.")
 				: null;
 		case "test":
-			if (typeof note.quizScore !== "number") return null;
-			return note.quizScore >= 7
-				? transitionTo(note, "apply", "Quiz passed. Moved to apply.")
-				: transitionTo(note, "explain", "Quiz was weak. Moved back to explain.");
+			if (canPromoteStatus(note, "apply")) {
+				return transitionTo(note, "apply", "Quiz passed. Moved to apply.");
+			}
+			return typeof note.quizScore === "number" && note.quizScore < 7
+				? transitionTo(note, "explain", "Quiz was weak. Moved back to explain.")
+				: null;
+		case "apply":
+			return canPromoteStatus(note, "review")
+				? transitionTo(note, "review", "Application evidence moved to review.")
+				: null;
+		case "review":
+			return canPromoteStatus(note, "done")
+				? transitionTo(note, "done", "Review evidence moved to done.")
+				: null;
 		case "done":
+			if (canPromoteStatus(note, "mastered")) {
+				return transitionTo(note, "mastered", "Mastery evidence accepted.");
+			}
 			return {
 				patch: {
 					status: "review",

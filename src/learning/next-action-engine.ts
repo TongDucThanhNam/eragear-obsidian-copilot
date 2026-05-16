@@ -18,7 +18,7 @@ export function inferNextAction(note: LearningNote): string {
 		case "explain":
 			return "Generate explanation, mechanism, examples, and failure modes";
 		case "visualize":
-			if (!note.artifactHtml) {
+			if (!hasHtmlExplainer(note)) {
 				return "Generate HTML explorable explanation";
 			}
 			return "Review existing visualization and move to connect stage";
@@ -53,10 +53,22 @@ export function scoreLearningNote(
 	const statusWeight = note.status ? STATUS_WEIGHT[note.status] : 94;
 	const missingFieldWeight = note.missingFields.length * 22;
 	const missingArtifactWeight =
-		note.status === "visualize" && !note.artifactHtml ? 36 : 0;
+		note.status === "visualize" &&
+		!note.artifactHtml &&
+		!note.artifacts?.html_explainer?.path
+			? 36
+			: 0;
 	const reviewDueWeight = isReviewDue(note.reviewDue, today) ? 28 : 0;
+	const blockedPenalty = (note.unmetPrerequisites ?? []).length > 0 ? 48 : 0;
+	const blockerPenalty = (note.blockers ?? []).length > 0 ? 16 : 0;
+	const weakPointWeight = (note.mastery?.weak_points ?? []).length * 10;
+	const unlockWeight = Math.min((note.unlockCount ?? 0) * 10, 30);
 	const sprintWeight =
-		activeSprint && note.sprint === activeSprint ? 24 : 0;
+		activeSprint &&
+		note.sprint === activeSprint &&
+		(note.unmetPrerequisites ?? []).length === 0
+			? 24
+			: 0;
 	const graphImportanceWeight = Math.min(note.graphScore ?? 0, 20);
 	const recentlyTouchedPenalty = isRecentlyTouched(note.lastTouched, today)
 		? 16
@@ -70,7 +82,11 @@ export function scoreLearningNote(
 		reviewDueWeight +
 		sprintWeight +
 		graphImportanceWeight -
-		recentlyTouchedPenalty
+		recentlyTouchedPenalty -
+		blockedPenalty -
+		blockerPenalty +
+		weakPointWeight +
+		unlockWeight
 	);
 }
 
@@ -102,8 +118,20 @@ function buildReasons(note: LearningNote, activeSprint?: string): string[] {
 	}
 	if (note.status) reasons.push(`status = ${note.status}`);
 	if (typeof note.priority === "number") reasons.push(`priority = ${note.priority}`);
-	if (note.status === "visualize" && !note.artifactHtml) {
+	if (note.status === "visualize" && !hasHtmlExplainer(note)) {
 		reasons.push("artifact_html is missing");
+	}
+	for (const blocker of note.blockers ?? []) {
+		reasons.push(blocker);
+	}
+	for (const prerequisite of note.unmetPrerequisites ?? []) {
+		reasons.push(`blocked by ${prerequisite}`);
+	}
+	for (const weakPoint of note.mastery?.weak_points ?? []) {
+		reasons.push(`weak point: ${weakPoint}`);
+	}
+	if ((note.unlockCount ?? 0) > 0) {
+		reasons.push(`unlocks ${note.unlockCount} notes`);
 	}
 	if (note.reviewDue && isReviewDue(note.reviewDue, formatLearningDate())) {
 		reasons.push(`review_due = ${note.reviewDue}`);
@@ -124,7 +152,7 @@ function expectedOutput(note: LearningNote): string | undefined {
 	if (note.status === "explain") {
 		return "00_Command_Center/learning-drafts/<note-slug>-explanation.md and status = visualize";
 	}
-	if (note.status === "visualize" && !note.artifactHtml) {
+	if (note.status === "visualize" && !hasHtmlExplainer(note)) {
 		return "_explainers/<note-slug>.html and status = connect";
 	}
 	if (note.status === "test" && typeof note.quizScore !== "number") {
@@ -149,7 +177,7 @@ function suggestedAgent(
 	note: LearningNote,
 ): "deterministic" | "reasoning-model" | "coding-agent" {
 	if (!note.type || !note.area || !note.status) return "deterministic";
-	if (note.status === "visualize" && !note.artifactHtml) return "coding-agent";
+	if (note.status === "visualize" && !hasHtmlExplainer(note)) return "coding-agent";
 	if (
 		note.status === "seed" ||
 		note.status === "explain" ||
@@ -165,4 +193,8 @@ function suggestedAgent(
 
 function isRecentlyTouched(lastTouched: string | undefined, today: string): boolean {
 	return lastTouched === today;
+}
+
+function hasHtmlExplainer(note: LearningNote): boolean {
+	return Boolean(note.artifactHtml || note.artifacts?.html_explainer?.path);
 }

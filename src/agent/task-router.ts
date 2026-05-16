@@ -7,6 +7,10 @@ import { buildLearningStructurePrompt } from "@/learning/prompt-builders/learnin
 import { buildQuizPrompt } from "@/learning/prompt-builders/quiz.prompt";
 import { buildReviewPrompt } from "@/learning/prompt-builders/review.prompt";
 import { createAgentSourceExcerpt } from "@/agent/task-source";
+import {
+	ARTIFACT_CONTRACTS,
+	inferArtifactTypeFromPath,
+} from "@/learning/artifact-contracts";
 import type { HtmlExplainerRelatedNote } from "@/learning/artifact-manager";
 import type { NextActionCandidate } from "@/learning/types";
 import type { LearningAgentTask } from "@/agent/agent-task";
@@ -53,36 +57,52 @@ function buildPrompt(
 		return buildLearningExplanationPrompt(base);
 	}
 
-	if (candidate.note.status === "visualize" && !candidate.note.artifactHtml) {
-		return buildHtmlExplainerPrompt(base);
+	if (
+		candidate.note.status === "visualize" &&
+		!candidate.note.artifactHtml &&
+		!candidate.note.artifacts?.html_explainer?.path
+	) {
+		return withArtifactContract(
+			buildHtmlExplainerPrompt(base),
+			"_explainers/example.html",
+		);
 	}
 
 	if (
 		candidate.note.status === "test" &&
 		typeof candidate.note.quizScore !== "number"
 	) {
-		return buildQuizPrompt(base);
+		return withArtifactContract(buildQuizPrompt(base), "_quizzes/example.md");
 	}
 
 	if (candidate.note.status === "connect" && candidate.note.links.length < 5) {
-		return buildBridgeNotePrompt({
-			...base,
-			sourcePath: candidate.note.path,
-		});
+		return withArtifactContract(
+			buildBridgeNotePrompt({
+				...base,
+				sourcePath: candidate.note.path,
+			}),
+			"03_Bridge_Notes/example.md",
+		);
 	}
 
 	if (candidate.note.status === "apply") {
-		return buildCaseStudyPrompt({
-			...base,
-			sourcePath: candidate.note.path,
-		});
+		return withArtifactContract(
+			buildCaseStudyPrompt({
+				...base,
+				sourcePath: candidate.note.path,
+			}),
+			"05_Case_Studies/example.md",
+		);
 	}
 
 	if (candidate.note.status === "review") {
-		return buildReviewPrompt({
-			...base,
-			sourcePath: candidate.note.path,
-		});
+		return withArtifactContract(
+			buildReviewPrompt({
+				...base,
+				sourcePath: candidate.note.path,
+			}),
+			"_reviews/example.md",
+		);
 	}
 
 	return `You are helping complete a Learning OS action.
@@ -104,6 +124,20 @@ Related notes:
 ${relatedNotes
 	.map((note) => `## ${note.title}\nPath: ${note.path}\n${note.excerpt}`)
 	.join("\n\n")}
+`;
+}
+
+function withArtifactContract(prompt: string, samplePath: string): string {
+	const type = inferArtifactTypeFromPath(samplePath);
+	if (!type) return prompt;
+	const contract = ARTIFACT_CONTRACTS[type];
+	return `${prompt}
+
+Quality contract:
+- Fill the artifact completely; do not leave placeholders.
+- Minimum length: ${contract.minLength} characters.
+- Include concrete sections for: ${contract.requiredTerms.join(", ")}.
+- The proposal will be rejected if quality checks fail.
 `;
 }
 

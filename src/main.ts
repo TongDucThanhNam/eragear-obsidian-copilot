@@ -22,6 +22,7 @@ import { runLearningAgentTaskWithAcp } from "@/agent/learning-agent-executor";
 import { createLearningAgentTaskFile } from "@/agent/task-writer";
 import {
 	applyAgentWriteProposal,
+	rejectAgentWriteProposal,
 	scanAgentWriteProposals,
 	type AgentWriteProposalSummary,
 } from "@/agent/write-proposal";
@@ -48,6 +49,9 @@ import {
 	generateHtmlExplainerForNote,
 	type HtmlExplainerRelatedNote,
 } from "@/learning/artifact-manager";
+import { generateBridgeNoteForNote } from "@/learning/bridge-note-manager";
+import { generateCaseStudyForNote } from "@/learning/case-study-manager";
+import { generateExaminerForNote } from "@/learning/examiner-manager";
 import {
 	patchLearningFrontmatter,
 	type LearningFrontmatterPatch,
@@ -239,6 +243,68 @@ export default class EragearPlugin extends Plugin {
 		});
 
 		this.addCommand({
+			id: "diagnose-current-note",
+			name: "Diagnose current note",
+			callback: () => {
+				const active = this.getActiveLearningNote();
+				if (!active) {
+					new Notice("Open a note first.");
+					return;
+				}
+				const blockers = active.blockers?.[0] ?? active.missingFields[0];
+				new Notice(
+					blockers
+						? `Current blocker: ${blockers}`
+						: `Current status: ${active.status ?? "missing status"}.`,
+				);
+				this.activateView();
+			},
+		});
+
+		this.addCommand({
+			id: "generate-next-action-queue",
+			name: "Generate next action queue",
+			callback: () => {
+				const queue = this.getLearningActionQueue();
+				new Notice(
+					queue[0]
+						? `Today focus: ${queue[0].action} for ${queue[0].note.title}`
+						: "No learning action found.",
+				);
+				this.activateView();
+			},
+		});
+
+		this.addCommand({
+			id: "start-learning-session",
+			name: "Start learning session",
+			callback: () => {
+				this.activateView();
+				const next = this.getNextLearningAction();
+				new Notice(
+					next
+						? `Start with: ${next.action} for ${next.note.title}`
+						: "No learning action found.",
+				);
+			},
+		});
+
+		this.addCommand({
+			id: "run-examiner",
+			name: "Run examiner",
+			callback: async () => {
+				const activeFile = this.app.workspace.getActiveFile();
+				if (!activeFile) {
+					new Notice("Open a note first.");
+					return;
+				}
+				const artifact = await generateExaminerForNote(this.app, activeFile);
+				new Notice(`Examiner created: ${artifact.artifactPath}`);
+				this.notifyLearningStateChanged();
+			},
+		});
+
+		this.addCommand({
 			id: "scan-learning-notes",
 			name: "Scan learning notes",
 			callback: () => {
@@ -288,6 +354,55 @@ export default class EragearPlugin extends Plugin {
 				if (artifact) {
 					new Notice(`HTML explainer created: ${artifact.artifactPath}`);
 				}
+			},
+		});
+
+		this.addCommand({
+			id: "generate-bridge-note",
+			name: "Generate bridge note",
+			callback: async () => {
+				const activeFile = this.app.workspace.getActiveFile();
+				if (!activeFile) {
+					new Notice("Open a note first.");
+					return;
+				}
+				const artifact = await generateBridgeNoteForNote(this.app, activeFile, {
+					relatedNotes: await this.getLearningRelatedNotes({
+						note: scanLearningNote(this.app, activeFile),
+						action: "Generate bridge note",
+					}),
+				});
+				new Notice(`Bridge note created: ${artifact.artifactPath}`);
+				this.notifyLearningStateChanged();
+			},
+		});
+
+		this.addCommand({
+			id: "generate-case-study",
+			name: "Generate case study",
+			callback: async () => {
+				const activeFile = this.app.workspace.getActiveFile();
+				if (!activeFile) {
+					new Notice("Open a note first.");
+					return;
+				}
+				const artifact = await generateCaseStudyForNote(this.app, activeFile, {
+					relatedNotes: await this.getLearningRelatedNotes({
+						note: scanLearningNote(this.app, activeFile),
+						action: "Generate case study",
+					}),
+				});
+				new Notice(`Case study created: ${artifact.artifactPath}`);
+				this.notifyLearningStateChanged();
+			},
+		});
+
+		this.addCommand({
+			id: "review-agent-proposals",
+			name: "Review agent proposals",
+			callback: () => {
+				this.activateView();
+				new Notice("Open Artifact Review in the Learning Command Center.");
 			},
 		});
 
@@ -610,6 +725,17 @@ export default class EragearPlugin extends Plugin {
 		this.lastLearningScan = scanVaultLearningNotes(this.app);
 		this.notifyLearningStateChanged();
 		new Notice("Agent proposal applied.");
+	}
+
+	async rejectAgentWriteProposal(
+		proposal: AgentWriteProposalSummary,
+	): Promise<void> {
+		const task = this.getLearningAgentTasks().find(
+			(candidate) => candidate.path === proposal.taskPath,
+		);
+		await rejectAgentWriteProposal(this.app, proposal, task);
+		this.notifyLearningStateChanged();
+		new Notice("Agent proposal rejected.");
 	}
 
 	async patchLearningMetadataForNote(

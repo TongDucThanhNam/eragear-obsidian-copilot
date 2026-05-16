@@ -145,6 +145,36 @@ describe("next action engine", () => {
 			"_reviews/<note-slug>-review.md and next_action = complete review",
 		);
 	});
+
+	it("penalizes blocked notes and boosts prerequisite notes", () => {
+		const blocked = learningNote({
+			priority: 90,
+			unmetPrerequisites: ["[[Cache basics]]"],
+			blockers: ["Prerequisite not met: [[Cache basics]]"],
+		});
+		const prerequisite = learningNote({
+			priority: 40,
+			unlockCount: 3,
+		});
+
+		expect(scoreLearningNote(prerequisite)).toBeGreaterThan(
+			scoreLearningNote(blocked),
+		);
+	});
+
+	it("adds weak points and blocker reasons to the queue", () => {
+		const queue = generateNextActionQueue(
+			scanWith([
+				learningNote({
+					mastery: { weak_points: ["mechanism: stale reads"] },
+					blockers: ["Review evidence is missing."],
+				}),
+			]),
+		);
+
+		expect(queue[0]?.reason).toContain("Review evidence is missing.");
+		expect(queue[0]?.reason).toContain("weak point: mechanism: stale reads");
+	});
 });
 
 function learningNote(overrides: Partial<LearningNote> = {}): LearningNote {
@@ -178,7 +208,13 @@ function scanWith(notes: LearningNote[]): LearningScanResult {
 			weakNotes: 0,
 			missingArtifacts: 0,
 			dueReviews: 0,
+			blockedNotes: 0,
+			masteryGaps: 0,
+			artifactQualityIssues: 0,
 		},
+		blockedNotes: [],
+		masteryGaps: [],
+		artifactQualityIssues: [],
 		scannedAt: "2026-05-12T00:00:00.000Z",
 	};
 }

@@ -57,6 +57,10 @@ async function buildReview(
 	relatedNotes: HtmlExplainerRelatedNote[],
 ): Promise<string> {
 	const content = await app.vault.cachedRead(file);
+	const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter as
+		| Record<string, unknown>
+		| undefined;
+	const weakPoints = parseWeakPoints(frontmatter?.mastery);
 	const source = stripFrontmatter(content);
 	const generatedAt = formatLearningDate();
 	const prompt = buildReviewPrompt({
@@ -97,6 +101,10 @@ created: ${generatedAt}
 - [ ] Apply the concept to one concrete project, design, or decision.
 - [ ] Record any remaining confusion in the source note.
 
+## Weak points
+
+${formatWeakPoints(weakPoints)}
+
 ## Promotion criteria
 
 - Increase \`maturity\` if recall and application are both strong.
@@ -113,6 +121,22 @@ ${formatRelatedNotes(relatedNotes)}
 ${prompt.slice(0, 20000)}
 \`\`\`
 `;
+}
+
+function parseWeakPoints(value: unknown): string[] {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) {
+		return [];
+	}
+	const weakPoints = (value as Record<string, unknown>).weak_points;
+	if (!Array.isArray(weakPoints)) return [];
+	return weakPoints.filter((item): item is string => typeof item === "string");
+}
+
+function formatWeakPoints(weakPoints: string[]): string {
+	if (weakPoints.length === 0) {
+		return "- No weak points recorded yet.";
+	}
+	return weakPoints.map((point) => `- [ ] ${point}`).join("\n");
 }
 
 function formatRelatedNotes(relatedNotes: HtmlExplainerRelatedNote[]): string {

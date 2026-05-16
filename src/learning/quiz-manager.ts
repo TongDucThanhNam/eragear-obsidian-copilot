@@ -69,11 +69,11 @@ Generated: ${generatedAt}
 
 ## Short-answer questions
 
-1. What is the core idea of this note?
-2. What mechanism makes the idea work?
-3. What is one concrete example?
-4. What failure mode should you watch for?
-5. How does this connect to another note in the vault?
+1. [recall] What is the core idea of this note?
+2. [mechanism] What mechanism makes the idea work?
+3. [transfer] What is one concrete example outside the source context?
+4. [application] What failure mode should you watch for in practice?
+5. [transfer] How does this connect to another note in the vault?
 
 ## Misconception checks
 

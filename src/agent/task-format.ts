@@ -35,6 +35,7 @@ ${task.prompt}
 
 - [ ] Output stays inside allowed write zones.
 - [ ] Proposed write paths pass the agent task write guard.
+- [ ] Artifact content satisfies the quality contract and has no placeholders.
 - [ ] Create proposal JSON in \`00_Command_Center/agent-proposals\` before applying writes.
 - [ ] Source note frontmatter is updated if state changes.
 - [ ] Learning action log is updated after execution.
