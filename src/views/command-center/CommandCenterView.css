@@ -1,23 +1,23 @@
 .eragear-copilot-root .eragear-main-tabs-list {
 	justify-content: flex-start;
+	flex-wrap: wrap;
 	width: 100%;
 	box-sizing: border-box;
-	overflow-x: hidden;
-	overflow-y: hidden;
+	overflow: visible;
 }
 
 .eragear-copilot-root
 	.eragear-main-tabs-list
 	[data-slot="tabs-trigger"] {
-	flex: 1 1 0;
+	flex: 1 1 7rem;
 	min-width: 0;
-	padding-inline: var(--size-4-3);
+	padding-inline: var(--size-4-2);
 }
 
 .eragear-copilot-root .eragear-learning-center {
 	display: flex;
 	flex-direction: column;
-	gap: var(--size-4-3);
+	gap: var(--size-4-4);
 	min-height: 0;
 	height: 100%;
 	overflow-y: auto;
@@ -37,7 +37,7 @@
 	position: sticky;
 	top: 0;
 	z-index: 1;
-	padding-block-end: var(--size-4-2);
+	padding: var(--size-4-1) 0 var(--size-4-2);
 	border-bottom: var(--border-width) solid var(--cui-border);
 	background: var(--cui-bg);
 }
@@ -61,16 +61,30 @@
 
 .eragear-copilot-root .eragear-learning-overview {
 	display: grid;
-	grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
 	gap: var(--size-4-3);
 	align-items: stretch;
 }
 
+.eragear-copilot-root .eragear-focused-mode {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--size-4-3);
+	min-width: 0;
+}
+
 .eragear-copilot-root .eragear-learning-os-grid {
 	display: grid;
-	grid-template-columns: minmax(14rem, 0.9fr) minmax(18rem, 1.5fr) minmax(16rem, 1fr);
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--size-4-4);
+	align-items: start;
+}
+
+.eragear-copilot-root .eragear-learning-secondary-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
 	gap: var(--size-4-3);
-	align-items: stretch;
+	align-items: start;
 }
 
 .eragear-copilot-root .eragear-next-action-hero,
@@ -85,12 +99,13 @@
 	display: flex;
 	min-width: 0;
 	flex-direction: column;
-	gap: var(--size-4-3);
-	padding: var(--size-4-4);
+	gap: var(--size-4-4);
+	padding: var(--size-4-5);
 }
 
 .eragear-copilot-root .eragear-today-focus-panel h3 {
 	font-size: var(--font-ui-large);
+	line-height: var(--line-height-tight);
 }
 
 .eragear-copilot-root .eragear-skill-map-list {
@@ -198,6 +213,7 @@
 .eragear-copilot-root .eragear-output-box,
 .eragear-copilot-root .eragear-concept-readiness,
 .eragear-copilot-root .eragear-session-diagnosis,
+.eragear-copilot-root .eragear-dod-gate,
 .eragear-copilot-root .eragear-proposal-diff-preview {
 	display: flex;
 	min-width: 0;
@@ -213,6 +229,7 @@
 .eragear-copilot-root .eragear-output-box strong,
 .eragear-copilot-root .eragear-concept-readiness strong,
 .eragear-copilot-root .eragear-session-diagnosis strong,
+.eragear-copilot-root .eragear-dod-gate strong,
 .eragear-copilot-root .eragear-proposal-review-grid strong,
 .eragear-copilot-root .eragear-proposal-diff-preview strong {
 	color: var(--cui-text);
@@ -221,6 +238,7 @@
 
 .eragear-copilot-root .eragear-output-box ul,
 .eragear-copilot-root .eragear-concept-readiness ul,
+.eragear-copilot-root .eragear-dod-gate ul,
 .eragear-copilot-root .eragear-proposal-review-grid ul {
 	display: grid;
 	gap: var(--size-4-1);
@@ -231,48 +249,47 @@
 	line-height: var(--line-height-normal);
 }
 
+.eragear-copilot-root .eragear-dod-gate p,
+.eragear-copilot-root .eragear-dod-gate li {
+	margin: 0;
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+	line-height: var(--line-height-normal);
+	overflow-wrap: anywhere;
+}
+
 .eragear-copilot-root .eragear-active-title {
 	font-size: var(--font-ui-medium);
 	font-weight: var(--font-semibold);
 }
 
-.eragear-copilot-root .eragear-status-stepper {
-	display: grid;
-	grid-template-columns: repeat(9, minmax(0, 1fr));
-	gap: var(--size-4-1);
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.eragear-copilot-root .eragear-status-stepper li {
+.eragear-copilot-root .eragear-status-rail {
 	display: flex;
 	min-width: 0;
 	flex-direction: column;
-	align-items: center;
 	gap: var(--size-4-1);
+}
+
+.eragear-copilot-root .eragear-status-rail-header,
+.eragear-copilot-root .eragear-status-rail-labels {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	min-width: 0;
+}
+
+.eragear-copilot-root .eragear-status-rail-header strong {
+	color: var(--cui-text);
+	font-size: var(--font-ui-small);
+	line-height: var(--line-height-normal);
+}
+
+.eragear-copilot-root .eragear-status-rail-header span,
+.eragear-copilot-root .eragear-status-rail-labels span {
 	color: var(--cui-text-muted);
 	font-size: var(--font-ui-smaller);
-	text-align: center;
-	overflow-wrap: anywhere;
-}
-
-.eragear-copilot-root .eragear-status-stepper li span {
-	width: var(--size-4-3);
-	height: var(--size-4-3);
-	border: var(--border-width) solid var(--cui-border);
-	border-radius: var(--radius-s);
-	background: var(--cui-bg);
-}
-
-.eragear-copilot-root .eragear-status-stepper li.is-active {
-	color: var(--cui-text);
-	font-weight: var(--font-semibold);
-}
-
-.eragear-copilot-root .eragear-status-stepper li.is-active span {
-	border-color: var(--interactive-accent);
-	background: var(--interactive-accent);
+	line-height: var(--line-height-normal);
 }
 
 .eragear-copilot-root .eragear-learning-eyebrow {
@@ -282,7 +299,8 @@
 	color: var(--cui-text-muted);
 	font-size: var(--font-ui-smaller);
 	font-weight: var(--font-semibold);
-	text-transform: uppercase;
+	letter-spacing: 0;
+	text-transform: none;
 }
 
 .eragear-copilot-root .eragear-next-action-title-row,
@@ -302,6 +320,20 @@
 .eragear-copilot-root .eragear-next-action-title-row h3 {
 	margin-block-end: var(--size-4-1);
 	font-size: var(--font-ui-large);
+	overflow-wrap: anywhere;
+}
+
+.eragear-copilot-root .eragear-action-kicker {
+	display: block;
+	margin-block-end: var(--size-4-1);
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	line-height: var(--line-height-normal);
+}
+
+.eragear-copilot-root .eragear-focus-note-link {
+	font-size: var(--font-ui-small);
 }
 
 .eragear-copilot-root .eragear-next-action-meta,
@@ -359,6 +391,92 @@
 
 .eragear-copilot-root .eragear-acp-runtime-state button[data-slot="button"] {
 	align-self: flex-start;
+}
+
+.eragear-copilot-root .eragear-acp-event-stream {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding: var(--size-4-3);
+	border: var(--border-width) solid var(--cui-border);
+	border-radius: var(--radius-s);
+	background: var(--cui-bg);
+}
+
+.eragear-copilot-root .eragear-acp-event-stream-header,
+.eragear-copilot-root .eragear-acp-event-main {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	min-width: 0;
+}
+
+.eragear-copilot-root .eragear-acp-event-stream-header strong,
+.eragear-copilot-root .eragear-acp-event-main strong {
+	color: var(--cui-text);
+	font-size: var(--font-ui-small);
+	line-height: var(--line-height-normal);
+}
+
+.eragear-copilot-root .eragear-acp-event-stream-header span,
+.eragear-copilot-root .eragear-acp-event-main span,
+.eragear-copilot-root .eragear-acp-event-list p {
+	color: var(--cui-text-muted);
+	font-size: var(--font-ui-smaller);
+	line-height: var(--line-height-normal);
+}
+
+.eragear-copilot-root .eragear-acp-event-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.eragear-copilot-root .eragear-acp-event-list li {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-1);
+	padding: var(--size-4-2);
+	border: var(--border-width) solid var(--cui-border);
+	border-inline-start: var(--size-4-1) solid var(--cui-border);
+	border-radius: var(--radius-s);
+	background: var(--cui-bg-2);
+}
+
+.eragear-copilot-root
+	.eragear-acp-event-list
+	li[data-severity="success"] {
+	border-inline-start-color: var(--text-success);
+}
+
+.eragear-copilot-root
+	.eragear-acp-event-list
+	li[data-severity="warning"] {
+	border-inline-start-color: var(--text-warning);
+}
+
+.eragear-copilot-root .eragear-acp-event-list li[data-severity="error"] {
+	border-inline-start-color: var(--text-error);
+}
+
+.eragear-copilot-root .eragear-acp-event-main > div:first-child {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	gap: var(--size-4-1);
+}
+
+.eragear-copilot-root .eragear-acp-event-time {
+	font-variant-numeric: tabular-nums;
+}
+
+.eragear-copilot-root .eragear-acp-event-list p {
+	margin: 0;
+	overflow-wrap: anywhere;
 }
 
 .eragear-copilot-root .eragear-primary-action-button {
@@ -468,6 +586,13 @@
 	display: flex;
 	flex-direction: column;
 	gap: var(--size-4-3);
+}
+
+.eragear-copilot-root .eragear-focus-detail-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+	gap: var(--size-4-2);
+	align-items: stretch;
 }
 
 .eragear-copilot-root .eragear-learning-metadata-form {
@@ -737,9 +862,10 @@
 }
 
 .eragear-copilot-root .eragear-session-layout,
+.eragear-copilot-root .eragear-examiner-layout,
 .eragear-copilot-root .eragear-proposal-review-grid {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.45fr);
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
 	gap: var(--size-4-2);
 	align-items: start;
 }
@@ -846,6 +972,7 @@
 	.eragear-copilot-root .eragear-learning-summary,
 	.eragear-copilot-root .eragear-learning-grid,
 	.eragear-copilot-root .eragear-session-layout,
+	.eragear-copilot-root .eragear-examiner-layout,
 	.eragear-copilot-root .eragear-proposal-review-grid,
 	.eragear-copilot-root .eragear-learning-metadata-form,
 	.eragear-copilot-root .eragear-evidence-panel,
@@ -860,7 +987,10 @@
 	}
 
 	.eragear-copilot-root .eragear-status-stepper {
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: repeat(
+			auto-fit,
+			minmax(min(100%, calc(var(--size-4-4) * 6)), 1fr)
+		);
 	}
 
 	.eragear-copilot-root .eragear-acp-lane-actions {

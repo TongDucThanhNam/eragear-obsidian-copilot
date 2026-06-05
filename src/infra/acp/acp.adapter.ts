@@ -102,6 +102,45 @@ export interface AcpReadGuardResult {
 
 export type AcpReadGuard = (path: string) => AcpReadGuardResult;
 
+export type AcpAdapterRuntimeEventSeverity =
+	| "info"
+	| "success"
+	| "warning"
+	| "error";
+
+export interface AcpAdapterRuntimeEvent {
+	kind:
+		| "permission_requested"
+		| "permission_auto_approved"
+		| "permission_auto_denied"
+		| "permission_resolved"
+		| "file_read_requested"
+		| "file_read_served"
+		| "file_read_blocked"
+		| "file_read_missing"
+		| "file_read_success"
+		| "file_read_error"
+		| "file_write_requested"
+		| "file_write_created"
+		| "file_write_modified"
+		| "file_write_rejected"
+		| "file_write_error"
+		| "prompt_started"
+		| "prompt_completed"
+		| "prompt_error";
+	message: string;
+	severity?: AcpAdapterRuntimeEventSeverity;
+	path?: string;
+	title?: string;
+	outcome?: string;
+	stopReason?: StopReason;
+	chars?: number;
+}
+
+export type AcpAdapterRuntimeEventSink = (
+	event: AcpAdapterRuntimeEvent,
+) => void;
+
 export class AcpAdapter implements IAgentClient {
 	// ========================================================================
 	// Private State
@@ -140,6 +179,9 @@ export class AcpAdapter implements IAgentClient {
 	/** Optional read guard used by bounded execution flows such as Learning OS */
 	private readGuard: AcpReadGuard | null = null;
 
+	/** Optional runtime event sink used by bounded execution UI surfaces */
+	private runtimeEventSink: AcpAdapterRuntimeEventSink | null = null;
+
 	/** Terminal tools are enabled for chat, but can be disabled for bounded tasks */
 	private terminalAccessEnabled = true;
 
@@ -172,6 +214,10 @@ export class AcpAdapter implements IAgentClient {
 
 	setAutoApproveSafeFilePermissions(enabled: boolean): void {
 		this.autoApproveSafeFilePermissions = enabled;
+	}
+
+	setRuntimeEventSink(sink: AcpAdapterRuntimeEventSink | null): void {
+		this.runtimeEventSink = sink;
 	}
 
 	// ========================================================================
@@ -242,12 +288,19 @@ export class AcpAdapter implements IAgentClient {
 
 		// Generate a unique request ID
 		const requestId = `perm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+		const permissionTitle = p.title || p.toolCall?.title || "Permission required";
 
 		console.log("[AcpAdapter] Permission requested:", {
 			requestId,
-			title: p.title || p.toolCall?.title,
+			title: permissionTitle,
 			optionsCount: p.options?.length || 0,
 			optionsRaw: p.options,
+		});
+		this.emitRuntimeEvent({
+			kind: "permission_requested",
+			message: "Permission requested",
+			severity: "warning",
+			title: permissionTitle,
 		});
 
 		const autoPermission = this.getAutoApprovedPermission(p);
@@ -257,12 +310,26 @@ export class AcpAdapter implements IAgentClient {
 				path: autoPermission.path,
 				optionId: autoPermission.outcome.optionId,
 			});
+			this.emitRuntimeEvent({
+				kind: "permission_auto_approved",
+				message: "Permission auto-approved",
+				severity: "success",
+				path: autoPermission.path,
+				title: permissionTitle,
+				outcome: autoPermission.outcome.optionId,
+			});
 			return { outcome: autoPermission.outcome };
 		}
 		if (this.autoApproveSafeFilePermissions) {
 			console.log("[AcpAdapter] Auto-denied bounded permission:", {
 				requestId,
-				title: p.title || p.toolCall?.title,
+				title: permissionTitle,
+			});
+			this.emitRuntimeEvent({
+				kind: "permission_auto_denied",
+				message: "Permission auto-denied",
+				severity: "warning",
+				title: permissionTitle,
 			});
 			return { outcome: { outcome: "cancelled" } };
 		}
@@ -279,7 +346,7 @@ export class AcpAdapter implements IAgentClient {
 		const permissionUpdate: SessionUpdate = {
 			type: "permission_requested",
 			requestId,
-			title: p.title || p.toolCall?.title || "Permission Required",
+			title: permissionTitle,
 			description: p.description,
 			options: (p.options || []).map((o) => ({
 				id: o.optionId,
@@ -294,6 +361,13 @@ export class AcpAdapter implements IAgentClient {
 		const outcome = await responsePromise;
 
 		console.log("[AcpAdapter] Permission response:", outcome);
+		this.emitRuntimeEvent({
+			kind: "permission_resolved",
+			message: `Permission ${outcome.outcome}`,
+			severity: outcome.outcome === "selected" ? "success" : "warning",
+			title: permissionTitle,
+			outcome: outcome.optionId ?? outcome.outcome,
+		});
 
 		return { outcome };
 	}
@@ -868,6 +942,12 @@ export class AcpAdapter implements IAgentClient {
 			sessionId,
 			chars: message.length,
 		});
+		this.emitRuntimeEvent({
+			kind: "prompt_started",
+			message: "Prompt sent to ACP agent",
+			severity: "info",
+			chars: message.length,
+		});
 
 		try {
 			const result = await connection.prompt({
@@ -876,12 +956,23 @@ export class AcpAdapter implements IAgentClient {
 			});
 
 			console.log("[AcpAdapter] Prompt completed", result);
+			this.emitRuntimeEvent({
+				kind: "prompt_completed",
+				message: "Prompt completed",
+				severity: "success",
+				stopReason: (result.stopReason as StopReason) || "end_turn",
+			});
 
 			return {
 				stopReason: (result.stopReason as StopReason) || "end_turn",
 			};
 		} catch (e) {
 			console.error("[AcpAdapter] Prompt error:", e);
+			this.emitRuntimeEvent({
+				kind: "prompt_error",
+				message: e instanceof Error ? e.message : "Prompt failed",
+				severity: "error",
+			});
 			throw e instanceof AgentError
 				? e
 				: new AgentError(
@@ -1330,6 +1421,16 @@ export class AcpAdapter implements IAgentClient {
 		}
 	}
 
+	private emitRuntimeEvent(event: AcpAdapterRuntimeEvent): void {
+		if (!this.runtimeEventSink) return;
+
+		try {
+			this.runtimeEventSink(event);
+		} catch (e) {
+			console.error("[AcpAdapter] Error in runtime event sink:", e);
+		}
+	}
+
 	/**
 	 * Notify all error subscribers.
 	 */
@@ -1500,14 +1601,33 @@ export class AcpAdapter implements IAgentClient {
 
 		try {
 			const normalizedPath = this.normalizeVaultPath(params.path);
+			this.emitRuntimeEvent({
+				kind: "file_read_requested",
+				message: "Read file requested",
+				severity: "info",
+				path: normalizedPath,
+			});
 			const guardResult = this.readGuard?.(normalizedPath);
 			if (guardResult) {
 				if (guardResult.content !== undefined) {
 					console.log("[AcpAdapter] Read file served by guard:", normalizedPath);
+					this.emitRuntimeEvent({
+						kind: "file_read_served",
+						message: "Read served by bounded context",
+						severity: "success",
+						path: normalizedPath,
+						chars: guardResult.content.length,
+					});
 					return { content: guardResult.content };
 				}
 				if (!guardResult.allowed) {
 					console.log("[AcpAdapter] Read file blocked by guard:", normalizedPath);
+					this.emitRuntimeEvent({
+						kind: "file_read_blocked",
+						message: guardResult.message ?? "Read blocked by bounded guard",
+						severity: "warning",
+						path: normalizedPath,
+					});
 					return {
 						content:
 							guardResult.message ??
@@ -1519,6 +1639,12 @@ export class AcpAdapter implements IAgentClient {
 			const file = this.vaultManager.getFileByPath(normalizedPath);
 			if (!file) {
 				console.log("[AcpAdapter] File not found:", normalizedPath);
+				this.emitRuntimeEvent({
+					kind: "file_read_missing",
+					message: "File not found",
+					severity: "warning",
+					path: normalizedPath,
+				});
 				return { content: "" };
 			}
 
@@ -1528,9 +1654,21 @@ export class AcpAdapter implements IAgentClient {
 				normalizedPath,
 				`(${content.length} chars)`,
 			);
+			this.emitRuntimeEvent({
+				kind: "file_read_success",
+				message: "Read file successfully",
+				severity: "success",
+				path: normalizedPath,
+				chars: content.length,
+			});
 			return { content };
 		} catch (error) {
 			console.error("[AcpAdapter] Error reading file:", error);
+			this.emitRuntimeEvent({
+				kind: "file_read_error",
+				message: error instanceof Error ? error.message : "Read failed",
+				severity: "error",
+			});
 			return { content: "" };
 		}
 	}
@@ -1551,9 +1689,22 @@ export class AcpAdapter implements IAgentClient {
 
 		try {
 			const normalizedPath = this.normalizeVaultPath(params.path);
+			this.emitRuntimeEvent({
+				kind: "file_write_requested",
+				message: "Write file requested",
+				severity: "info",
+				path: normalizedPath,
+				chars: params.content.length,
+			});
 
 			const guardResult = this.writeGuard?.(normalizedPath);
 			if (guardResult && !guardResult.allowed) {
+				this.emitRuntimeEvent({
+					kind: "file_write_rejected",
+					message: guardResult.message ?? "Write rejected by bounded guard",
+					severity: "error",
+					path: normalizedPath,
+				});
 				throw new AgentError(
 					guardResult.message ?? `Write rejected: ${normalizedPath}`,
 					"WRITE_GUARD_REJECTED",
@@ -1566,15 +1717,34 @@ export class AcpAdapter implements IAgentClient {
 				// Modify existing file
 				await this.vaultManager.modifyFile(existingFile, params.content);
 				console.log("[AcpAdapter] Modified file:", normalizedPath);
+				this.emitRuntimeEvent({
+					kind: "file_write_modified",
+					message: "Modified proposal file",
+					severity: "success",
+					path: normalizedPath,
+					chars: params.content.length,
+				});
 			} else {
 				// Create new file
 				await this.vaultManager.createFile(normalizedPath, params.content);
 				console.log("[AcpAdapter] Created file:", normalizedPath);
+				this.emitRuntimeEvent({
+					kind: "file_write_created",
+					message: "Created proposal file",
+					severity: "success",
+					path: normalizedPath,
+					chars: params.content.length,
+				});
 			}
 
 			return {};
 		} catch (error) {
 			console.error("[AcpAdapter] Error writing file:", error);
+			this.emitRuntimeEvent({
+				kind: "file_write_error",
+				message: error instanceof Error ? error.message : "Write failed",
+				severity: "error",
+			});
 			throw error;
 		}
 	}

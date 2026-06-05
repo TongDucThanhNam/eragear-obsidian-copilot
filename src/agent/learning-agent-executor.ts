@@ -6,11 +6,16 @@ import { updateLearningAgentTaskStatus } from "@/agent/task-store";
 import { AcpAdapter } from "@/infra/acp/acp.adapter";
 import { ARTIFACT_FOLDERS } from "@/learning/constants";
 import type { MyPluginSettings } from "@/app/settings/plugin-settings";
+import type { AgentTaskStatus } from "@/agent/agent-task";
 import type { LearningAgentTaskSummary } from "@/agent/task-frontmatter";
 import type {
 	SessionModelState,
 	StopReason,
 } from "@/core/models/session-update";
+import type {
+	AcpAdapterRuntimeEvent,
+	AcpAdapterRuntimeEventSeverity,
+} from "@/infra/acp/acp.adapter";
 
 const PROPOSAL_FOLDER = normalizePath(
 	`${ARTIFACT_FOLDERS.commandCenter}/agent-proposals`,
@@ -24,9 +29,28 @@ export interface LearningAgentExecutionResult {
 	proposalCount: number;
 }
 
+export interface LearningAgentExecutionEvent {
+	kind: "task_status" | "proposal_scan" | "agent_error" | AcpAdapterRuntimeEvent["kind"];
+	taskPath: string;
+	taskTitle: string;
+	message: string;
+	createdAt: string;
+	severity?: AcpAdapterRuntimeEventSeverity;
+	status?: AgentTaskStatus;
+	path?: string;
+	detail?: string;
+	outcome?: string;
+	stopReason?: StopReason;
+	chars?: number;
+	proposalCount?: number;
+}
+
 interface LearningAgentExecutorAdapter {
 	setTerminalAccess: (enabled: boolean) => void;
 	setAutoApproveSafeFilePermissions: (enabled: boolean) => void;
+	setRuntimeEventSink?: (
+		sink: ((event: AcpAdapterRuntimeEvent) => void) | null,
+	) => void;
 	setWriteGuard: (
 		guard: (path: string) => { allowed: boolean; message?: string },
 	) => void;
@@ -54,6 +78,7 @@ export interface LearningAgentExecutorOptions {
 	adapterFactory?: (app: App) => LearningAgentExecutorAdapter;
 	isDesktopApp?: boolean;
 	timeoutMs?: number;
+	onEvent?: (event: LearningAgentExecutionEvent) => void;
 }
 
 export async function runLearningAgentTaskWithAcp(
@@ -81,8 +106,22 @@ export async function runLearningAgentTaskWithAcp(
 	const compactTaskContent = compactLearningAgentTaskContent(taskContent);
 	await ensureProposalFolder(app);
 	const adapter = options.adapterFactory?.(app) ?? new AcpAdapter(app);
+	const emit = (event: LearningAgentExecutionEventInput) =>
+		emitLearningAgentEvent(options, task, event);
 	adapter.setTerminalAccess(false);
 	adapter.setAutoApproveSafeFilePermissions(true);
+	adapter.setRuntimeEventSink?.((event) =>
+		emit({
+			kind: event.kind,
+			message: event.message,
+			severity: event.severity,
+			path: event.path,
+			detail: event.title,
+			outcome: event.outcome,
+			stopReason: event.stopReason,
+			chars: event.chars,
+		}),
+	);
 	adapter.setWriteGuard((path) => {
 		if (isPathAllowed(path, [PROPOSAL_FOLDER])) {
 			return { allowed: true };
@@ -114,6 +153,12 @@ export async function runLearningAgentTaskWithAcp(
 	});
 
 	await updateLearningAgentTaskStatus(app, task.path, "running");
+	emit({
+		kind: "task_status",
+		message: "Agent task marked running",
+		severity: "info",
+		status: "running",
+	});
 
 	try {
 		const timeoutMs = options.timeoutMs ?? DEFAULT_AGENT_TASK_TIMEOUT_MS;
@@ -122,17 +167,35 @@ export async function runLearningAgentTaskWithAcp(
 			...baseConfig,
 			workingDirectory: getVaultBasePath(app) ?? baseConfig.workingDirectory,
 		};
+		emit({
+			kind: "task_status",
+			message: "Initializing ACP agent",
+			severity: "info",
+			status: "running",
+		});
 		await withTimeout(
 			adapter.initialize(acpConfig),
 			timeoutMs,
 			"Agent initialization timed out.",
 		);
+		emit({
+			kind: "task_status",
+			message: "Creating ACP session",
+			severity: "info",
+			status: "running",
+		});
 		const session = await withTimeout(
 			adapter.newSession(acpConfig.workingDirectory ?? process.cwd()),
 			timeoutMs,
 			"Agent session creation timed out.",
 		);
 		await selectLearningAgentModel(adapter, session);
+		emit({
+			kind: "task_status",
+			message: "Generating proposal JSON",
+			severity: "info",
+			status: "running",
+		});
 		const response = await withTimeout(
 			adapter.sendMessage(
 				session.sessionId,
@@ -146,12 +209,31 @@ export async function runLearningAgentTaskWithAcp(
 			(proposal) =>
 				proposal.taskPath === task.path && proposal.status === "pending",
 		).length;
+		emit({
+			kind: "proposal_scan",
+			message:
+				proposalCount > 0
+					? "Pending proposal detected"
+					: "No pending proposal detected",
+			severity: proposalCount > 0 ? "success" : "warning",
+			proposalCount,
+		});
 
 		await updateLearningAgentTaskStatus(
 			app,
 			task.path,
 			proposalCount > 0 ? "proposed" : "blocked",
 		);
+		emit({
+			kind: "task_status",
+			message:
+				proposalCount > 0
+					? "Agent task marked proposed"
+					: "Agent task marked blocked",
+			severity: proposalCount > 0 ? "success" : "warning",
+			status: proposalCount > 0 ? "proposed" : "blocked",
+			proposalCount,
+		});
 
 		return {
 			stopReason: response.stopReason,
@@ -159,10 +241,39 @@ export async function runLearningAgentTaskWithAcp(
 		};
 	} catch (error) {
 		await updateLearningAgentTaskStatus(app, task.path, "blocked");
+		emit({
+			kind: "task_status",
+			message: "Agent task marked blocked",
+			severity: "error",
+			status: "blocked",
+		});
+		emit({
+			kind: "agent_error",
+			message: error instanceof Error ? error.message : String(error),
+			severity: "error",
+		});
 		throw error;
 	} finally {
 		await adapter.disconnect();
 	}
+}
+
+type LearningAgentExecutionEventInput = Omit<
+	LearningAgentExecutionEvent,
+	"taskPath" | "taskTitle" | "createdAt"
+>;
+
+function emitLearningAgentEvent(
+	options: LearningAgentExecutorOptions,
+	task: LearningAgentTaskSummary,
+	event: LearningAgentExecutionEventInput,
+): void {
+	options.onEvent?.({
+		...event,
+		taskPath: task.path,
+		taskTitle: task.title,
+		createdAt: new Date().toISOString(),
+	});
 }
 
 async function selectLearningAgentModel(

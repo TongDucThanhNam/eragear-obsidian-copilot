@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { App } from "obsidian";
 import { TFile, TFolder, normalizePath } from "obsidian";
-import { runLearningAgentTaskWithAcp } from "@/agent/learning-agent-executor";
+import {
+	runLearningAgentTaskWithAcp,
+	type LearningAgentExecutionEvent,
+} from "@/agent/learning-agent-executor";
 import type { LearningAgentTaskSummary } from "@/agent/task-frontmatter";
 import type { MyPluginSettings } from "@/app/settings/plugin-settings";
 import type { StopReason } from "@/core/models/session-update";
+import type { AcpAdapterRuntimeEvent } from "@/infra/acp/acp.adapter";
 
 describe("learning agent executor", () => {
 	it("marks a task proposed when the agent creates a pending proposal", async () => {
@@ -41,6 +45,56 @@ describe("learning agent executor", () => {
 		expect(app.frontmatter("00_Command_Center/agent-tasks/task.md").status).toBe(
 			"proposed",
 		);
+	});
+
+	it("emits task, adapter, proposal, and final status events", async () => {
+		const app = createApp({
+			"00_Command_Center/agent-tasks/task.md": "---\ntype: agent-task\nstatus: queued\n---\n# Task\n",
+		});
+		const events: LearningAgentExecutionEvent[] = [];
+		let runtimeSink: ((event: AcpAdapterRuntimeEvent) => void) | null = null;
+
+		await runLearningAgentTaskWithAcp(app, settings(), taskSummary(), {
+			isDesktopApp: true,
+			onEvent: (event) => events.push(event),
+			adapterFactory: () => ({
+				...createAdapter(async () => {
+					runtimeSink?.({
+						kind: "file_write_created",
+						message: "Created proposal file",
+						severity: "success",
+						path: "00_Command_Center/agent-proposals/task.json",
+					});
+					await app.vault.create(
+						"00_Command_Center/agent-proposals/task.json",
+						JSON.stringify({
+							taskPath: "00_Command_Center/agent-tasks/task.md",
+							writes: [
+								{
+									path: "_explainers/cache.html",
+									content: "<!doctype html>",
+								},
+							],
+						}),
+					);
+				}),
+				setRuntimeEventSink: (sink) => {
+					runtimeSink = sink;
+				},
+			}),
+		});
+
+		expect(events.map((event) => event.kind)).toContain("task_status");
+		expect(events.map((event) => event.kind)).toContain("file_write_created");
+		expect(events.map((event) => event.kind)).toContain("proposal_scan");
+		expect(events.some((event) => event.status === "proposed")).toBe(true);
+		expect(
+			events.every(
+				(event) =>
+					event.taskPath === "00_Command_Center/agent-tasks/task.md" &&
+					event.taskTitle === "task",
+			),
+		).toBe(true);
 	});
 
 	it("marks a task blocked when the agent creates no proposal", async () => {

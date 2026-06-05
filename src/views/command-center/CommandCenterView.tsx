@@ -10,13 +10,17 @@ import {
 	IconPackage,
 	IconRotate,
 	IconTag,
-	IconWarning,
 } from "@/components/ui/Icons";
 import type EragearPlugin from "@/main";
+import type { LearningAcpRunEvent } from "@/main";
 import type { AgentTaskStatus } from "@/agent/agent-task";
 import type { LearningAgentTaskSummary } from "@/agent/task-store";
 import type { AgentWriteProposalSummary } from "@/agent/write-proposal";
 import { LEARNING_NOTE_TYPES, LEARNING_STATUSES } from "@/learning/constants";
+import {
+	canPromoteStatus,
+	getPromotionBlockers,
+} from "@/learning/definition-of-done";
 import type { LearningFrontmatterPatch } from "@/learning/frontmatter-writer";
 import { getNextLearningStatus } from "@/learning/learning-state";
 import type {
@@ -30,9 +34,19 @@ import "./CommandCenterView.css";
 
 interface CommandCenterViewProps {
 	plugin: EragearPlugin;
+	mode?: CommandCenterMode;
 }
 
-export function CommandCenterView({ plugin }: CommandCenterViewProps) {
+export type CommandCenterMode =
+	| "learning"
+	| "inspector"
+	| "examiner"
+	| "artifacts";
+
+export function CommandCenterView({
+	plugin,
+	mode = "learning",
+}: CommandCenterViewProps) {
 	const [scan, setScan] = useState<LearningScanResult>(() =>
 		plugin.getLearningScan(),
 	);
@@ -44,6 +58,9 @@ export function CommandCenterView({ plugin }: CommandCenterViewProps) {
 	);
 	const [agentTasks, setAgentTasks] = useState<LearningAgentTaskSummary[]>(() =>
 		plugin.getLearningAgentTasks(),
+	);
+	const [acpRunEvents, setAcpRunEvents] = useState<LearningAcpRunEvent[]>(() =>
+		plugin.getLearningAcpRunEvents(),
 	);
 	const [writeProposals, setWriteProposals] = useState<
 		AgentWriteProposalSummary[]
@@ -69,6 +86,7 @@ export function CommandCenterView({ plugin }: CommandCenterViewProps) {
 		setQueue(plugin.getLearningActionQueue());
 		setActiveNote(plugin.getActiveLearningNote());
 		setAgentTasks(plugin.getLearningAgentTasks());
+		setAcpRunEvents(plugin.getLearningAcpRunEvents());
 		void refreshWriteProposals();
 	}, [plugin, refreshWriteProposals]);
 
@@ -85,6 +103,7 @@ export function CommandCenterView({ plugin }: CommandCenterViewProps) {
 	useEffect(() => {
 		const intervalId = window.setInterval(() => {
 			setAgentTasks(plugin.getLearningAgentTasks());
+			setAcpRunEvents(plugin.getLearningAcpRunEvents());
 			void refreshWriteProposals();
 		}, 3000);
 
@@ -267,13 +286,25 @@ export function CommandCenterView({ plugin }: CommandCenterViewProps) {
 		});
 	};
 
+	const generateExaminer = async () => {
+		setBusy(true);
+		try {
+			await plugin.generateExaminerForActiveNote();
+			refresh();
+		} finally {
+			setBusy(false);
+		}
+	};
+
+	const modeMeta = getModeMeta(mode);
+
 	return (
 		<div className="eragear-learning-center">
 			<header className="eragear-learning-header">
 				<div>
-					<h2>Eragear Learning OS</h2>
+					<h2>{modeMeta.title}</h2>
 					<p role="status" aria-live="polite">
-						Sprint: {activeSprint} · {formatDisplayDate()} ·{" "}
+						{modeMeta.subtitle} · Sprint: {activeSprint} · {formatDisplayDate()} ·{" "}
 						{scan.summary.totalNotes} notes · {queue.length} actions
 					</p>
 				</div>
@@ -288,122 +319,203 @@ export function CommandCenterView({ plugin }: CommandCenterViewProps) {
 				</Button>
 			</header>
 
-			<section className="eragear-learning-os-grid" aria-label="Learning OS">
-				<SkillMapPanel notes={scan.notes} />
-				<TodayFocusPanel
-					nextAction={nextAction}
-					plugin={plugin}
-					metadataDraft={metadataDraft}
-					onMetadataDraftChange={setMetadataDraft}
-					onSaveMetadata={saveMetadata}
-					onRunSuggestedAction={runSuggestedAction}
-					onRunWithAcp={runWithAcp}
-					onCreateAgentTask={createAgentTask}
-					busy={busy}
-				/>
-				<ActiveConceptPanel
-					activeNote={activeNote}
-					plugin={plugin}
-					activeDraft={activeDraft}
-					onActiveDraftChange={setActiveDraft}
-					onSaveActiveMetadata={saveActiveMetadata}
-					quizScoreDraft={quizScoreDraft}
-					onQuizScoreDraftChange={setQuizScoreDraft}
-					onRecordQuizScore={recordQuizScore}
-					onPatchActiveProgress={patchActiveProgress}
-					busy={busy}
-				/>
-			</section>
+			{mode === "learning" ? (
+				<>
+					<section className="eragear-learning-os-grid" aria-label="Learning OS">
+						<TodayFocusPanel
+							nextAction={nextAction}
+							plugin={plugin}
+							metadataDraft={metadataDraft}
+							onMetadataDraftChange={setMetadataDraft}
+							onSaveMetadata={saveMetadata}
+							onRunSuggestedAction={runSuggestedAction}
+							onRunWithAcp={runWithAcp}
+							onCreateAgentTask={createAgentTask}
+							busy={busy}
+						/>
+						<ActiveConceptPanel
+							compact
+							activeNote={activeNote}
+							plugin={plugin}
+							activeDraft={activeDraft}
+							onActiveDraftChange={setActiveDraft}
+							onSaveActiveMetadata={saveActiveMetadata}
+							quizScoreDraft={quizScoreDraft}
+							onQuizScoreDraftChange={setQuizScoreDraft}
+							onRecordQuizScore={recordQuizScore}
+							onPatchActiveProgress={patchActiveProgress}
+							onGenerateExaminer={generateExaminer}
+							busy={busy}
+						/>
+					</section>
 
-			<section className="eragear-learning-summary" aria-label="Learning summary">
-				<Metric label="Weak" value={scan.summary.weakNotes} />
-				<Metric label="Type" value={scan.summary.missingType} />
-				<Metric label="Area" value={scan.summary.missingArea} />
-				<Metric label="Status" value={scan.summary.missingStatus} />
-				<Metric label="Artifacts" value={scan.summary.missingArtifacts} />
-				<Metric label="Reviews" value={scan.summary.dueReviews} />
-				<Metric label="Blocked" value={scan.summary.blockedNotes} />
-				<Metric label="Mastery gaps" value={scan.summary.masteryGaps} />
-				<Metric label="ACP" value={acpWorkCount} />
-			</section>
+					<ActionQueuePanel
+						queue={queue}
+						plugin={plugin}
+						onRunAction={runQueuedAction}
+						onRunWithAcp={runWithAcp}
+						onCreateAgentTask={createAgentTask}
+						disabled={busy}
+					/>
 
-			<ActionQueuePanel
-				queue={queue}
-				plugin={plugin}
-				onRunAction={runQueuedAction}
-				onRunWithAcp={runWithAcp}
-				onCreateAgentTask={createAgentTask}
-				disabled={busy}
-			/>
+					<AcpLanePanel
+						aiAction={aiAction}
+						plugin={plugin}
+						onRunWithAcp={runWithAcp}
+						onCreateAgentTask={createAgentTask}
+						onRunAgentTask={runAgentTask}
+						runningTask={runningAcpTask}
+						blockedTask={blockedAcpTask}
+						events={acpRunEvents}
+						pendingProposalCount={pendingProposals}
+						disabled={busy}
+					/>
 
-			<LearningSessionPanel
-				note={activeNote ?? nextAction?.note ?? null}
-				nextAction={nextAction}
-				onRunSuggestedAction={runSuggestedAction}
-				onRunWithAcp={runWithAcp}
-				onCreateAgentTask={createAgentTask}
-				disabled={busy}
-			/>
+					<WriteProposalsPanel
+						proposals={writeProposals}
+						plugin={plugin}
+						onApply={applyWriteProposal}
+						onReject={rejectWriteProposal}
+						disabled={busy}
+						hideWhenEmpty
+					/>
 
-			<AcpLanePanel
-				aiAction={aiAction}
-				plugin={plugin}
-				onRunWithAcp={runWithAcp}
-				onCreateAgentTask={createAgentTask}
-				onRunAgentTask={runAgentTask}
-				runningTask={runningAcpTask}
-				blockedTask={blockedAcpTask}
-				pendingProposalCount={pendingProposals}
-				disabled={busy}
-			/>
+					<section className="eragear-learning-secondary-grid" aria-label="Learning overview">
+						<LearningSummary scan={scan} acpWorkCount={acpWorkCount} />
+						<SkillMapPanel notes={scan.notes} />
+					</section>
+				</>
+			) : null}
 
-			<AgentTasksPanel
-				tasks={agentTasks}
-				plugin={plugin}
-				onRun={runAgentTask}
-				onStatusChange={updateAgentTaskStatus}
-				disabled={busy}
-			/>
+			{mode === "inspector" ? (
+				<section className="eragear-focused-mode" aria-label="Concept inspector">
+					<ActiveConceptPanel
+						activeNote={activeNote}
+						plugin={plugin}
+						activeDraft={activeDraft}
+						onActiveDraftChange={setActiveDraft}
+						onSaveActiveMetadata={saveActiveMetadata}
+						quizScoreDraft={quizScoreDraft}
+						onQuizScoreDraftChange={setQuizScoreDraft}
+						onRecordQuizScore={recordQuizScore}
+						onPatchActiveProgress={patchActiveProgress}
+						onGenerateExaminer={generateExaminer}
+						busy={busy}
+					/>
+					<ActionQueuePanel
+						queue={queue}
+						plugin={plugin}
+						onRunAction={runQueuedAction}
+						onRunWithAcp={runWithAcp}
+						onCreateAgentTask={createAgentTask}
+						disabled={busy}
+					/>
+				</section>
+			) : null}
 
-			<WriteProposalsPanel
-				proposals={writeProposals}
-				plugin={plugin}
-				onApply={applyWriteProposal}
-				onReject={rejectWriteProposal}
-				disabled={busy}
-			/>
+			{mode === "examiner" ? (
+				<section className="eragear-focused-mode" aria-label="Examiner mode">
+					<ExaminerPanel
+						note={activeNote ?? nextAction?.note ?? null}
+						nextAction={nextAction}
+						onGenerateExaminer={generateExaminer}
+						onRunSuggestedAction={runSuggestedAction}
+						onRunWithAcp={runWithAcp}
+						onCreateAgentTask={createAgentTask}
+						disabled={busy}
+					/>
+					<LearningSessionPanel
+						note={activeNote ?? nextAction?.note ?? null}
+						nextAction={nextAction}
+						onRunSuggestedAction={runSuggestedAction}
+						onRunWithAcp={runWithAcp}
+						onCreateAgentTask={createAgentTask}
+						onGenerateExaminer={generateExaminer}
+						disabled={busy}
+					/>
+				</section>
+			) : null}
 
-			<div className="eragear-learning-grid">
-				<NoteList
-					title="Weak notes"
-					icon={<IconWarning />}
-					notes={scan.weakNotes}
-					plugin={plugin}
-					emptyText="No weak notes found."
-				/>
-				<NoteList
-					title="Missing HTML explainers"
-					icon={<IconFileText />}
-					notes={scan.missingArtifacts}
-					plugin={plugin}
-					emptyText="No missing explainers."
-				/>
-				<NoteList
-					title="Due reviews"
-					icon={<IconRotate />}
-					notes={scan.dueReviews}
-					plugin={plugin}
-					emptyText="No reviews due."
-				/>
-				<NoteList
-					title="Blocked notes"
-					icon={<IconWarning />}
-					notes={scan.blockedNotes}
-					plugin={plugin}
-					emptyText="No blocked notes."
-				/>
-			</div>
+			{mode === "artifacts" ? (
+				<section className="eragear-focused-mode" aria-label="Artifact review">
+					<AcpLanePanel
+						aiAction={aiAction}
+						plugin={plugin}
+						onRunWithAcp={runWithAcp}
+						onCreateAgentTask={createAgentTask}
+						onRunAgentTask={runAgentTask}
+						runningTask={runningAcpTask}
+						blockedTask={blockedAcpTask}
+						events={acpRunEvents}
+						pendingProposalCount={pendingProposals}
+						disabled={busy}
+					/>
+
+					<AgentTasksPanel
+						tasks={agentTasks}
+						plugin={plugin}
+						onRun={runAgentTask}
+						onStatusChange={updateAgentTaskStatus}
+						disabled={busy}
+					/>
+
+					<WriteProposalsPanel
+						proposals={writeProposals}
+						plugin={plugin}
+						onApply={applyWriteProposal}
+						onReject={rejectWriteProposal}
+						disabled={busy}
+					/>
+				</section>
+			) : null}
 		</div>
+	);
+}
+
+function getModeMeta(mode: CommandCenterMode): { title: string; subtitle: string } {
+	switch (mode) {
+		case "inspector":
+			return {
+				title: "Concept Inspector",
+				subtitle: "Current note state, blockers, and evidence",
+			};
+		case "examiner":
+			return {
+				title: "Examiner Mode",
+				subtitle: "Test understanding before promotion",
+			};
+		case "artifacts":
+			return {
+				title: "Artifact Review",
+				subtitle: "Staged ACP proposals and validation",
+			};
+		case "learning":
+			return {
+				title: "Eragear Learning OS",
+				subtitle: "Today focus and next action queue",
+			};
+	}
+}
+
+function LearningSummary({
+	scan,
+	acpWorkCount,
+}: {
+	scan: LearningScanResult;
+	acpWorkCount: number;
+}) {
+	return (
+		<section className="eragear-learning-summary" aria-label="Learning summary">
+			<Metric label="Weak" value={scan.summary.weakNotes} />
+			<Metric label="Type" value={scan.summary.missingType} />
+			<Metric label="Area" value={scan.summary.missingArea} />
+			<Metric label="Status" value={scan.summary.missingStatus} />
+			<Metric label="Artifacts" value={scan.summary.missingArtifacts} />
+			<Metric label="Reviews" value={scan.summary.dueReviews} />
+			<Metric label="Blocked" value={scan.summary.blockedNotes} />
+			<Metric label="Mastery gaps" value={scan.summary.masteryGaps} />
+			<Metric label="ACP" value={acpWorkCount} />
+		</section>
 	);
 }
 
@@ -520,6 +632,7 @@ function TodayFocusPanel({
 }) {
 	const usesAcp = nextAction?.suggestedAgent !== "deterministic";
 	const outputBullets = nextAction ? getExpectedOutputBullets(nextAction) : [];
+	const blockers = nextAction ? getActionBlockers(nextAction.note) : [];
 
 	return (
 		<section className="eragear-next-action-hero eragear-today-focus-panel">
@@ -531,16 +644,17 @@ function TodayFocusPanel({
 				<div className="eragear-next-action">
 					<div className="eragear-next-action-title-row">
 						<div>
-							<h3>1 thing to do now</h3>
+							<span className="eragear-action-kicker">Do this now</span>
+							<h3>{nextAction.action}</h3>
 							<button
 								type="button"
-								className="eragear-learning-link"
+								className="eragear-learning-link eragear-focus-note-link"
 								onClick={() => openNote(plugin, nextAction.note)}
 							>
-								{nextAction.action}: {nextAction.note.title}
+								{nextAction.note.title}
 							</button>
 						</div>
-						<StatusChip>{agentLabel(nextAction.suggestedAgent)}</StatusChip>
+						<StatusChip>{shortAgentLabel(nextAction.suggestedAgent)}</StatusChip>
 					</div>
 					<div className="eragear-next-action-meta">
 						<StatusChip>score {Math.round(nextAction.score)}</StatusChip>
@@ -549,18 +663,33 @@ function TodayFocusPanel({
 							<StatusChip>{nextAction.note.area}</StatusChip>
 						) : null}
 					</div>
-					<ul className="eragear-reason-list">
-						{nextAction.reason.slice(0, 5).map((reason) => (
-							<li key={reason}>{reason}</li>
-						))}
-					</ul>
-					<div className="eragear-output-box">
-						<strong>Expected output</strong>
-						<ul>
-							{outputBullets.map((item) => (
-								<li key={item}>{item}</li>
-							))}
-						</ul>
+					<div className="eragear-focus-detail-grid">
+						<div className="eragear-output-box">
+							<strong>Why this matters</strong>
+							<ul>
+								{nextAction.reason.slice(0, 5).map((reason) => (
+									<li key={reason}>{reason}</li>
+								))}
+							</ul>
+						</div>
+						{blockers.length > 0 ? (
+							<div className="eragear-dod-gate">
+								<strong>Blocked by</strong>
+								<ul>
+									{blockers.slice(0, 4).map((blocker) => (
+										<li key={blocker}>{blocker}</li>
+									))}
+								</ul>
+							</div>
+						) : null}
+						<div className="eragear-output-box">
+							<strong>Expected output</strong>
+							<ul>
+								{outputBullets.map((item) => (
+									<li key={item}>{item}</li>
+								))}
+							</ul>
+						</div>
 					</div>
 					<div className="eragear-primary-action-row">
 						{usesAcp ? (
@@ -573,7 +702,7 @@ function TodayFocusPanel({
 								className="eragear-primary-action-button"
 							>
 								<IconCode />
-								<span>Run with ACP</span>
+								<span>Start agent run</span>
 							</Button>
 						) : (
 							<Button
@@ -597,7 +726,7 @@ function TodayFocusPanel({
 								size="lg"
 							>
 								<IconFileText />
-								<span>Create ACP task</span>
+								<span>Save as task</span>
 							</Button>
 						) : null}
 						{usesAcp ? (
@@ -609,7 +738,7 @@ function TodayFocusPanel({
 								size="lg"
 							>
 								<IconMagic />
-								<span>Run local fallback</span>
+								<span>Use local generator</span>
 							</Button>
 						) : null}
 					</div>
@@ -640,6 +769,7 @@ function TodayFocusPanel({
 }
 
 function ActiveConceptPanel({
+	compact = false,
 	activeNote,
 	plugin,
 	activeDraft,
@@ -649,8 +779,10 @@ function ActiveConceptPanel({
 	onQuizScoreDraftChange,
 	onRecordQuizScore,
 	onPatchActiveProgress,
+	onGenerateExaminer,
 	busy,
 }: {
+	compact?: boolean;
 	activeNote: LearningNote | null;
 	plugin: EragearPlugin;
 	activeDraft: MetadataDraft;
@@ -660,6 +792,7 @@ function ActiveConceptPanel({
 	onQuizScoreDraftChange: (value: string) => void;
 	onRecordQuizScore: () => void;
 	onPatchActiveProgress: (patch: LearningFrontmatterPatch) => void;
+	onGenerateExaminer: () => void;
 	busy: boolean;
 }) {
 	return (
@@ -687,23 +820,54 @@ function ActiveConceptPanel({
 						<StatusChip>maturity {activeNote.maturity ?? 0}/5</StatusChip>
 					</div>
 					<StatusStepper status={activeNote.status} />
-					<ConceptReadiness note={activeNote} />
-					<MetadataFixer
-						draft={activeDraft}
-						onDraftChange={onActiveDraftChange}
-						onSave={onSaveActiveMetadata}
-						disabled={busy}
-						submitLabel="Save active note metadata"
-					/>
-					<ProgressControls
-						note={activeNote}
-						quizScoreDraft={quizScoreDraft}
-						onQuizScoreDraftChange={onQuizScoreDraftChange}
-						onRecordQuizScore={onRecordQuizScore}
-						onPatch={onPatchActiveProgress}
-						disabled={busy}
-					/>
-					<EvidencePanel note={activeNote} />
+					<div className="eragear-session-diagnosis">
+						<strong>{getCurrentStateHeadline(activeNote)}</strong>
+						<p>{getSessionDiagnosis(activeNote)}</p>
+					</div>
+					<ConceptReadiness note={activeNote} limit={compact ? 3 : 7} />
+					{compact ? (
+						<div className="eragear-row-actions">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={onGenerateExaminer}
+								disabled={busy}
+								size="sm"
+							>
+								<IconMagic />
+								<span>Run examiner</span>
+							</Button>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => openNote(plugin, activeNote)}
+								size="sm"
+							>
+								<IconFileText />
+								<span>Open note</span>
+							</Button>
+						</div>
+					) : (
+						<>
+							<MetadataFixer
+								draft={activeDraft}
+								onDraftChange={onActiveDraftChange}
+								onSave={onSaveActiveMetadata}
+								disabled={busy}
+								submitLabel="Save active note metadata"
+							/>
+							<ProgressControls
+								note={activeNote}
+								quizScoreDraft={quizScoreDraft}
+								onQuizScoreDraftChange={onQuizScoreDraftChange}
+								onRecordQuizScore={onRecordQuizScore}
+								onPatch={onPatchActiveProgress}
+								onGenerateExaminer={onGenerateExaminer}
+								disabled={busy}
+							/>
+							<EvidencePanel note={activeNote} />
+						</>
+					)}
 				</div>
 			) : (
 				<p>Open a learning note to inspect the current concept.</p>
@@ -712,14 +876,20 @@ function ActiveConceptPanel({
 	);
 }
 
-function ConceptReadiness({ note }: { note: LearningNote }) {
+function ConceptReadiness({
+	note,
+	limit = 7,
+}: {
+	note: LearningNote;
+	limit?: number;
+}) {
 	const missing = getMissingKnowledge(note);
 	return (
 		<div className="eragear-concept-readiness">
 			<strong>Missing knowledge</strong>
 			{missing.length > 0 ? (
 				<ul>
-					{missing.slice(0, 7).map((item) => (
+					{missing.slice(0, limit).map((item) => (
 						<li key={item}>{item}</li>
 					))}
 				</ul>
@@ -738,6 +908,7 @@ function AcpLanePanel({
 	onRunAgentTask,
 	runningTask,
 	blockedTask,
+	events,
 	pendingProposalCount,
 	disabled,
 }: {
@@ -748,6 +919,7 @@ function AcpLanePanel({
 	onRunAgentTask: (task: LearningAgentTaskSummary) => void;
 	runningTask: LearningAgentTaskSummary | null;
 	blockedTask: LearningAgentTaskSummary | null;
+	events: LearningAcpRunEvent[];
 	pendingProposalCount: number;
 	disabled: boolean;
 }) {
@@ -828,6 +1000,7 @@ function AcpLanePanel({
 					</Button>
 				</div>
 			) : null}
+			<AcpRuntimeEventList events={events} plugin={plugin} />
 			{aiAction ? (
 				<div className="eragear-action-row-main">
 					<div>
@@ -875,12 +1048,72 @@ function AcpLanePanel({
 	);
 }
 
+function AcpRuntimeEventList({
+	events,
+	plugin,
+}: {
+	events: LearningAcpRunEvent[];
+	plugin: EragearPlugin;
+}) {
+	const visibleEvents = events.slice(-8).reverse();
+	if (visibleEvents.length === 0) return null;
+
+	return (
+		<div className="eragear-acp-event-stream" role="status" aria-live="polite">
+			<div className="eragear-acp-event-stream-header">
+				<strong>Runtime state</strong>
+				<span>{visibleEvents.length} latest events</span>
+			</div>
+			<ol className="eragear-acp-event-list">
+				{visibleEvents.map((event) => (
+					<li key={event.id} data-severity={event.severity ?? "info"}>
+						<div className="eragear-acp-event-main">
+							<div>
+								<span className="eragear-acp-event-time">
+									{formatRuntimeEventTime(event.createdAt)}
+								</span>
+								<strong>{event.message}</strong>
+								<span>{event.taskTitle}</span>
+							</div>
+							<div className="eragear-action-row-chips">
+								{event.status ? <StatusChip>{event.status}</StatusChip> : null}
+								{event.proposalCount !== undefined ? (
+									<StatusChip>{event.proposalCount} proposal</StatusChip>
+								) : null}
+								{event.stopReason ? (
+									<StatusChip>{event.stopReason}</StatusChip>
+								) : null}
+								{event.chars !== undefined ? (
+									<StatusChip>{event.chars} chars</StatusChip>
+								) : null}
+							</div>
+						</div>
+						{event.path ? (
+							<button
+								type="button"
+								className="eragear-learning-link eragear-learning-path-link"
+								onClick={() => openPath(plugin, event.path ?? "")}
+							>
+								{event.path}
+							</button>
+						) : null}
+						{event.detail || event.outcome ? (
+							<p>{[event.detail, event.outcome].filter(Boolean).join(" · ")}</p>
+						) : null}
+					</li>
+				))}
+			</ol>
+		</div>
+	);
+}
+
 function ProgressControls({
 	note,
 	quizScoreDraft,
 	onQuizScoreDraftChange,
 	onRecordQuizScore,
 	onPatch,
+	onGenerateExaminer,
 	disabled,
 }: {
 	note: LearningNote;
@@ -888,10 +1121,19 @@ function ProgressControls({
 	onQuizScoreDraftChange: (value: string) => void;
 	onRecordQuizScore: () => void;
 	onPatch: (patch: LearningFrontmatterPatch) => void;
+	onGenerateExaminer: () => void;
 	disabled: boolean;
 }) {
 	const nextStatus = note.status ? getNextLearningStatus(note.status) : null;
 	const nextMaturity = clampMaturity((note.maturity ?? 0) + 1);
+	const nextStatusBlockers = nextStatus
+		? getPromotionBlockers(note, nextStatus)
+		: [];
+	const canMoveNext = Boolean(nextStatus) && nextStatusBlockers.length === 0;
+	const canMarkMastered =
+		note.status === "done" && canPromoteStatus(note, "mastered");
+	const masteredBlockers =
+		note.status === "done" ? getPromotionBlockers(note, "mastered") : [];
 
 	return (
 		<div className="eragear-progress-controls">
@@ -923,6 +1165,11 @@ function ProgressControls({
 				</Button>
 			</div>
 
+			<DefinitionOfDoneGate
+				targetStatus={nextStatus}
+				blockers={nextStatusBlockers}
+			/>
+
 			<div className="eragear-progress-actions">
 				<Button
 					type="button"
@@ -940,13 +1187,22 @@ function ProgressControls({
 				<Button
 					type="button"
 					variant="outline"
+					onClick={onGenerateExaminer}
+					disabled={disabled}
+				>
+					<IconMagic />
+					<span>Run examiner</span>
+				</Button>
+				<Button
+					type="button"
+					variant="outline"
 					onClick={() =>
 						onPatch({
 							status: nextStatus ?? note.status,
 							maturity: nextMaturity,
 						})
 					}
-					disabled={disabled || !nextStatus}
+					disabled={disabled || !canMoveNext}
 				>
 					<span>{nextStatus ? `Move to ${nextStatus}` : "No next stage"}</span>
 				</Button>
@@ -959,11 +1215,45 @@ function ProgressControls({
 							maturity: 5,
 						})
 					}
-					disabled={disabled}
+					disabled={disabled || !canMarkMastered}
 				>
-					<span>Mark mastered</span>
+					<span>Promote to mastered</span>
 				</Button>
 			</div>
+			{note.status === "done" && masteredBlockers.length > 0 ? (
+				<DefinitionOfDoneGate
+					targetStatus="mastered"
+					blockers={masteredBlockers}
+				/>
+			) : null}
+		</div>
+	);
+}
+
+function DefinitionOfDoneGate({
+	targetStatus,
+	blockers,
+}: {
+	targetStatus: LearningStatus | null;
+	blockers: string[];
+}) {
+	if (!targetStatus) return null;
+
+	return (
+		<div className="eragear-dod-gate">
+			<strong>Definition of Done gate</strong>
+			{blockers.length > 0 ? (
+				<>
+					<p>Status cannot move to {targetStatus} yet.</p>
+					<ul>
+						{blockers.slice(0, 5).map((blocker) => (
+							<li key={blocker}>{blocker}</li>
+						))}
+					</ul>
+				</>
+			) : (
+				<p>Evidence gate passed for {targetStatus}.</p>
+			)}
 		</div>
 	);
 }
@@ -1034,9 +1324,10 @@ function EvidenceGroup({
 	);
 }
 
-function LearningSessionPanel({
+function ExaminerPanel({
 	note,
 	nextAction,
+	onGenerateExaminer,
 	onRunSuggestedAction,
 	onRunWithAcp,
 	onCreateAgentTask,
@@ -1044,9 +1335,113 @@ function LearningSessionPanel({
 }: {
 	note: LearningNote | null;
 	nextAction: NextActionCandidate | null;
+	onGenerateExaminer: () => void;
 	onRunSuggestedAction: () => void;
 	onRunWithAcp: (candidate: NextActionCandidate) => void;
 	onCreateAgentTask: (candidate: NextActionCandidate) => void;
+	disabled: boolean;
+}) {
+	const rubric = note ? getExaminerRubric(note) : [];
+
+	return (
+		<section className="eragear-learning-panel eragear-examiner-panel">
+			<div className="eragear-learning-panel-header">
+				<div>
+					<h3>Examiner mode</h3>
+					<p>Score understanding before the concept can move forward.</p>
+				</div>
+				<IconMagic />
+			</div>
+			{note ? (
+				<div className="eragear-examiner-layout">
+					<div className="eragear-session-main">
+						<div className="eragear-session-diagnosis">
+							<strong>Concept: {note.title}</strong>
+							<p>{getSessionDiagnosis(note)}</p>
+						</div>
+						<div className="eragear-output-box">
+							<strong>Question focus</strong>
+							<p>{getExaminerQuestion(note)}</p>
+						</div>
+						<div className="eragear-output-box">
+							<strong>Rubric</strong>
+							<ul>
+								{rubric.map((item) => (
+									<li key={item}>{item}</li>
+								))}
+							</ul>
+						</div>
+					</div>
+					<div className="eragear-session-actions">
+						<Button
+							type="button"
+							variant="secondary"
+							onClick={onGenerateExaminer}
+							disabled={disabled}
+							size="sm"
+						>
+							<IconMagic />
+							<span>Generate examiner</span>
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={onRunSuggestedAction}
+							disabled={disabled || !nextAction}
+							size="sm"
+						>
+							<span>Run next fix</span>
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => nextAction && onCreateAgentTask(nextAction)}
+							disabled={
+								disabled ||
+								!nextAction ||
+								nextAction.suggestedAgent === "deterministic"
+							}
+							size="sm"
+						>
+							<span>Create ACP task</span>
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => nextAction && onRunWithAcp(nextAction)}
+							disabled={
+								disabled ||
+								!nextAction ||
+								nextAction.suggestedAgent === "deterministic"
+							}
+							size="sm"
+						>
+							<span>Run ACP fill</span>
+						</Button>
+					</div>
+				</div>
+			) : (
+				<p>Open a learning note to generate an examiner artifact.</p>
+			)}
+		</section>
+	);
+}
+
+function LearningSessionPanel({
+	note,
+	nextAction,
+	onRunSuggestedAction,
+	onRunWithAcp,
+	onCreateAgentTask,
+	onGenerateExaminer,
+	disabled,
+}: {
+	note: LearningNote | null;
+	nextAction: NextActionCandidate | null;
+	onRunSuggestedAction: () => void;
+	onRunWithAcp: (candidate: NextActionCandidate) => void;
+	onCreateAgentTask: (candidate: NextActionCandidate) => void;
+	onGenerateExaminer: () => void;
 	disabled: boolean;
 }) {
 	return (
@@ -1112,6 +1507,15 @@ function LearningSessionPanel({
 						<Button
 							type="button"
 							variant="secondary"
+							onClick={onGenerateExaminer}
+							disabled={disabled}
+							size="sm"
+						>
+							<span>Run examiner</span>
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
 							onClick={() => nextAction && onRunWithAcp(nextAction)}
 							disabled={
 								disabled ||
@@ -1120,7 +1524,7 @@ function LearningSessionPanel({
 							}
 							size="sm"
 						>
-							<span>Run examiner / ACP</span>
+							<span>Run ACP fill</span>
 						</Button>
 					</div>
 				</div>
@@ -1132,19 +1536,33 @@ function LearningSessionPanel({
 }
 
 function StatusStepper({ status }: { status?: LearningStatus }) {
+	const activeIndex = status ? LEARNING_STATUSES.indexOf(status) : -1;
+	const safeIndex = activeIndex >= 0 ? activeIndex : 0;
+	const progressBucketValue =
+		activeIndex >= 0
+			? Math.round(((safeIndex + 1) / LEARNING_STATUSES.length) * 10)
+			: 0;
+	const nextStatus = status ? getNextLearningStatus(status) : null;
+
 	return (
-		<ol className="eragear-status-stepper" aria-label="Learning status">
-			{LEARNING_STATUSES.map((item) => (
-				<li
-					key={item}
-					className={item === status ? "is-active" : undefined}
-					aria-current={item === status ? "step" : undefined}
-				>
-					<span />
-					{item}
-				</li>
-			))}
-		</ol>
+		<div className="eragear-status-rail" aria-label="Learning status">
+			<div className="eragear-status-rail-header">
+				<strong>{status ?? "missing status"}</strong>
+				<span>
+					{nextStatus ? `Next: ${nextStatus}` : "Final stage"} · step{" "}
+					{activeIndex >= 0 ? safeIndex + 1 : 0}/{LEARNING_STATUSES.length}
+				</span>
+			</div>
+			<div className="eragear-progress-bar" aria-hidden="true">
+				<span
+					className={`eragear-progress-fill-${progressBucket(progressBucketValue * 10)}`}
+				/>
+			</div>
+			<div className="eragear-status-rail-labels">
+				<span>Seed</span>
+				<span>Mastered</span>
+			</div>
+		</div>
 	);
 }
 
@@ -1333,6 +1751,12 @@ function agentLabel(agent: NextActionCandidate["suggestedAgent"]): string {
 	return "ACP reasoning agent";
 }
 
+function shortAgentLabel(agent: NextActionCandidate["suggestedAgent"]): string {
+	if (agent === "deterministic") return "Local";
+	if (agent === "coding-agent") return "Coding";
+	return "Agent";
+}
+
 function Metric({ label, value }: { label: string; value: number }) {
 	return (
 		<div className="eragear-learning-metric">
@@ -1370,8 +1794,10 @@ function ActionQueuePanel({
 			</div>
 			{visibleActions.length > 0 ? (
 				<ol className="eragear-action-queue">
-					{visibleActions.map((candidate, index) => (
-						<li key={candidate.note.path}>
+					{visibleActions.map((candidate, index) => {
+						const blockers = getActionBlockers(candidate.note);
+						return (
+							<li key={candidate.note.path}>
 							<div className="eragear-action-row-main">
 								<div className="eragear-action-rank">{index + 1}</div>
 								<div className="eragear-action-description">
@@ -1397,6 +1823,9 @@ function ActionQueuePanel({
 								<StatusChip>score {Math.round(candidate.score)}</StatusChip>
 								<StatusChip>{agentLabel(candidate.suggestedAgent)}</StatusChip>
 								<StatusChip>{candidate.note.status ?? "missing status"}</StatusChip>
+								{blockers.length > 0 ? (
+									<StatusChip>blocked by {blockers.length}</StatusChip>
+								) : null}
 							</div>
 							{candidate.expectedOutput ? (
 								<p>{candidate.expectedOutput}</p>
@@ -1407,6 +1836,16 @@ function ActionQueuePanel({
 										<li key={reason}>{reason}</li>
 									))}
 								</ul>
+							) : null}
+							{blockers.length > 0 ? (
+								<div className="eragear-dod-gate">
+									<strong>Blocked by</strong>
+									<ul>
+										{blockers.slice(0, 3).map((blocker) => (
+											<li key={blocker}>{blocker}</li>
+										))}
+									</ul>
+								</div>
 							) : null}
 							<div className="eragear-row-actions">
 								{candidate.suggestedAgent !== "deterministic" ? (
@@ -1443,7 +1882,8 @@ function ActionQueuePanel({
 								) : null}
 							</div>
 						</li>
-					))}
+						);
+					})}
 				</ol>
 			) : (
 				<p>No queued actions.</p>
@@ -1568,14 +2008,17 @@ function WriteProposalsPanel({
 	onApply,
 	onReject,
 	disabled,
+	hideWhenEmpty = false,
 }: {
 	proposals: AgentWriteProposalSummary[];
 	plugin: EragearPlugin;
 	onApply: (proposal: AgentWriteProposalSummary) => void;
 	onReject: (proposal: AgentWriteProposalSummary) => void;
 	disabled: boolean;
+	hideWhenEmpty?: boolean;
 }) {
 	const visibleProposals = proposals.slice(0, 6);
+	if (hideWhenEmpty && visibleProposals.length === 0) return null;
 
 	return (
 		<section className="eragear-learning-panel eragear-artifact-review-panel">
@@ -1686,55 +2129,6 @@ function WriteProposalsPanel({
 	);
 }
 
-function NoteList({
-	title,
-	icon,
-	notes,
-	plugin,
-	emptyText,
-}: {
-	title: string;
-	icon: React.ReactNode;
-	notes: LearningNote[];
-	plugin: EragearPlugin;
-	emptyText: string;
-}) {
-	const visibleNotes = notes.slice(0, 8);
-
-	return (
-		<section className="eragear-learning-panel">
-			<div className="eragear-learning-panel-header">
-				<h3>{title}</h3>
-				{icon}
-			</div>
-			{visibleNotes.length > 0 ? (
-				<ol className="eragear-learning-note-list">
-					{visibleNotes.map((note) => (
-						<li key={note.path}>
-							<button
-								type="button"
-								className="eragear-learning-link"
-								onClick={() => openNote(plugin, note)}
-							>
-								{note.title}
-							</button>
-							<span>
-								{note.status ?? "missing status"}
-								{note.priority ? ` · ${note.priority}` : ""}
-							</span>
-							{(note.blockers ?? []).length > 0 ? (
-								<span>{note.blockers?.slice(0, 2).join(" · ")}</span>
-							) : null}
-						</li>
-					))}
-				</ol>
-			) : (
-				<p>{emptyText}</p>
-			)}
-		</section>
-	);
-}
-
 function matchesSkillArea(note: LearningNote, terms: readonly string[]): boolean {
 	const haystack = `${note.title} ${note.area ?? ""} ${note.sprint ?? ""} ${note.type ?? ""}`.toLowerCase();
 	return terms.some((term) => haystack.includes(term));
@@ -1838,6 +2232,17 @@ function getMissingKnowledge(note: LearningNote): string[] {
 	return [];
 }
 
+function getActionBlockers(note: LearningNote): string[] {
+	return Array.from(
+		new Set([
+			...(note.unmetPrerequisites ?? []).map(
+				(prerequisite) => `Prerequisite: ${prerequisite}`,
+			),
+			...(note.blockers ?? []),
+		]),
+	);
+}
+
 function getSessionDiagnosis(note: LearningNote): string {
 	if ((note.blockers ?? []).length > 0) {
 		return "This concept cannot advance until its blockers are cleared.";
@@ -1856,11 +2261,58 @@ function getSessionDiagnosis(note: LearningNote): string {
 	return "This concept has strong evidence recorded.";
 }
 
+function getCurrentStateHeadline(note: LearningNote): string {
+	if ((note.blockers ?? []).length > 0) return "Clear blockers first";
+	if ((note.missingFields ?? []).length > 0) return "Metadata needs cleanup";
+	if (getMissingKnowledge(note).length > 0) return "Understanding is incomplete";
+	if (note.status === "done") return "Ready for mastery evidence";
+	if (note.status === "mastered") return "Mastery evidence recorded";
+	return "Ready for the next learning step";
+}
+
+function getExaminerQuestion(note: LearningNote): string {
+	const missing = getMissingKnowledge(note)[0];
+	if (missing) {
+		return `Explain ${missing.toLowerCase()} and why it matters for ${note.title}.`;
+	}
+	if (note.status === "test") {
+		return `What would prove that you can use ${note.title} beyond a surface definition?`;
+	}
+	return `Explain the mechanism behind ${note.title}, then name one failure mode and one production implication.`;
+}
+
+function getExaminerRubric(note: LearningNote): string[] {
+	const baseline = [
+		"Answers the question directly",
+		"Explains the internal mechanism",
+		"Names a tradeoff or failure mode",
+		"Connects the concept to a related system",
+		"States the next fix if confidence is weak",
+	];
+	const blockers = (note.blockers ?? []).slice(0, 2);
+	if (blockers.length === 0) return baseline;
+	return [
+		...baseline.slice(0, 3),
+		...blockers.map((blocker) => `Addresses blocker: ${blocker}`),
+		...baseline.slice(3),
+	];
+}
+
 function formatDisplayDate(date = new Date()): string {
 	return date.toLocaleDateString(undefined, {
 		day: "2-digit",
 		month: "short",
 		year: "numeric",
+	});
+}
+
+function formatRuntimeEventTime(value: string): string {
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return "";
+	return date.toLocaleTimeString(undefined, {
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
 	});
 }
 

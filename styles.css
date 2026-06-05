@@ -112,7 +112,7 @@ If your plugin does not need CSS, delete this file.
 	justify-content: center;
 	gap: 0.5rem;
 	white-space: nowrap;
-	letter-spacing: 0.3px;
+	letter-spacing: 0;
 }
 .test-btn:hover:not(:disabled) {
 	background-color: var(--paper-dark);
@@ -502,9 +502,10 @@ If your plugin does not need CSS, delete this file.
 }
 
 .eragear-copilot-root .eragear-main-tabs > [data-slot="tabs-list"] {
-	height: var(--size-4-10);
+	height: auto;
 	padding: var(--size-4-2);
-	border-bottom: 2px solid var(--ink);
+	border-bottom: var(--border-width) solid var(--background-modifier-border);
+	flex-wrap: wrap;
 }
 
 .eragear-copilot-root
@@ -519,13 +520,13 @@ If your plugin does not need CSS, delete this file.
 	.cui-menu-item,
 	.cui-menu-sub-trigger
 ) {
-	border: 2px solid var(--ink);
-	border-radius: 0;
+	border: var(--border-width) solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
 	color: var(--ink);
 	background: var(--paper);
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
+	font-weight: var(--font-medium);
+	text-transform: none;
+	letter-spacing: 0;
 	box-shadow: none;
 }
 
@@ -549,10 +550,10 @@ If your plugin does not need CSS, delete this file.
 	.cui-menu-sub-trigger[data-highlighted],
 	.cui-menu-sub-trigger[data-open]
 ) {
-	background: var(--ink);
-	color: var(--paper);
-	border-color: var(--ink);
-	box-shadow: var(--shadow);
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border-color: var(--interactive-accent);
+	box-shadow: none;
 }
 
 .eragear-copilot-root :is(.cui-button-variant-destructive, .test-btn-danger),
@@ -604,14 +605,14 @@ If your plugin does not need CSS, delete this file.
 }
 
 .eragear-copilot-root [data-slot="badge"] {
-	border: 2px solid var(--ink);
-	border-radius: 0;
+	border: var(--border-width) solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
 	background: var(--paper);
 	color: var(--ink);
-	font-family: var(--font-ui-newsprint);
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
+	font-family: var(--font-interface);
+	font-weight: var(--font-medium);
+	text-transform: none;
+	letter-spacing: 0;
 }
 
 .eragear-copilot-root [data-slot="badge"][data-variant="default"],
@@ -671,7 +672,7 @@ If your plugin does not need CSS, delete this file.
 .eragear-copilot-root [data-result="true"],
 .eragear-copilot-root .computed-result {
 	background: var(--result);
-	color: #fff;
+	color: var(--text-on-accent);
 }
 
 .eragear-copilot-root .prompt-input-button.cui-button,
@@ -739,10 +740,10 @@ If your plugin does not need CSS, delete this file.
 	color: var(--ink);
 	border: 2px solid var(--ink);
 	box-shadow: none;
-	font-family: var(--font-ui-newsprint);
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
+	font-family: var(--font-interface);
+	font-weight: var(--font-medium);
+	text-transform: none;
+	letter-spacing: 0;
 }
 
 .eragear-copilot-root
@@ -965,7 +966,7 @@ If your plugin does not need CSS, delete this file.
 
 .eragear-copilot-root .output-message.output-info {
 	background: var(--result);
-	color: #fff;
+	color: var(--text-on-accent);
 }
 
 .eragear-copilot-root .output-message-icon {
@@ -1075,9 +1076,9 @@ If your plugin does not need CSS, delete this file.
 	margin-bottom: var(--size-4-1);
 	color: var(--accent);
 	font-size: 0.7rem;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
+	font-weight: var(--font-semibold);
+	text-transform: none;
+	letter-spacing: 0;
 }
 
 .eragear-copilot-root .tool-call-pre,
@@ -1121,9 +1122,9 @@ If your plugin does not need CSS, delete this file.
 	justify-content: space-between;
 	gap: var(--size-4-2);
 	margin-bottom: var(--size-4-2);
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.06em;
+	font-weight: var(--font-semibold);
+	text-transform: none;
+	letter-spacing: 0;
 }
 
 .eragear-copilot-root .terminal-renderer-status {
@@ -1134,7 +1135,7 @@ If your plugin does not need CSS, delete this file.
 
 .eragear-copilot-root .terminal-renderer-status.is-running {
 	background: var(--result);
-	color: #fff;
+	color: var(--text-on-accent);
 }
 
 .eragear-copilot-root .terminal-renderer-status.is-cancelled,
@@ -1188,11 +1189,11 @@ If your plugin does not need CSS, delete this file.
 	border: 0;
 	border-radius: 0;
 	box-shadow: none;
-	font-family: var(--font-ui-newsprint);
-	font-weight: 700;
+	font-family: var(--font-interface);
+	font-weight: var(--font-medium);
 	text-align: left;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
+	text-transform: none;
+	letter-spacing: 0;
 	cursor: var(--cursor);
 }
 
@@ -1426,25 +1427,25 @@ If your plugin does not need CSS, delete this file.
 	height: var(--cui-size-lg);
 }
 
-/* --- Neo-brutalist final system override --- */
+/* --- Obsidian-native final system override --- */
 .eragear-copilot-root,
 .eragear-settings-container,
 .eragear-settings {
-	--nb-bg: #f4f1ea;
-	--nb-bg-dot: #d8d8d8;
-	--nb-surface: #ffffff;
-	--nb-surface-muted: #eae8e3;
-	--nb-ink: #000000;
-	--nb-muted: #5f5f5f;
-	--nb-yellow: #ffe066;
-	--nb-blue: #2563eb;
-	--nb-lime: #a6fa75;
-	--nb-pink: #f43f5e;
-	--nb-red: #ef4444;
-	--nb-code: #eae8e3;
-	--nb-shadow-sm: 2px 2px 0 var(--nb-ink);
-	--nb-shadow: 4px 4px 0 var(--nb-ink);
-	--nb-shadow-lg: 6px 6px 0 var(--nb-ink);
+	--nb-bg: var(--background-primary);
+	--nb-bg-dot: var(--background-modifier-border);
+	--nb-surface: var(--background-secondary);
+	--nb-surface-muted: var(--background-modifier-hover);
+	--nb-ink: var(--text-normal);
+	--nb-muted: var(--text-muted);
+	--nb-yellow: var(--interactive-accent);
+	--nb-blue: var(--interactive-accent);
+	--nb-lime: var(--interactive-accent-hover);
+	--nb-pink: var(--text-accent);
+	--nb-red: var(--text-error);
+	--nb-code: var(--code-background);
+	--nb-shadow-sm: var(--shadow-s, none);
+	--nb-shadow: var(--shadow-s, none);
+	--nb-shadow-lg: var(--shadow-s, none);
 
 	--paper: var(--nb-bg);
 	--paper-dark: var(--nb-surface-muted);
@@ -1455,9 +1456,9 @@ If your plugin does not need CSS, delete this file.
 	--result: var(--nb-blue);
 
 	--font-brand: "DM Serif Display", Georgia, serif;
-	--font-body: "Work Sans", var(--font-interface), sans-serif;
-	--font-ui-newsprint: "Space Mono", "Courier New", monospace;
-	--font-code: "Space Mono", "Courier New", monospace;
+	--font-body: var(--font-interface);
+	--font-ui-newsprint: var(--font-interface);
+	--font-code: var(--font-interface);
 }
 
 .eragear-copilot-root,
@@ -1488,8 +1489,8 @@ If your plugin does not need CSS, delete this file.
 
 .eragear-copilot-root :is(h1, h2, h3, .brand, .eragear-chat-title),
 .eragear-settings-container :is(h1, h2, h3, .brand) {
-	font-family: var(--font-brand);
-	font-weight: 400;
+	font-family: var(--font-interface);
+	font-weight: var(--font-semibold);
 	letter-spacing: 0;
 }
 
@@ -1523,7 +1524,7 @@ If your plugin does not need CSS, delete this file.
 }
 
 .eragear-copilot-root .eragear-main {
-	border-left: 4px solid var(--nb-ink);
+	border-left: var(--border-width) solid var(--background-modifier-border);
 }
 
 .eragear-copilot-root :is(
@@ -1547,9 +1548,9 @@ If your plugin does not need CSS, delete this file.
 ) {
 	background: var(--nb-surface);
 	color: var(--nb-ink);
-	border: 4px solid var(--nb-ink);
-	border-radius: 0;
-	box-shadow: var(--nb-shadow);
+	border: var(--border-width) solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	box-shadow: none;
 }
 
 .eragear-copilot-root :is(
@@ -1563,9 +1564,9 @@ If your plugin does not need CSS, delete this file.
 	.cui-button
 ):focus-visible,
 .eragear-settings-container :is(button, input, textarea, select):focus-visible {
-	outline: 3px solid var(--nb-blue);
-	outline-offset: 3px;
-	box-shadow: var(--nb-shadow-sm);
+	outline: var(--border-width) solid var(--interactive-accent);
+	outline-offset: var(--size-4-1);
+	box-shadow: none;
 }
 
 .eragear-copilot-root :is(
@@ -1584,13 +1585,13 @@ If your plugin does not need CSS, delete this file.
 	.cui-menu-sub-trigger
 ),
 .eragear-settings-container :is(button, input, select, textarea) {
-	border: 2px solid var(--nb-ink);
-	border-radius: 0;
+	border: var(--border-width) solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
 	background: var(--nb-surface);
 	color: var(--nb-ink);
-	box-shadow: var(--nb-shadow-sm);
-	font-family: var(--font-ui-newsprint);
-	font-weight: 700;
+	box-shadow: none;
+	font-family: var(--font-interface);
+	font-weight: var(--font-medium);
 }
 
 .eragear-copilot-root :is(
@@ -1603,10 +1604,9 @@ If your plugin does not need CSS, delete this file.
 	.search-btn,
 	.hero-search-btn
 ):hover:not(:disabled) {
-	background: var(--nb-yellow);
+	background: var(--background-modifier-hover);
 	color: var(--nb-ink);
-	box-shadow: 1px 1px 0 var(--nb-ink);
-	transform: translate(2px, 2px);
+	box-shadow: none;
 }
 
 .eragear-copilot-root :is(.cui-button-variant-default, .test-btn-primary),
@@ -1617,10 +1617,10 @@ If your plugin does not need CSS, delete this file.
 	.cui-menu-sub-trigger[data-highlighted],
 	.cui-menu-sub-trigger[data-open]
 ) {
-	background: var(--nb-ink);
-	color: var(--nb-surface);
-	border-color: var(--nb-ink);
-	box-shadow: var(--nb-shadow);
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border-color: var(--interactive-accent);
+	box-shadow: none;
 }
 
 .eragear-copilot-root :is(.cui-button-variant-destructive, .test-btn-danger),
@@ -1633,13 +1633,13 @@ If your plugin does not need CSS, delete this file.
 .eragear-copilot-root [data-slot="badge"] {
 	background: var(--nb-surface);
 	color: var(--nb-ink);
-	border: 2px solid var(--nb-ink);
-	border-radius: 0;
-	box-shadow: var(--nb-shadow-sm);
-	font-family: var(--font-ui-newsprint);
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.06em;
+	border: var(--border-width) solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	box-shadow: none;
+	font-family: var(--font-interface);
+	font-weight: var(--font-medium);
+	text-transform: none;
+	letter-spacing: 0;
 }
 
 .eragear-copilot-root [data-slot="badge"][data-variant="secondary"] {
@@ -1654,10 +1654,10 @@ If your plugin does not need CSS, delete this file.
 }
 
 .eragear-copilot-root .eragear-main-tabs > [data-slot="tabs-list"] {
-	height: 64px;
+	height: auto;
 	padding: var(--size-4-2);
-	gap: var(--size-4-2);
-	border-bottom: 4px solid var(--nb-ink);
+	gap: var(--size-4-1);
+	border-bottom: var(--border-width) solid var(--background-modifier-border);
 }
 
 .eragear-copilot-root
@@ -1665,14 +1665,14 @@ If your plugin does not need CSS, delete this file.
 	> [data-slot="tabs-list"]
 	[data-slot="tabs-trigger"] {
 	height: 44px;
-	min-width: min(46%, 240px);
-	background: var(--nb-bg);
-	border: 2px solid var(--nb-ink);
+	min-width: auto;
+	background: transparent;
+	border: var(--border-width) solid transparent;
 	box-shadow: none;
-	font-family: var(--font-ui-newsprint);
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
+	font-family: var(--font-interface);
+	font-weight: var(--font-medium);
+	text-transform: none;
+	letter-spacing: 0;
 }
 
 .eragear-copilot-root
@@ -1691,9 +1691,9 @@ If your plugin does not need CSS, delete this file.
 	.eragear-main-tabs
 	> [data-slot="tabs-list"]
 	[data-slot="tabs-trigger"][aria-selected="true"] {
-	background: var(--nb-ink);
-	color: var(--nb-surface);
-	box-shadow: var(--nb-shadow);
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	box-shadow: none;
 }
 
 .eragear-copilot-root .eragear-chat-header {
@@ -1846,11 +1846,11 @@ If your plugin does not need CSS, delete this file.
 	padding-bottom: var(--size-4-1);
 	border-bottom: 2px solid color-mix(in srgb, var(--nb-ink) 22%, transparent);
 	color: var(--nb-blue);
-	font-family: var(--font-ui-newsprint);
+	font-family: var(--font-interface);
 	font-size: 0.8rem;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
+	font-weight: var(--font-semibold);
+	text-transform: none;
+	letter-spacing: 0;
 }
 
 .eragear-copilot-root .eragear-message-group.user .eragear-message-meta {
@@ -1902,8 +1902,8 @@ If your plugin does not need CSS, delete this file.
 	color: var(--nb-surface);
 	font-family: var(--font-code);
 	font-size: 0.78rem;
-	font-weight: 700;
-	text-transform: uppercase;
+	font-weight: var(--font-semibold);
+	text-transform: none;
 }
 
 .eragear-copilot-root .eragear-code-block-copy {
@@ -2197,7 +2197,6 @@ If your plugin does not need CSS, delete this file.
 
 .eragear-copilot-root .action-card:hover {
 	background: var(--nb-yellow);
-	transform: translate(2px, 2px);
 	box-shadow: var(--nb-shadow-sm);
 }
 
@@ -2399,9 +2398,9 @@ If your plugin does not need CSS, delete this file.
 	border-radius: 0;
 	box-shadow: none;
 	font-family: var(--font-code);
-	font-weight: 700;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
+	font-weight: var(--font-semibold);
+	letter-spacing: 0;
+	text-transform: none;
 }
 
 .eragear-copilot-root .reasoning-trigger:hover,
@@ -2410,6 +2409,12 @@ If your plugin does not need CSS, delete this file.
 	color: var(--nb-ink);
 	background: var(--nb-yellow);
 	box-shadow: none;
+}
+
+.eragear-copilot-root .eragear-primary-action-row .cui-button {
+	white-space: normal;
+	overflow-wrap: anywhere;
+	text-align: center;
 }
 
 .eragear-copilot-root .reasoning-content {
@@ -2445,4 +2450,65 @@ If your plugin does not need CSS, delete this file.
 	overflow: visible;
 	text-overflow: clip;
 	white-space: nowrap;
+}
+
+/* Learning OS uses native Obsidian UI styles. */
+.eragear-copilot-root .eragear-learning-center,
+.eragear-copilot-root
+	.eragear-learning-center
+	:is(button, input, textarea, select, h2, h3, p, span, strong, li, label) {
+	font-family: var(--font-interface);
+}
+
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"][data-selected],
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"][data-active],
+.eragear-copilot-root
+	.eragear-main-tabs
+	> [data-slot="tabs-list"]
+	[data-slot="tabs-trigger"][aria-selected="true"] {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+	border-color: var(--background-modifier-border);
+}
+
+.eragear-copilot-root
+	.eragear-learning-center
+	.eragear-primary-action-button.cui-button {
+	background: var(--interactive-normal);
+	color: var(--text-normal);
+	border-color: var(--background-modifier-border);
+}
+
+.eragear-copilot-root
+	.eragear-learning-center
+	.eragear-primary-action-button.cui-button:hover:not(:disabled) {
+	background: var(--interactive-hover);
+	color: var(--text-normal);
+}
+
+.eragear-copilot-root .eragear-learning-center .eragear-learning-link {
+	min-height: auto;
+	padding: 0;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	color: var(--text-normal);
+	font: inherit;
+	text-decoration: underline;
+	text-decoration-thickness: var(--border-width);
+	text-underline-offset: var(--size-4-1);
+}
+
+.eragear-copilot-root
+	.eragear-learning-center
+	.eragear-learning-link:hover {
+	background: transparent;
+	color: var(--text-normal);
 }

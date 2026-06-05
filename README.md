@@ -126,6 +126,7 @@ npm run build
 
 ## Learning OS roadmap
 
+- [Learning OS UX/UI plan](docs/learning-os/UX_UI_PLAN.md)
 - [Learning OS maturity spec](docs/learning-os/README.md)
 - [Learning OS implementation plan](docs/learning-os/PLAN.md)
 - [Learning OS todo checklist](docs/learning-os/TODO.md)

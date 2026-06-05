@@ -18,7 +18,10 @@ import {
 	updateLearningAgentTaskStatus,
 	type LearningAgentTaskSummary,
 } from "@/agent/task-store";
-import { runLearningAgentTaskWithAcp } from "@/agent/learning-agent-executor";
+import {
+	runLearningAgentTaskWithAcp,
+	type LearningAgentExecutionEvent,
+} from "@/agent/learning-agent-executor";
 import { createLearningAgentTaskFile } from "@/agent/task-writer";
 import {
 	applyAgentWriteProposal,
@@ -68,6 +71,13 @@ import type {
 	NextActionCandidate,
 } from "@/learning/types";
 
+const MAX_LEARNING_ACP_RUN_EVENTS = 40;
+
+export interface LearningAcpRunEvent extends LearningAgentExecutionEvent {
+	id: string;
+	sequence: number;
+}
+
 /**
  * Main Plugin Class
  *
@@ -85,6 +95,8 @@ export default class EragearPlugin extends Plugin {
 	private statusBar: HTMLElement | null = null;
 	private lastLearningScan: LearningScanResult | null = null;
 	private learningStateListeners = new Set<() => void>();
+	private learningAcpRunEvents: LearningAcpRunEvent[] = [];
+	private learningAcpRunEventSequence = 0;
 
 	async onload() {
 		try {
@@ -293,14 +305,7 @@ export default class EragearPlugin extends Plugin {
 			id: "run-examiner",
 			name: "Run examiner",
 			callback: async () => {
-				const activeFile = this.app.workspace.getActiveFile();
-				if (!activeFile) {
-					new Notice("Open a note first.");
-					return;
-				}
-				const artifact = await generateExaminerForNote(this.app, activeFile);
-				new Notice(`Examiner created: ${artifact.artifactPath}`);
-				this.notifyLearningStateChanged();
+				await this.generateExaminerForActiveNote();
 			},
 		});
 
@@ -583,6 +588,37 @@ export default class EragearPlugin extends Plugin {
 		};
 	}
 
+	getLearningAcpRunEvents(): LearningAcpRunEvent[] {
+		return [...this.learningAcpRunEvents];
+	}
+
+	clearLearningAcpRunEvents(): void {
+		this.learningAcpRunEvents = [];
+		this.notifyLearningStateChanged();
+	}
+
+	private clearLearningAcpRunEventsForTask(taskPath: string): void {
+		this.learningAcpRunEvents = this.learningAcpRunEvents.filter(
+			(event) => event.taskPath !== taskPath,
+		);
+	}
+
+	private recordLearningAcpRunEvent(
+		event: LearningAgentExecutionEvent,
+	): LearningAcpRunEvent {
+		this.learningAcpRunEventSequence += 1;
+		const nextEvent = {
+			...event,
+			id: `acp-run-${this.learningAcpRunEventSequence}`,
+			sequence: this.learningAcpRunEventSequence,
+		};
+		this.learningAcpRunEvents = [
+			...this.learningAcpRunEvents,
+			nextEvent,
+		].slice(-MAX_LEARNING_ACP_RUN_EVENTS);
+		return nextEvent;
+	}
+
 	getLearningAgentTasks(): LearningAgentTaskSummary[] {
 		return scanLearningAgentTasks(this.app);
 	}
@@ -683,8 +719,17 @@ export default class EragearPlugin extends Plugin {
 			return;
 		}
 
-		await updateLearningAgentTaskStatus(this.app, task.path, "running");
 		this.updateStatusBar("processing");
+		this.clearLearningAcpRunEventsForTask(task.path);
+		this.recordLearningAcpRunEvent({
+			kind: "task_status",
+			taskPath: task.path,
+			taskTitle: task.title,
+			message: "ACP agent started",
+			createdAt: new Date().toISOString(),
+			severity: "info",
+			status: "running",
+		});
 		this.notifyLearningStateChanged();
 		new Notice("ACP agent started. Watch the Learning OS ACP lane.");
 
@@ -693,6 +738,12 @@ export default class EragearPlugin extends Plugin {
 				this.app,
 				this.settings,
 				task,
+				{
+					onEvent: (event) => {
+						this.recordLearningAcpRunEvent(event);
+						this.notifyLearningStateChanged();
+					},
+				},
 			);
 			if (result.proposalCount > 0) {
 				this.notifyLearningStateChanged();
@@ -702,8 +753,23 @@ export default class EragearPlugin extends Plugin {
 			this.notifyLearningStateChanged();
 			new Notice("Agent task blocked. No proposal created.");
 		} catch (error) {
-			this.notifyLearningStateChanged();
 			const message = error instanceof Error ? error.message : String(error);
+			const latestEvent =
+				this.learningAcpRunEvents[this.learningAcpRunEvents.length - 1];
+			if (
+				latestEvent?.kind !== "agent_error" ||
+				latestEvent.message !== message
+			) {
+				this.recordLearningAcpRunEvent({
+					kind: "agent_error",
+					taskPath: task.path,
+					taskTitle: task.title,
+					message,
+					createdAt: new Date().toISOString(),
+					severity: "error",
+				});
+			}
+			this.notifyLearningStateChanged();
 			new Notice(`Agent task failed: ${message}`);
 		} finally {
 			this.updateStatusBar("ready");
@@ -787,6 +853,20 @@ export default class EragearPlugin extends Plugin {
 		});
 		this.lastLearningScan = scanVaultLearningNotes(this.app);
 		this.notifyLearningStateChanged();
+		return artifact;
+	}
+
+	async generateExaminerForActiveNote(): Promise<GeneratedArtifact | null> {
+		const activeFile = this.app.workspace.getActiveFile();
+		if (!activeFile) {
+			new Notice("Open a note first.");
+			return null;
+		}
+
+		const artifact = await generateExaminerForNote(this.app, activeFile);
+		this.lastLearningScan = scanVaultLearningNotes(this.app);
+		this.notifyLearningStateChanged();
+		new Notice(`Examiner created: ${artifact.artifactPath}`);
 		return artifact;
 	}
 

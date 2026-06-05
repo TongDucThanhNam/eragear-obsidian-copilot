@@ -8,22 +8,22 @@
 
 .eragear-copilot-root .cui-button {
 	font-size: var(--cui-font-size);
-	font-family: var(--font-code);
-	font-weight: 700;
+	font-family: var(--font-interface);
+	font-weight: var(--font-medium);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	white-space: nowrap;
 	transition: all var(--cui-transition);
-	border: 2px solid var(--nb-ink);
+	border: var(--border-width) solid var(--cui-border);
 	outline: none;
 	cursor: var(--cui-cursor);
 	user-select: none;
 	padding: 0 var(--cui-px);
 	height: var(--cui-size-md);
 	gap: var(--cui-gap);
-	border-radius: 0;
-	box-shadow: var(--nb-shadow-sm);
+	border-radius: var(--radius-s);
+	box-shadow: none;
 	background-clip: padding-box;
 }
 
@@ -39,71 +39,67 @@
 }
 
 .eragear-copilot-root .cui-button:focus-visible {
-	border-color: var(--nb-ink);
-	box-shadow: var(--nb-shadow);
-	outline: none;
+	border-color: var(--cui-accent);
+	box-shadow: none;
+	outline: var(--border-width) solid var(--cui-accent);
 	outline-offset: var(--size-4-1);
 }
 
 /* Variants */
 .eragear-copilot-root .cui-button.cui-button-variant-default {
-	background-color: var(--nb-ink);
-	color: var(--nb-surface);
+	background-color: var(--interactive-normal);
+	color: var(--cui-text);
 }
 
 .eragear-copilot-root
 	.cui-button.cui-button-variant-default:hover:not(:disabled) {
-	background-color: var(--nb-lime);
-	color: var(--nb-ink);
-	box-shadow: none;
-	transform: translate(2px, 2px);
+	background-color: var(--interactive-hover);
+	color: var(--cui-text);
 }
 
 .eragear-copilot-root .cui-button.cui-button-variant-outline {
-	background-color: var(--nb-surface);
-	color: var(--nb-ink);
+	background-color: transparent;
+	color: var(--cui-text);
 }
 
 .eragear-copilot-root
 	.cui-button.cui-button-variant-outline:hover:not(:disabled) {
-	background-color: var(--nb-yellow);
-	box-shadow: none;
-	transform: translate(2px, 2px);
+	background-color: var(--background-modifier-hover);
 }
 
 .eragear-copilot-root .cui-button.cui-button-variant-secondary {
-	background-color: var(--nb-yellow);
-	color: var(--nb-ink);
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border-color: var(--interactive-accent);
 }
 
 .eragear-copilot-root
 	.cui-button.cui-button-variant-secondary:hover:not(:disabled) {
-	background-color: var(--nb-lime);
-	box-shadow: none;
-	transform: translate(2px, 2px);
+	background-color: var(--interactive-accent-hover);
+	color: var(--text-on-accent);
 }
 
 .eragear-copilot-root .cui-button.cui-button-variant-ghost {
 	background-color: transparent;
-	color: var(--nb-ink);
+	color: var(--cui-text);
 	box-shadow: none;
 }
 
 .eragear-copilot-root
 	.cui-button.cui-button-variant-ghost:hover:not(:disabled) {
-	background-color: var(--nb-yellow);
-	box-shadow: var(--nb-shadow-sm);
+	background-color: var(--background-modifier-hover);
+	box-shadow: none;
 }
 
 .eragear-copilot-root .cui-button.cui-button-variant-destructive {
-	background-color: var(--nb-surface);
-	color: var(--nb-red);
+	background-color: transparent;
+	color: var(--text-error);
 }
 
 .eragear-copilot-root
 	.cui-button.cui-button-variant-destructive:hover:not(:disabled) {
-	background-color: var(--nb-red);
-	color: var(--nb-surface);
+	background-color: var(--background-modifier-error);
+	color: var(--text-error);
 }
 
 .eragear-copilot-root .cui-button.cui-button-variant-link {

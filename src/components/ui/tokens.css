@@ -9,24 +9,24 @@
 .eragear-copilot-root {
 	position: relative;
 
-	/* Neo-brutalist design system */
-	--nb-bg: #f4f1ea;
-	--nb-bg-dot: #d8d8d8;
-	--nb-surface: #ffffff;
-	--nb-surface-muted: #eae8e3;
-	--nb-ink: #000000;
-	--nb-muted: #5f5f5f;
-	--nb-line: #000000;
-	--nb-yellow: #ffe066;
-	--nb-blue: #2563eb;
-	--nb-lime: #a6fa75;
-	--nb-pink: #f43f5e;
-	--nb-red: #ef4444;
-	--nb-code: #eae8e3;
-	--nb-shadow-sm: 2px 2px 0 var(--nb-ink);
-	--nb-shadow: 4px 4px 0 var(--nb-ink);
-	--nb-shadow-lg: 6px 6px 0 var(--nb-ink);
-	--nb-shadow-xl: 8px 8px 0 var(--nb-ink);
+	/* Obsidian-native aliases kept for older UI wrappers. */
+	--nb-bg: var(--background-primary);
+	--nb-bg-dot: var(--background-modifier-border);
+	--nb-surface: var(--background-secondary);
+	--nb-surface-muted: var(--background-modifier-hover);
+	--nb-ink: var(--text-normal);
+	--nb-muted: var(--text-muted);
+	--nb-line: var(--background-modifier-border);
+	--nb-yellow: var(--interactive-accent);
+	--nb-blue: var(--interactive-accent);
+	--nb-lime: var(--interactive-accent-hover);
+	--nb-pink: var(--text-accent);
+	--nb-red: var(--text-error);
+	--nb-code: var(--code-background);
+	--nb-shadow-sm: var(--shadow-s, none);
+	--nb-shadow: var(--shadow-s, none);
+	--nb-shadow-lg: var(--shadow-s, none);
+	--nb-shadow-xl: var(--shadow-s, none);
 
 	--paper: var(--nb-bg);
 	--paper-dark: var(--nb-surface-muted);
@@ -37,15 +37,15 @@
 	--result: var(--nb-blue);
 
 	--font-brand: "DM Serif Display", Georgia, serif;
-	--font-body: "Work Sans", var(--font-interface), sans-serif;
-	--font-ui-newsprint: "Space Mono", "Courier New", monospace;
-	--font-code: "Space Mono", "Courier New", monospace;
+	--font-body: var(--font-interface);
+	--font-ui-newsprint: var(--font-interface);
+	--font-code: var(--font-interface);
 
 	/* Background colors */
 	--cui-bg: var(--paper);
 	--cui-bg-2: var(--nb-surface);
 	--cui-bg-3: var(--paper-dark);
-	--cui-bg-hover: var(--nb-yellow);
+	--cui-bg-hover: var(--background-modifier-hover);
 	--cui-backdrop: color-mix(in srgb, var(--ink) 42%, transparent);
 
 	/* Text colors */
@@ -59,8 +59,8 @@
 
 	/* Accent colors */
 	--cui-accent: var(--nb-ink);
-	--cui-accent-hover: var(--nb-yellow);
-	--cui-accent-text: var(--nb-surface);
+	--cui-accent-hover: var(--interactive-accent-hover);
+	--cui-accent-text: var(--text-on-accent);
 
 	/* Destructive colors */
 	--cui-destructive: var(--nb-red);
@@ -87,9 +87,9 @@
 	--cui-line-height: 1.5;
 
 	/* Radius */
-	--cui-radius: 10px;
-	--cui-radius-sm: 6px;
-	--cui-radius-lg: 14px;
+	--cui-radius: var(--radius-m);
+	--cui-radius-sm: var(--radius-s);
+	--cui-radius-lg: var(--radius-l);
 
 	/* Shadow */
 	--cui-shadow: var(--nb-shadow);

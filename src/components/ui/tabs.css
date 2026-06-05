@@ -16,15 +16,15 @@
 	justify-content: center;
 	flex-shrink: 0;
 	height: auto;
-	padding: var(--size-4-3) var(--size-4-3) 0;
-	gap: var(--size-4-2);
-	color: var(--nb-ink);
-	border-bottom: 4px solid var(--nb-ink);
+	padding: var(--size-4-2) var(--size-4-2) 0;
+	gap: var(--size-4-1);
+	color: var(--cui-text);
+	border-bottom: var(--border-width) solid var(--cui-border);
 	border-radius: 0;
 }
 
 .eragear-copilot-root [data-slot="tabs-list"][data-variant="default"] {
-	background: var(--nb-bg);
+	background: var(--cui-bg);
 }
 
 .eragear-copilot-root [data-slot="tabs-list"][data-variant="line"] {
@@ -38,18 +38,17 @@
 	justify-content: center;
 	gap: var(--size-4-1);
 	flex: 1;
-	min-height: var(--cui-touch-target);
-	padding: 0 var(--size-4-6);
-	color: var(--nb-ink);
-	background: var(--nb-bg);
-	border: 2px solid var(--nb-ink);
-	border-bottom-width: 0;
-	border-radius: 0;
-	font-family: var(--font-code);
+	min-height: var(--size-4-8);
+	padding: 0 var(--size-4-2);
+	color: var(--cui-text-muted);
+	background: transparent;
+	border: var(--border-width) solid transparent;
+	border-radius: var(--radius-s);
+	font-family: var(--font-interface);
 	font-size: var(--font-ui-small);
-	font-weight: 700;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
+	font-weight: var(--font-medium);
+	letter-spacing: 0;
+	text-transform: none;
 	white-space: nowrap;
 	cursor: var(--cui-cursor);
 	outline: none;
@@ -60,18 +59,17 @@
 }
 
 .eragear-copilot-root [data-slot="tabs-trigger"]:hover {
-	background: var(--nb-yellow);
-	color: var(--nb-ink);
+	background: var(--background-modifier-hover);
+	color: var(--cui-text);
 }
 
 .eragear-copilot-root [data-slot="tabs-trigger"][data-selected],
 .eragear-copilot-root [data-slot="tabs-trigger"][data-active],
 .eragear-copilot-root [data-slot="tabs-trigger"][aria-selected="true"] {
 	color: var(--cui-text);
-	background: var(--nb-ink);
-	border-color: var(--nb-ink);
-	color: var(--nb-surface);
-	box-shadow: var(--nb-shadow-sm);
+	background: var(--background-modifier-hover);
+	border-color: var(--cui-border);
+	box-shadow: none;
 }
 
 .eragear-copilot-root [data-slot="tabs-trigger"][data-selected]::after,
